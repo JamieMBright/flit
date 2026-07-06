@@ -69,10 +69,16 @@ Fragment Shader (globe.frag)          Canvas Overlay
 - **`lib/game/map/country_data.dart`** - Polygon data retained for hit-testing only
 
 ### Texture Samplers (4 max per shader pass)
+`globe.frag` currently uses 2 of the 4 available samplers:
 1. `uSatellite` — NASA Blue Marble (equirectangular satellite imagery)
-2. `uHeightmap` — ETOPO heightmap (terrain elevation + ocean depth)
-3. `uShoreDist` — Shore distance field (for coastline foam)
-4. `uCityLights` — NASA Earth at Night (city light emissions)
+2. `uCityLights` — NASA Earth at Night (city light emissions)
+
+`uHeightmap` (ETOPO heightmap) and `uShoreDist` (shore distance field) were never
+wired into the shader — no uniform declarations, no `texture()` calls — so
+`heightmap.png` and `shore_distance.png` were removed from `assets/textures/`.
+Surface classification is derived from satellite color instead. If terrain-relief
+shading or coastline foam is implemented later, re-add the textures and samplers
+(2 slots remain available before hitting the 4-sampler limit).
 
 If more textures needed → pack into RGBA channels or use multi-pass.
 

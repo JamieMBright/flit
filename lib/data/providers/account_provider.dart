@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/services/game_settings.dart';
+import '../../core/utils/network_timeout.dart';
 import '../../game/economy/consumables.dart';
 import '../../game/economy/fuel_tank.dart';
 import '../../game/economy/license_heat.dart';
@@ -189,6 +190,148 @@ class AccountState {
     return SocialTitleCatalog.getById(equippedTitleId!);
   }
 
+  /// Public UTC `YYYY-MM-DD` date-key helper, matching the internal
+  /// [_todayStr] format exactly.
+  ///
+  /// Exposed so screens (e.g. `DailyChallengeScreen`) can capture "today"
+  /// ONCE at screen-open time and thread that value through to completion
+  /// recording — see [AccountNotifier.recordDailyChallengeCompletion]. Without
+  /// this, a run that crosses UTC midnight would stamp the wrong day and could
+  /// break the daily streak (item B7).
+  static String todayDateKey() => _todayStr();
+
+  /// Pure decision logic used by [AccountNotifier._applySnapshot] to merge a
+  /// freshly-loaded server snapshot into the current local state (item B8).
+  ///
+  /// Returns `null` when the snapshot application should be skipped/deferred
+  /// entirely because an optimistic coin spend / purchase is mid-flight
+  /// ([spendInFlight]) — applying a stale server snapshot at that moment could
+  /// clobber the just-spent coins or just-granted item before the purchase
+  /// RPC confirms or rejects it. The caller should leave local state untouched
+  /// and let the next refresh (after the purchase settles) pick up the
+  /// server's view.
+  ///
+  /// Otherwise, owned-item sets ([serverOwnedCosmetics], [serverOwnedAvatarParts])
+  /// are UNIONED with the current local sets (rather than replaced) whenever
+  /// [sameUser] is true, so a freshly-purchased item already applied locally
+  /// is never dropped by a server snapshot that hasn't caught up yet. On a
+  /// fresh login / different user, the server sets fully replace local state
+  /// (there is nothing of the new user's to preserve).
+  ///
+  /// Exposed as a static, Supabase-free function (and `@visibleForTesting`)
+  /// so this behavior is unit-testable without a live backend.
+  @visibleForTesting
+  static AccountState? mergeServerSnapshot({
+    required AccountState local,
+    required Player resolvedPlayer,
+    required Set<String> serverOwnedCosmetics,
+    required Set<String> serverOwnedAvatarParts,
+    required bool sameUser,
+    required bool spendInFlight,
+  }) {
+    if (spendInFlight) return null;
+    return local.copyWith(
+      currentPlayer: resolvedPlayer,
+      ownedCosmetics: sameUser
+          ? {...local.ownedCosmetics, ...serverOwnedCosmetics}
+          : serverOwnedCosmetics,
+      ownedAvatarParts: sameUser
+          ? {...local.ownedAvatarParts, ...serverOwnedAvatarParts}
+          : serverOwnedAvatarParts,
+    );
+  }
+
+  /// Whether a purchase-validation RPC result indicates the server rejected
+  /// an optimistically-applied purchase (item B8). A `null` result (unexpected
+  /// response shape) is treated as "not a rejection" — we simply don't have
+  /// enough information to safely revert.
+  @visibleForTesting
+  static bool purchaseRpcRejected(Map<String, dynamic>? result) =>
+      result != null && (result['success'] as bool? ?? false) == false;
+
+  /// Revert an optimistically-applied cosmetic purchase after the server
+  /// rejects it: restores the spent coins and removes the granted cosmetic.
+  ///
+  /// Pure/testable — no Supabase dependency.
+  @visibleForTesting
+  static AccountState revertOptimisticCosmeticPurchase(
+    AccountState state, {
+    required String cosmeticId,
+    required int cost,
+  }) {
+    final restoredCosmetics = {...state.ownedCosmetics}..remove(cosmeticId);
+    return state.copyWith(
+      currentPlayer: state.currentPlayer.copyWith(
+        coins: state.currentPlayer.coins + cost,
+      ),
+      ownedCosmetics: restoredCosmetics,
+    );
+  }
+
+  /// Revert an optimistically-applied avatar-part purchase after the server
+  /// rejects it: restores the spent coins and removes the granted part.
+  ///
+  /// Pure/testable — no Supabase dependency.
+  @visibleForTesting
+  static AccountState revertOptimisticAvatarPartPurchase(
+    AccountState state, {
+    required String partKey,
+    required int cost,
+  }) {
+    final restoredParts = {...state.ownedAvatarParts}..remove(partKey);
+    return state.copyWith(
+      currentPlayer: state.currentPlayer.copyWith(
+        coins: state.currentPlayer.coins + cost,
+      ),
+      ownedAvatarParts: restoredParts,
+    );
+  }
+
+  /// Pure decision logic for updating a [DailyStreak] after a daily-challenge
+  /// completion recorded for [dateKey] — the UTC day captured at screen-open
+  /// time, NOT recomputed from "now" at completion time (item B7: a run that
+  /// crosses UTC midnight must not stamp the wrong day or break the streak).
+  ///
+  /// Deliberately compares [dateKey] against [streak.lastCompletionDate]
+  /// instead of using [DailyStreak.completedToday] / [DailyStreak.isStreakActive]
+  /// (which read the real wall-clock "now") — so this function has no
+  /// wall-clock dependency at all and is fully deterministic/testable.
+  @visibleForTesting
+  static DailyStreak computeStreakAfterCompletion(
+    DailyStreak streak,
+    String dateKey,
+  ) {
+    final alreadyCompletedForKey = streak.lastCompletionDate == dateKey;
+    final isConsecutiveDay = _isDayAfter(streak.lastCompletionDate, dateKey);
+    final streakContinues = alreadyCompletedForKey || isConsecutiveDay;
+
+    final newCurrent = streakContinues
+        ? (alreadyCompletedForKey
+            ? streak.currentStreak
+            : streak.currentStreak + 1)
+        : 1;
+    final newLongest =
+        newCurrent > streak.longestStreak ? newCurrent : streak.longestStreak;
+
+    return streak.copyWith(
+      currentStreak: newCurrent,
+      longestStreak: newLongest,
+      lastCompletionDate: dateKey,
+      totalCompleted: streak.totalCompleted + 1,
+    );
+  }
+
+  /// Whether [dateKey] (`YYYY-MM-DD`) is exactly one calendar day after
+  /// [lastDate]. Used by [computeStreakAfterCompletion] to decide whether a
+  /// streak is still consecutive, without touching wall-clock time.
+  static bool _isDayAfter(String? lastDate, String dateKey) {
+    if (lastDate == null) return false;
+    final last = DateTime.tryParse(lastDate);
+    final current = DateTime.tryParse(dateKey);
+    if (last == null || current == null) return false;
+    return current.difference(last).inDays == 1;
+  }
+
   AccountState copyWith({
     Player? currentPlayer,
     Set<String>? unlockedRegions,
@@ -297,6 +440,18 @@ class AccountNotifier extends StateNotifier<AccountState> {
   /// a failed initial load (common on iOS Safari PWA cold start).
   StreamSubscription<AuthState>? _authSubscription;
 
+  /// Count of in-flight optimistic coin spends / purchases (item B8).
+  ///
+  /// While > 0, [_applySnapshot] defers applying any server snapshot rather
+  /// than risk clobbering optimistic local state (coins just spent, an item
+  /// just granted) before the purchase-validation RPC round-trip settles. A
+  /// counter (rather than a plain bool) so overlapping purchases don't clear
+  /// the guard early while a sibling purchase is still validating.
+  int _spendInFlightCount = 0;
+
+  /// Whether an optimistic spend/purchase is currently mid-flight.
+  bool get _spendInFlight => _spendInFlightCount > 0;
+
   /// Load full account state from Supabase and hydrate all providers.
   ///
   /// Called after auth completes. Clears any stale dirty flags from a
@@ -324,7 +479,17 @@ class AccountNotifier extends StateNotifier<AccountState> {
     // silently leaves the user with default/empty state for the session.
     UserPreferencesSnapshot? snapshot;
     for (var attempt = 0; attempt < 3; attempt++) {
-      snapshot = await _prefs.load(userId);
+      try {
+        // Bound each attempt so a hung/unreachable backend on cold start
+        // can't stall the whole retry loop indefinitely (item B6).
+        snapshot = await _prefs.load(userId).withNetworkTimeout(
+              label: 'loadFromSupabase attempt ${attempt + 1}',
+            );
+      } on NetworkTimeoutException catch (e) {
+        debugPrint('[AccountNotifier] loadFromSupabase attempt '
+            '${attempt + 1} timed out: $e');
+        snapshot = null;
+      }
       if (snapshot != null) break;
       debugPrint(
         '[AccountNotifier] loadFromSupabase attempt ${attempt + 1} returned '
@@ -334,7 +499,20 @@ class AccountNotifier extends StateNotifier<AccountState> {
     }
 
     if (snapshot != null) {
-      await _applySnapshot(snapshot);
+      // Cold-start hydration must never leave the user stranded on the login
+      // screen (item B5): a malformed snapshot (bad types, unexpected jsonb
+      // shapes) must not propagate as an uncaught exception. Fall back to the
+      // safe in-memory defaults already on `state` and let the periodic
+      // refresh below retry — mirrors the try/catch used by
+      // [refreshFromServer] and [adminForceRefresh].
+      try {
+        await _applySnapshot(snapshot);
+      } catch (e) {
+        debugPrint(
+          '[AccountNotifier] loadFromSupabase: _applySnapshot failed for '
+          '$userId: $e — keeping safe default state.',
+        );
+      }
     } else {
       debugPrint(
         '[AccountNotifier] loadFromSupabase: all retries failed for $userId '
@@ -481,13 +659,31 @@ class AccountNotifier extends StateNotifier<AccountState> {
         ? _reconcileDailyStreak(state.dailyStreak, serverDailyStreak)
         : serverDailyStreak;
 
+    // Defer entirely while an optimistic purchase is mid-flight, and union
+    // (rather than replace) owned-item sets otherwise — see
+    // [AccountState.mergeServerSnapshot] (item B8).
+    final merged = AccountState.mergeServerSnapshot(
+      local: state,
+      resolvedPlayer: player,
+      serverOwnedCosmetics: snapshot.ownedCosmetics,
+      serverOwnedAvatarParts: snapshot.ownedAvatarParts,
+      sameUser: sameUser,
+      spendInFlight: _spendInFlight && !adminOverride,
+    );
+    if (merged == null) {
+      debugPrint(
+        '[AccountNotifier] _applySnapshot deferred — spend in flight',
+      );
+      return;
+    }
+
     state = AccountState(
-      currentPlayer: player,
+      currentPlayer: merged.currentPlayer,
       avatar: snapshot.toAvatarConfig(),
       license: snapshot.toPilotLicense(),
       unlockedRegions: snapshot.unlockedRegions,
-      ownedAvatarParts: snapshot.ownedAvatarParts,
-      ownedCosmetics: snapshot.ownedCosmetics,
+      ownedAvatarParts: merged.ownedAvatarParts,
+      ownedCosmetics: merged.ownedCosmetics,
       equippedPlaneId: snapshot.equippedPlaneId,
       equippedContrailId: snapshot.equippedContrailId,
       equippedTitleId: snapshot.equippedTitleId,
@@ -648,7 +844,9 @@ class AccountNotifier extends StateNotifier<AccountState> {
     }
 
     try {
-      final snapshot = await _prefs.load(_userId!);
+      final snapshot = await _prefs
+          .load(_userId!)
+          .withNetworkTimeout(label: 'refreshFromServer');
       if (snapshot != null) {
         await _applySnapshot(snapshot, hydrateSettings: false);
       }
@@ -674,7 +872,9 @@ class AccountNotifier extends StateNotifier<AccountState> {
     // data (e.g. old level) over the server snapshot via _recoverLocalCache.
     _prefs.clearLocalCaches();
     try {
-      final snapshot = await _prefs.load(_userId!);
+      final snapshot = await _prefs
+          .load(_userId!)
+          .withNetworkTimeout(label: 'adminForceRefresh');
       if (snapshot != null) {
         await _applySnapshot(
           snapshot,
@@ -1523,7 +1723,17 @@ class AccountNotifier extends StateNotifier<AccountState> {
   }
 
   /// Attempt server-side atomic purchase via Supabase RPC.
+  ///
+  /// Tracks [_spendInFlightCount] for the duration of the round-trip so
+  /// [_applySnapshot] can't clobber the optimistic grant/spend mid-flight
+  /// (item B8). When the server explicitly rejects the purchase
+  /// (`success: false`), the optimistic coin spend and cosmetic grant are
+  /// rolled back — an optimistic purchase must never be final if the server
+  /// says no. A network/timeout error, by contrast, is NOT rolled back: we
+  /// can't tell whether the purchase actually landed, and offline players
+  /// rely on the debounced client-side sync to reconcile once reconnected.
   Future<void> _serverValidatePurchase(String cosmeticId, int cost) async {
+    _spendInFlightCount++;
     try {
       final userId = state.currentPlayer.id;
       if (userId.isEmpty) return;
@@ -1538,8 +1748,19 @@ class AccountNotifier extends StateNotifier<AccountState> {
       );
 
       if (result is Map<String, dynamic>) {
-        final success = result['success'] as bool? ?? false;
-        if (success) {
+        if (AccountState.purchaseRpcRejected(result)) {
+          debugPrint(
+            '[AccountNotifier] Server purchase validation failed: '
+            '${result['error']} — reverting optimistic purchase',
+          );
+          state = AccountState.revertOptimisticCosmeticPurchase(
+            state,
+            cosmeticId: cosmeticId,
+            cost: cost,
+          );
+          _logCoinActivity(amount: cost, source: 'purchase_reverted');
+          _syncAccountState();
+        } else {
           // Server confirmed — update local coin balance to match server.
           final serverBalance = result['new_balance'] as int?;
           if (serverBalance != null &&
@@ -1550,28 +1771,28 @@ class AccountNotifier extends StateNotifier<AccountState> {
             );
             _logCoinActivity(amount: delta, source: 'server_balance_reconcile');
           }
-        } else {
-          debugPrint(
-            '[AccountNotifier] Server purchase validation failed: '
-            '${result['error']}',
-          );
-          // Server says no — but we already applied optimistically.
-          // The next periodic refresh will reconcile from the server.
         }
       }
     } catch (e) {
-      // Network error — rely on client-side debounced sync.
+      // Network error — rely on client-side debounced sync (offline
+      // resilience). Deliberately NOT reverted; see method doc above.
       debugPrint(
         '[AccountNotifier] Server purchase validation unavailable: $e',
       );
+    } finally {
+      _spendInFlightCount--;
     }
   }
 
   /// Attempt server-side atomic avatar part purchase via Supabase RPC.
+  ///
+  /// See [_serverValidatePurchase] for the in-flight tracking and revert
+  /// policy — identical here for avatar-part purchases.
   Future<void> _serverValidateAvatarPartPurchase(
     String partId,
     int cost,
   ) async {
+    _spendInFlightCount++;
     try {
       final userId = state.currentPlayer.id;
       if (userId.isEmpty) return;
@@ -1582,8 +1803,19 @@ class AccountNotifier extends StateNotifier<AccountState> {
       );
 
       if (result is Map<String, dynamic>) {
-        final success = result['success'] as bool? ?? false;
-        if (success) {
+        if (AccountState.purchaseRpcRejected(result)) {
+          debugPrint(
+            '[AccountNotifier] Server avatar part purchase failed: '
+            '${result['error']} — reverting optimistic purchase',
+          );
+          state = AccountState.revertOptimisticAvatarPartPurchase(
+            state,
+            partKey: partId,
+            cost: cost,
+          );
+          _logCoinActivity(amount: cost, source: 'purchase_reverted');
+          _syncAccountState();
+        } else {
           final serverBalance = result['new_balance'] as int?;
           if (serverBalance != null &&
               serverBalance != state.currentPlayer.coins) {
@@ -1593,17 +1825,14 @@ class AccountNotifier extends StateNotifier<AccountState> {
             );
             _logCoinActivity(amount: delta, source: 'server_balance_reconcile');
           }
-        } else {
-          debugPrint(
-            '[AccountNotifier] Server avatar part purchase failed: '
-            '${result['error']}',
-          );
         }
       }
     } catch (e) {
       debugPrint(
         '[AccountNotifier] Server avatar part purchase unavailable: $e',
       );
+    } finally {
+      _spendInFlightCount--;
     }
   }
 
@@ -1797,34 +2026,21 @@ class AccountNotifier extends StateNotifier<AccountState> {
   /// Record that the player completed today's daily challenge.
   ///
   /// Updates the streak counter and persists to Supabase.
-  void recordDailyChallengeCompletion() {
-    final todayStr = AccountState._todayStr();
-    state = state.copyWith(lastDailyChallengeDate: todayStr);
-
-    // Update streak.
-    final streak = state.dailyStreak;
-    final newTotal = streak.totalCompleted + 1;
-
-    int newCurrent;
-    if (streak.isStreakActive || streak.completedToday) {
-      // Streak is still going — just increment (or maintain if already done today).
-      newCurrent = streak.completedToday
-          ? streak.currentStreak
-          : streak.currentStreak + 1;
-    } else {
-      // Streak was broken — start fresh at 1.
-      newCurrent = 1;
-    }
-
-    final newLongest =
-        newCurrent > streak.longestStreak ? newCurrent : streak.longestStreak;
+  ///
+  /// [dateKey] should be the `YYYY-MM-DD` (UTC) day the challenge was
+  /// STARTED on — captured once by the caller at screen-open time via
+  /// [AccountState.todayDateKey] — NOT recomputed here. A run that crosses
+  /// UTC midnight would otherwise be stamped to the wrong day and could
+  /// spuriously break the streak (item B7). Falls back to recomputing
+  /// "today" when omitted, for any caller that hasn't been updated yet.
+  void recordDailyChallengeCompletion({String? dateKey}) {
+    final completionDateKey = dateKey ?? AccountState._todayStr();
+    state = state.copyWith(lastDailyChallengeDate: completionDateKey);
 
     state = state.copyWith(
-      dailyStreak: streak.copyWith(
-        currentStreak: newCurrent,
-        longestStreak: newLongest,
-        lastCompletionDate: todayStr,
-        totalCompleted: newTotal,
+      dailyStreak: AccountState.computeStreakAfterCompletion(
+        state.dailyStreak,
+        completionDateKey,
       ),
     );
     _syncAccountState();

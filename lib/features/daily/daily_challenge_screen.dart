@@ -37,6 +37,17 @@ class _DailyChallengeScreenState extends ConsumerState<DailyChallengeScreen> {
   int _dailyPlayerCount = 0;
   bool _loadingLeaderboard = true;
 
+  /// The UTC `YYYY-MM-DD` day this challenge run started on, captured ONCE
+  /// here at screen-open time and threaded through to
+  /// [AccountNotifier.recordDailyChallengeCompletion] on completion.
+  ///
+  /// Without this, completion would stamp whatever day it happens to be
+  /// when the round finishes — if the player starts just before UTC
+  /// midnight and finishes just after, that recomputed "today" is the wrong
+  /// day and can spuriously break the daily streak (item B7). Mirrors how
+  /// [DailyBriefing] captures its `dateKey` at construction time.
+  late final String _dateKey;
+
   // Licence bonuses always apply — no unlicensed/licensed split.
 
   bool get _hasDoneToday => ref.watch(accountProvider).hasDoneDailyToday;
@@ -44,6 +55,7 @@ class _DailyChallengeScreenState extends ConsumerState<DailyChallengeScreen> {
   @override
   void initState() {
     super.initState();
+    _dateKey = AccountState.todayDateKey();
     _challenge = DailyChallenge.forToday();
     _loadData();
   }
@@ -198,7 +210,7 @@ class _DailyChallengeScreenState extends ConsumerState<DailyChallengeScreen> {
           dailySeed: _challenge.seed,
           onComplete: (totalScore) {
             final notifier = ref.read(accountProvider.notifier);
-            notifier.recordDailyChallengeCompletion();
+            notifier.recordDailyChallengeCompletion(dateKey: _dateKey);
             // Big daily performances pump the license HOT for ~72h.
             notifier.pumpLicenseFromPerformance(
               score: totalScore,

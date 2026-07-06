@@ -15,6 +15,7 @@ import '../../data/models/seasonal_theme.dart';
 import '../../data/models/friend.dart';
 import '../../data/providers/account_provider.dart';
 import '../../game/tutorial/mode_requirements.dart';
+import '../../data/services/block_service.dart';
 import '../../data/services/challenge_service.dart';
 import '../../data/services/feature_flag_service.dart';
 import '../../data/services/friends_service.dart';
@@ -94,6 +95,10 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
     // between navigations would otherwise be hidden by the 60-second TTL).
     FriendsService.instance.invalidateCache();
 
+    // Refresh the block list so blocked users are hidden from friends and
+    // friend requests (Apple 1.2). Feature-detects + degrades to a no-op.
+    await BlockService.instance.refreshBlockedIds();
+
     final results = await Future.wait([
       FriendsService.instance.fetchFriends(),
       FriendsService.instance.fetchPendingRequests(),
@@ -102,24 +107,51 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
       ChallengeService.instance.fetchRecentChallenges(limit: 10),
     ]);
 
-    final friends = results[0] as List<Friend>;
-    final pending = results[1] as List<
-        ({
-          int friendshipId,
-          String requesterId,
-          String username,
-          String? displayName,
-          String? avatarUrl,
-        })>;
+    final block = BlockService.instance;
+    final friends = block
+        .filterBlocked<Friend>(results[0] as List<Friend>, (f) => f.playerId)
+        .toList();
+    final pending = block
+        .filterBlocked<
+            ({
+              int friendshipId,
+              String requesterId,
+              String username,
+              String? displayName,
+              String? avatarUrl,
+            })>(
+          results[1] as List<
+              ({
+                int friendshipId,
+                String requesterId,
+                String username,
+                String? displayName,
+                String? avatarUrl,
+              })>,
+          (r) => r.requesterId,
+        )
+        .toList();
     final activeChallenges = results[2] as List<Challenge>;
-    final sentRequests = results[3] as List<
-        ({
-          int friendshipId,
-          String addresseeId,
-          String username,
-          String? displayName,
-          String? avatarUrl,
-        })>;
+    final sentRequests = block
+        .filterBlocked<
+            ({
+              int friendshipId,
+              String addresseeId,
+              String username,
+              String? displayName,
+              String? avatarUrl,
+            })>(
+          results[3] as List<
+              ({
+                int friendshipId,
+                String addresseeId,
+                String username,
+                String? displayName,
+                String? avatarUrl,
+              })>,
+          (r) => r.addresseeId,
+        )
+        .toList();
     final recentChallenges = results[4] as List<Challenge>;
 
     // Load H2H records for all friends in parallel.
@@ -857,8 +889,90 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
           Navigator.of(sheetContext).pop();
           _showReportDialog(friend);
         },
+        onBlock: () {
+          Navigator.of(sheetContext).pop();
+          _confirmBlockFriend(friend);
+        },
       ),
     );
+  }
+
+  /// Confirms then blocks [friend], hiding them across friends, leaderboards
+  /// and matchmaking. Reloads on success. Degrades gracefully if the
+  /// blocked_users backend isn't deployed yet.
+  Future<void> _confirmBlockFriend(Friend friend) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: FlitColors.cardBackground,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        title: Text(
+          'Block ${friend.name}?',
+          style: const TextStyle(
+            color: FlitColors.textPrimary,
+            fontSize: 17,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        content: const Text(
+          "You won't see this player in your friends list, on leaderboards, "
+          'or as a challenge opponent. Blocking also removes them as a friend. '
+          'You can unblock them later.',
+          style: TextStyle(color: FlitColors.textSecondary, fontSize: 14),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(color: FlitColors.textSecondary),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text(
+              'Block',
+              style: TextStyle(color: FlitColors.error),
+            ),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    // Capture the messenger before awaiting so we never touch context across
+    // an async gap.
+    final messenger = ScaffoldMessenger.of(context);
+    final ok = await BlockService.instance.blockUser(friend.playerId);
+    if (!mounted) return;
+    if (ok) {
+      // Also remove the friendship so the block is symmetric on our side.
+      final friendshipId = int.tryParse(friend.id);
+      if (friendshipId != null) {
+        try {
+          await FriendsService.instance.removeFriend(friendshipId);
+        } catch (_) {
+          // Best-effort — the block itself already hides them from the UI.
+        }
+      }
+      _loadData();
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text('Blocked ${friend.name}'),
+          backgroundColor: FlitColors.textMuted,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } else {
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('Blocking is unavailable right now. Try again later.'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 
   void _showGiftMembershipDialog(Friend friend) {
@@ -2384,6 +2498,7 @@ class _FriendProfileSheet extends StatefulWidget {
     required this.onGiftMembership,
     required this.onRemove,
     required this.onReport,
+    required this.onBlock,
   });
 
   final Friend friend;
@@ -2394,6 +2509,7 @@ class _FriendProfileSheet extends StatefulWidget {
   final VoidCallback onGiftMembership;
   final VoidCallback onRemove;
   final VoidCallback onReport;
+  final VoidCallback onBlock;
 
   @override
   State<_FriendProfileSheet> createState() => _FriendProfileSheetState();
@@ -2925,9 +3041,10 @@ class _FriendProfileSheetState extends State<_FriendProfileSheet> {
               ),
             ],
             const SizedBox(height: 10),
-            // ── Remove friend + Report row ──
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+            // ── Remove friend + Report + Block row ──
+            Wrap(
+              alignment: WrapAlignment.center,
+              spacing: 4,
               children: [
                 TextButton.icon(
                   onPressed: widget.onRemove,
@@ -2948,7 +3065,6 @@ class _FriendProfileSheetState extends State<_FriendProfileSheet> {
                     foregroundColor: FlitColors.error,
                   ),
                 ),
-                const SizedBox(width: 8),
                 TextButton.icon(
                   onPressed: widget.onReport,
                   icon: const Icon(
@@ -2966,6 +3082,25 @@ class _FriendProfileSheetState extends State<_FriendProfileSheet> {
                   ),
                   style: TextButton.styleFrom(
                     foregroundColor: FlitColors.textMuted,
+                  ),
+                ),
+                TextButton.icon(
+                  onPressed: widget.onBlock,
+                  icon: const Icon(
+                    Icons.block,
+                    size: 16,
+                    color: FlitColors.error,
+                  ),
+                  label: const Text(
+                    'BLOCK',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 1.0,
+                    ),
+                  ),
+                  style: TextButton.styleFrom(
+                    foregroundColor: FlitColors.error,
                   ),
                 ),
               ],

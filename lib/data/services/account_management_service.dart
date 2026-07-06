@@ -5,6 +5,16 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/player.dart';
 
+/// How an account deletion resolved.
+enum AccountDeletionOutcome {
+  /// The edge function ran the full cascade AND removed the `auth.users` row.
+  serverCascade,
+
+  /// The edge function was unavailable (not deployed); app-side data was wiped
+  /// client-side but the `auth.users` row (email) remains until it is deployed.
+  clientFallback,
+}
+
 /// Service for account management operations: data export and account deletion.
 ///
 /// Handles fetching all user data for export and cascading deletion of user
@@ -211,60 +221,133 @@ class AccountManagementService {
   // Delete account
   // ---------------------------------------------------------------------------
 
-  /// Delete all user data from Supabase tables, then remove the auth.users row
-  /// via the `delete-auth-user` Edge Function.
+  /// Delete a user's account.
   ///
-  /// Cascade order: friendships, challenges, scores, account_state,
-  /// user_settings, profiles, then auth.users (via Edge Function).
+  /// Primary path: invoke the `delete-auth-user` Edge Function, which runs the
+  /// FULL cascade server-side (with the service role, so RLS cannot block it)
+  /// AND removes the `auth.users` row (the email). This is what lets a normal,
+  /// non-owner account be fully and correctly deleted in one call.
   ///
-  /// After deletion, the caller must sign out the Supabase auth session
-  /// and navigate to the login screen.
-  Future<void> deleteAccountData(String userId) async {
-    // Track which steps have completed so that a failure mid-sequence can be
-    // diagnosed and retried or cleaned up manually.
+  /// Graceful degradation: edge functions deploy separately from the app, so if
+  /// the (new) function is not yet deployed the server call returns 404. In that
+  /// case we fall back to wiping all app-side data from the client. The
+  /// `auth.users` row then remains until the function is deployed; that is
+  /// surfaced via the returned [AccountDeletionOutcome] and logged.
+  ///
+  /// IMPORTANT ordering: the server call happens BEFORE any client-side table
+  /// deletes. The old code deleted the caller's `profiles` row first, which
+  /// broke the function's role lookup — that is fixed both here (order) and in
+  /// the function (self-delete is authorized from the JWT, not the profile).
+  ///
+  /// After deletion the caller must sign out the Supabase session and navigate
+  /// to the login screen.
+  Future<AccountDeletionOutcome> deleteAccountData(String userId) {
+    return orchestrateDeletion(
+      serverDelete: () => _invokeServerDeletion(userId),
+      clientFallbackCascade: () => _clientSideCascade(userId),
+    );
+  }
+
+  /// Testable orchestration of the deletion cascade, decoupled from Supabase.
+  ///
+  /// - [serverDelete] returns `true` if the server fully handled deletion, or
+  ///   `false` if the edge function is unavailable (not deployed). It throws on
+  ///   any real server error (403/500/…), which propagates so the UI can report
+  ///   a genuine failure.
+  /// - [clientFallbackCascade] wipes app-side data when the server is
+  ///   unavailable.
+  @visibleForTesting
+  static Future<AccountDeletionOutcome> orchestrateDeletion({
+    required Future<bool> Function() serverDelete,
+    required Future<void> Function() clientFallbackCascade,
+  }) async {
+    final serverHandled = await serverDelete();
+    if (serverHandled) {
+      return AccountDeletionOutcome.serverCascade;
+    }
+    // Function not deployed yet — degrade gracefully by wiping app-side data.
+    await clientFallbackCascade();
+    return AccountDeletionOutcome.clientFallback;
+  }
+
+  /// Invokes the edge function. Returns `true` on success, `false` if the
+  /// function is not deployed (404), and throws on any other failure.
+  Future<bool> _invokeServerDeletion(String userId) async {
+    try {
+      // `invoke` returns a FunctionResponse only for 2xx; any non-2xx (incl.
+      // 404 "not deployed") is thrown as a FunctionException, handled below.
+      final res = await _client.functions.invoke(
+        'delete-auth-user',
+        body: {'user_id': userId},
+      );
+      final data = res.data;
+      if (data is Map && data['success'] == false) {
+        throw Exception('delete-auth-user error: ${data['error']}');
+      }
+      return true;
+    } on FunctionException catch (e) {
+      // 404 => function not deployed yet; degrade gracefully.
+      if (e.status == 404) {
+        debugPrint(
+          '[AccountManagementService] delete-auth-user missing (404) — '
+          'falling back to client-side cascade.',
+        );
+        return false;
+      }
+      rethrow;
+    }
+  }
+
+  /// Fallback cascade run entirely from the client (used only when the edge
+  /// function is not deployed). Deletes every app-side table the user touches.
+  /// Cannot remove the `auth.users` row — that waits for the function deploy.
+  Future<void> _clientSideCascade(String userId) async {
     final completed = <String>[];
 
     void logStep(String step) {
       completed.add(step);
       debugPrint(
-        '[AccountManagementService] deleteAccountData: completed $step',
+        '[AccountManagementService] clientSideCascade: completed $step',
       );
     }
 
     try {
-      // Delete in dependency order — child tables first, then profile last.
-      // Each delete targets rows where the user is referenced.
-
-      // 1. Friendships (user can be requester or addressee).
+      // Child/relationship tables first.
       await _client
           .from('friendships')
           .delete()
           .or('requester_id.eq.$userId,addressee_id.eq.$userId');
       logStep('friendships');
 
-      // 2. Challenges (user can be challenger or challenged).
       await _client
           .from('challenges')
           .delete()
           .or('challenger_id.eq.$userId,challenged_id.eq.$userId');
       logStep('challenges');
 
-      // 3. Scores.
+      // Blocks (table may not exist on older databases) — best-effort.
+      try {
+        await _client
+            .from('blocked_users')
+            .delete()
+            .or('blocker_id.eq.$userId,blocked_id.eq.$userId');
+        logStep('blocked_users');
+      } catch (e) {
+        debugPrint(
+          '[AccountManagementService] blocked_users delete skipped: $e',
+        );
+      }
+
       await _client.from('scores').delete().eq('user_id', userId);
       logStep('scores');
 
-      // 4. Account state.
       await _client.from('account_state').delete().eq('user_id', userId);
       logStep('account_state');
 
-      // 5. User settings.
       await _client.from('user_settings').delete().eq('user_id', userId);
       logStep('user_settings');
 
-      // 5b. IAP receipts — best-effort: the schema now cascades on auth
-      // deletion, but live databases created before that change would hit
-      // an FK violation at step 7 without this. RLS may deny the delete
-      // for older rows; that's fine once the cascade exists.
+      // IAP receipts — best-effort (older rows may be RLS-protected).
       try {
         await _client.from('iap_receipts').delete().eq('user_id', userId);
         logStep('iap_receipts');
@@ -274,22 +357,12 @@ class AccountManagementService {
         );
       }
 
-      // 6. Profile (last, since other tables may reference it).
+      // Profile last.
       await _client.from('profiles').delete().eq('id', userId);
       logStep('profiles');
-
-      // 7. Delete auth.users row via Edge Function (requires service_role — server-side only).
-      // Not swallowed: if auth deletion fails the caller must be informed so the
-      // account can be fully removed. Data tables are already gone at this point,
-      // which is logged above to aid investigation.
-      await _client.functions.invoke(
-        'delete-auth-user',
-        body: {'user_id': userId},
-      );
-      logStep('auth_user');
     } catch (e) {
       debugPrint(
-        '[AccountManagementService] deleteAccountData failed after '
+        '[AccountManagementService] clientSideCascade failed after '
         '[${completed.join(', ')}]: $e',
       );
       rethrow;

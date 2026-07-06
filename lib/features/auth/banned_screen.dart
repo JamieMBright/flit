@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
 
+import '../../core/constants/store_urls.dart';
 import '../../core/theme/flit_colors.dart';
+import '../../core/utils/url_opener.dart';
 import '../../core/widgets/menu_content_wrapper.dart';
 
 /// Full-screen "Account Suspended" display.
@@ -81,16 +82,11 @@ class BannedScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 32),
                   OutlinedButton.icon(
-                    onPressed: () {
-                      final uri = Uri(
-                        scheme: 'mailto',
-                        path: 'support@flit.app',
-                        queryParameters: {
-                          'subject': 'Account Suspension Appeal'
-                        },
-                      );
-                      launchUrl(uri);
-                    },
+                    onPressed: () => UrlOpener.openMailto(
+                      context,
+                      StoreUrls.supportEmail,
+                      subject: 'Account Suspension Appeal',
+                    ),
                     icon: const Icon(Icons.email_outlined, size: 18),
                     label: const Text('Contact Support'),
                     style: OutlinedButton.styleFrom(

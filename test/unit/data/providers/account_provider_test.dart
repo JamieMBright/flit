@@ -1,6 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:flit/data/models/avatar_config.dart';
+import 'package:flit/data/models/daily_streak.dart';
+import 'package:flit/data/models/player.dart';
 import 'package:flit/data/models/season.dart';
 import 'package:flit/data/providers/account_provider.dart';
 import 'package:flit/game/economy/consumables.dart';
@@ -409,5 +411,309 @@ void main() {
       );
       notifier.dispose();
     });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Item B7: daily-streak completion must use the dateKey captured at
+  // screen-open time, not "today" recomputed at completion time (UTC
+  // midnight boundary bug).
+  // ---------------------------------------------------------------------------
+
+  group('AccountState.computeStreakAfterCompletion (item B7)', () {
+    test('first-ever completion starts the streak at 1', () {
+      const streak = DailyStreak();
+      final result =
+          AccountState.computeStreakAfterCompletion(streak, '2026-07-06');
+
+      expect(result.currentStreak, 1);
+      expect(result.longestStreak, 1);
+      expect(result.lastCompletionDate, '2026-07-06');
+      expect(result.totalCompleted, 1);
+    });
+
+    test('consecutive-day completion increments the streak', () {
+      const streak = DailyStreak(
+        currentStreak: 3,
+        longestStreak: 3,
+        lastCompletionDate: '2026-07-05',
+        totalCompleted: 3,
+      );
+      final result =
+          AccountState.computeStreakAfterCompletion(streak, '2026-07-06');
+
+      expect(result.currentStreak, 4);
+      expect(result.longestStreak, 4);
+      expect(result.lastCompletionDate, '2026-07-06');
+    });
+
+    test('a gap of more than one day resets the streak to 1', () {
+      const streak = DailyStreak(
+        currentStreak: 5,
+        longestStreak: 10,
+        lastCompletionDate: '2026-07-01',
+        totalCompleted: 20,
+      );
+      final result =
+          AccountState.computeStreakAfterCompletion(streak, '2026-07-06');
+
+      expect(result.currentStreak, 1);
+      expect(result.longestStreak, 10); // All-time max is preserved.
+    });
+
+    test(
+      'UTC-midnight boundary: completing right after midnight with the '
+      'dateKey captured BEFORE midnight still stamps the earlier day and '
+      'keeps the streak alive',
+      () {
+        // Player completed yesterday (7/5) and started a new run just before
+        // midnight on 7/6, finishing just after — the captured dateKey is
+        // 7/6 (the day the run started on), which is one day after the last
+        // completion, so the streak must extend to 2, NOT reset to 1 as it
+        // would if the wall-clock date at completion time (7/7) were used
+        // instead of the captured dateKey.
+        const streak = DailyStreak(
+          currentStreak: 1,
+          longestStreak: 1,
+          lastCompletionDate: '2026-07-05',
+          totalCompleted: 1,
+        );
+        const capturedDateKey = '2026-07-06'; // captured at screen-open
+
+        final result = AccountState.computeStreakAfterCompletion(
+          streak,
+          capturedDateKey,
+        );
+
+        expect(result.currentStreak, 2);
+        expect(result.lastCompletionDate, '2026-07-06');
+      },
+    );
+
+    test(
+      'completing again for the same dateKey does not double-increment',
+      () {
+        const streak = DailyStreak(
+          currentStreak: 2,
+          longestStreak: 2,
+          lastCompletionDate: '2026-07-06',
+          totalCompleted: 2,
+        );
+        final result =
+            AccountState.computeStreakAfterCompletion(streak, '2026-07-06');
+
+        expect(result.currentStreak, 2); // Unchanged — already done today.
+      },
+    );
+  });
+
+  group('AccountNotifier.recordDailyChallengeCompletion (item B7)', () {
+    test('threading an explicit dateKey stamps that day, not "now"', () {
+      final notifier = AccountNotifier();
+      notifier.switchAccount(
+        notifier.state.currentPlayer.copyWith(id: 'u1', username: 'pilot'),
+      );
+
+      notifier.recordDailyChallengeCompletion(dateKey: '2020-01-01');
+
+      expect(notifier.state.lastDailyChallengeDate, '2020-01-01');
+      expect(notifier.state.dailyStreak.lastCompletionDate, '2020-01-01');
+      expect(notifier.state.dailyStreak.currentStreak, 1);
+      notifier.dispose();
+    });
+
+    test('omitting dateKey falls back to recomputing "today"', () {
+      final notifier = AccountNotifier();
+      final today = AccountState.todayDateKey();
+
+      notifier.recordDailyChallengeCompletion();
+
+      expect(notifier.state.lastDailyChallengeDate, today);
+      notifier.dispose();
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Item B8: coin lost-update race — applying a server snapshot while a
+  // spend is in-flight must not clobber optimistic local state, and owned
+  // sets must be unioned (never replaced) with the server's view.
+  // ---------------------------------------------------------------------------
+
+  group('AccountState.mergeServerSnapshot (item B8)', () {
+    const localPlayer = Player(id: 'u1', username: 'pilot', coins: 40);
+    const serverPlayer = Player(id: 'u1', username: 'pilot', coins: 100);
+
+    test('returns null (skips) when a spend is in flight', () {
+      final local = AccountState(
+        currentPlayer: localPlayer,
+        ownedCosmetics: const {'plane_default', 'plane_freshly_bought'},
+      );
+
+      final merged = AccountState.mergeServerSnapshot(
+        local: local,
+        resolvedPlayer: serverPlayer,
+        serverOwnedCosmetics: const {'plane_default'},
+        serverOwnedAvatarParts: const {},
+        sameUser: true,
+        spendInFlight: true,
+      );
+
+      expect(merged, isNull);
+    });
+
+    test(
+      'unions owned cosmetics/avatar parts with local state instead of '
+      'replacing them when sameUser is true',
+      () {
+        final local = AccountState(
+          currentPlayer: localPlayer,
+          ownedCosmetics: const {'plane_default', 'plane_freshly_bought'},
+          ownedAvatarParts: const {'hat_freshly_bought'},
+        );
+
+        final merged = AccountState.mergeServerSnapshot(
+          local: local,
+          resolvedPlayer: serverPlayer,
+          serverOwnedCosmetics: const {'plane_default', 'plane_server_owned'},
+          serverOwnedAvatarParts: const {'hat_server_owned'},
+          sameUser: true,
+          spendInFlight: false,
+        );
+
+        expect(merged, isNotNull);
+        // The freshly-bought item (not yet reflected server-side) survives.
+        expect(merged!.ownedCosmetics, contains('plane_freshly_bought'));
+        // The server's own item is present too — a true union.
+        expect(merged.ownedCosmetics, contains('plane_server_owned'));
+        expect(merged.ownedAvatarParts, contains('hat_freshly_bought'));
+        expect(merged.ownedAvatarParts, contains('hat_server_owned'));
+        expect(merged.currentPlayer.coins, 100);
+      },
+    );
+
+    test(
+      'replaces owned sets wholesale on a different user / fresh login '
+      '(sameUser is false) so a previous account cannot leak in',
+      () {
+        final local = AccountState(
+          currentPlayer: localPlayer,
+          ownedCosmetics: const {'plane_previous_user_item'},
+        );
+
+        final merged = AccountState.mergeServerSnapshot(
+          local: local,
+          resolvedPlayer: serverPlayer,
+          serverOwnedCosmetics: const {'plane_server_owned'},
+          serverOwnedAvatarParts: const {},
+          sameUser: false,
+          spendInFlight: false,
+        );
+
+        expect(merged!.ownedCosmetics, equals({'plane_server_owned'}));
+        expect(
+          merged.ownedCosmetics,
+          isNot(contains('plane_previous_user_item')),
+        );
+      },
+    );
+  });
+
+  group('AccountNotifier purchase revert on server rejection (item B8)', () {
+    test(
+      'purchaseRpcRejected identifies an explicit success:false result',
+      () {
+        expect(
+          AccountState.purchaseRpcRejected(
+            {'success': false, 'error': 'nope'},
+          ),
+          isTrue,
+        );
+        expect(AccountState.purchaseRpcRejected({'success': true}), isFalse);
+        expect(AccountState.purchaseRpcRejected(null), isFalse);
+      },
+    );
+
+    test(
+      'revertOptimisticCosmeticPurchase restores coins and removes the '
+      'granted cosmetic',
+      () {
+        final state = AccountState(
+          currentPlayer: const Player(id: 'u1', username: 'pilot', coins: 400),
+          ownedCosmetics: const {'plane_default', 'plane_new_purchase'},
+        );
+
+        final reverted = AccountState.revertOptimisticCosmeticPurchase(
+          state,
+          cosmeticId: 'plane_new_purchase',
+          cost: 500,
+        );
+
+        expect(reverted.currentPlayer.coins, 900);
+        expect(
+          reverted.ownedCosmetics,
+          isNot(contains('plane_new_purchase')),
+        );
+        expect(reverted.ownedCosmetics, contains('plane_default'));
+      },
+    );
+
+    test(
+      'revertOptimisticAvatarPartPurchase restores coins and removes the '
+      'granted part',
+      () {
+        final state = AccountState(
+          currentPlayer: const Player(id: 'u1', username: 'pilot', coins: 100),
+          ownedAvatarParts: const {'hat_new_purchase'},
+        );
+
+        final reverted = AccountState.revertOptimisticAvatarPartPurchase(
+          state,
+          partKey: 'hat_new_purchase',
+          cost: 200,
+        );
+
+        expect(reverted.currentPlayer.coins, 300);
+        expect(
+          reverted.ownedAvatarParts,
+          isNot(contains('hat_new_purchase')),
+        );
+      },
+    );
+
+    test(
+      'purchaseCosmetic followed by an unreachable server validation keeps '
+      'the optimistic purchase (network errors do not revert)',
+      () async {
+        final notifier = AccountNotifier();
+        notifier.switchAccount(
+          notifier.state.currentPlayer.copyWith(id: 'u1', username: 'pilot'),
+        );
+        notifier.addCoins(1000, applyBoost: false, source: 'test_grant');
+
+        final coinsBefore = notifier.state.currentPlayer.coins;
+        expect(notifier.purchaseCosmetic('plane_new_purchase', 500), isTrue);
+        // Optimistic apply happened immediately.
+        expect(notifier.state.currentPlayer.coins, coinsBefore - 500);
+        expect(
+          notifier.state.ownedCosmetics,
+          contains('plane_new_purchase'),
+        );
+
+        // Supabase isn't initialized in unit tests, so the fire-and-forget
+        // server validation call throws and is caught internally (this
+        // exercises the same code path as an unreachable backend). Give the
+        // microtask queue a turn so the catch branch runs.
+        await Future<void>.delayed(Duration.zero);
+
+        // No live RPC ran, so nothing was confirmed OR rejected — the
+        // optimistic purchase remains (network-error path intentionally does
+        // NOT revert; see _serverValidatePurchase doc).
+        expect(notifier.state.currentPlayer.coins, coinsBefore - 500);
+        expect(
+          notifier.state.ownedCosmetics,
+          contains('plane_new_purchase'),
+        );
+        notifier.dispose();
+      },
+    );
   });
 }

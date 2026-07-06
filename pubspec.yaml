@@ -42,6 +42,9 @@ dependencies:
   shared_preferences: ^2.2.2
   share_plus: ^12.0.2
 
+  # Opening external store / privacy / support links (cross-platform: iOS, Android, Web)
+  url_launcher: ^6.3.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -82,7 +85,6 @@ flutter:
   assets:
     - assets/images/flags/
     - assets/textures/
-    - assets/audio/engines/
     - assets/audio/music/
     - assets/audio/sfx/
     - assets/images/coaches/

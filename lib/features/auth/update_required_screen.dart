@@ -1,8 +1,9 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
 
+import '../../core/constants/store_urls.dart';
 import '../../core/theme/flit_colors.dart';
+import '../../core/utils/url_opener.dart';
 import '../../core/widgets/menu_content_wrapper.dart';
 import '../../core/utils/platform_stub.dart'
     if (dart.library.io) '../../core/utils/platform_native.dart';
@@ -11,19 +12,10 @@ import '../../core/utils/platform_stub.dart'
 class UpdateRequiredScreen extends StatelessWidget {
   const UpdateRequiredScreen({super.key});
 
-  void _openStore() {
-    // TODO: Replace with actual App Store / Play Store URLs when app is published.
-    final Uri storeUrl;
-    if (kIsWeb) {
-      return; // Web is always latest.
-    } else if (Platform.isIOS) {
-      storeUrl = Uri.parse('https://apps.apple.com/app/flit/id<app-id>');
-    } else {
-      storeUrl = Uri.parse(
-        'https://play.google.com/store/apps/details?id=app.flit',
-      );
-    }
-    launchUrl(storeUrl, mode: LaunchMode.externalApplication);
+  Future<void> _openStore(BuildContext context) async {
+    if (kIsWeb) return; // Web is always latest.
+    final url = Platform.isIOS ? StoreUrls.appStore : StoreUrls.playStore;
+    await UrlOpener.open(context, url, title: 'Update Flit');
   }
 
   @override
@@ -65,7 +57,7 @@ class UpdateRequiredScreen extends StatelessWidget {
                   const SizedBox(height: 32),
                   if (!kIsWeb)
                     ElevatedButton.icon(
-                      onPressed: _openStore,
+                      onPressed: () => _openStore(context),
                       icon: const Icon(Icons.download, size: 18),
                       label: const Text('Update Now'),
                       style: ElevatedButton.styleFrom(

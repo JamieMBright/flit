@@ -2,6 +2,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/config/supabase_config.dart';
 import '../models/player.dart';
+import 'block_service.dart';
 
 // Sentinel used by AuthState.copyWith to distinguish "not passed" from null.
 const Object _sentinel = Object();
@@ -355,6 +356,8 @@ class AuthService {
     } catch (_) {
       // Ignore sign-out errors (network offline, etc.)
     }
+    // Drop per-user caches so a subsequent login doesn't inherit stale state.
+    BlockService.instance.clear();
     _state = const AuthState();
     return _state;
   }
