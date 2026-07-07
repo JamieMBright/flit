@@ -843,4 +843,148 @@ void main() {
       },
     );
   });
+
+  // -------------------------------------------------------------------------
+  // Durable completed-mission persistence (completed_mission_ids column)
+  // -------------------------------------------------------------------------
+
+  group('UserPreferencesSnapshot.toCompletedMissionIds()', () {
+    test('empty when account_state is null', () {
+      final snapshot = UserPreferencesSnapshot(
+        profile: _baseProfile(),
+        accountState: null,
+      );
+      expect(snapshot.toCompletedMissionIds(), isEmpty);
+    });
+
+    test('empty when column absent (pre-migration fallback)', () {
+      // A row that predates the migration simply has no completed_mission_ids
+      // key — the accessor degrades to an empty set instead of throwing.
+      final snapshot = UserPreferencesSnapshot(
+        profile: _baseProfile(),
+        accountState: <String, dynamic>{'user_id': 'user-123'},
+      );
+      expect(snapshot.toCompletedMissionIds(), isEmpty);
+    });
+
+    test('round-trips ids from the completed_mission_ids column', () {
+      final snapshot = UserPreferencesSnapshot(
+        profile: _baseProfile(),
+        accountState: <String, dynamic>{
+          'user_id': 'user-123',
+          'completed_mission_ids': ['training_flight', 'training_recon'],
+        },
+      );
+      expect(
+        snapshot.toCompletedMissionIds(),
+        equals({'training_flight', 'training_recon'}),
+      );
+    });
+  });
+
+  group(
+      'UserPreferencesService.filterAccountPayloadForColumns (feature-detect)',
+      () {
+    test('strips a column the server does not have (pre-migration)', () {
+      // Baseline lacks completed_mission_ids / campaign_progress — they must be
+      // stripped so a single unknown column can never fail the whole upsert.
+      final payload = {
+        'user_id': 'u1',
+        'flight_school_progress': {'x': 1},
+        'campaign_progress': {'training_flight': {}},
+        'completed_mission_ids': ['training_flight'],
+      };
+      final filtered = UserPreferencesService.filterAccountPayloadForColumns(
+        payload,
+        UserPreferencesService.baselineAccountColumns,
+      );
+      expect(filtered.containsKey('completed_mission_ids'), isFalse);
+      expect(filtered.containsKey('campaign_progress'), isFalse);
+      expect(filtered['user_id'], equals('u1'));
+      expect(filtered['flight_school_progress'], equals({'x': 1}));
+    });
+
+    test('keeps completed_mission_ids once the column is observed', () {
+      final known = {
+        ...UserPreferencesService.baselineAccountColumns,
+        'completed_mission_ids',
+      };
+      final payload = {
+        'user_id': 'u1',
+        'completed_mission_ids': ['training_flight'],
+      };
+      final filtered = UserPreferencesService.filterAccountPayloadForColumns(
+        payload,
+        known,
+      );
+      expect(
+        filtered['completed_mission_ids'],
+        equals(['training_flight']),
+      );
+    });
+
+    test('always drops the client-only cache stamp', () {
+      final filtered = UserPreferencesService.filterAccountPayloadForColumns(
+        {'user_id': 'u1', '_cached_at': 'now'},
+        UserPreferencesService.baselineAccountColumns,
+      );
+      expect(filtered.containsKey('_cached_at'), isFalse);
+    });
+  });
+
+  group('UserPreferencesService.unionCompletedMissionIds (never shrinks)', () {
+    Map<String, dynamic> withIds(List<String> ids) => {
+          'completed_mission_ids': ids,
+        };
+
+    test('an emptier server row cannot un-complete local missions', () {
+      final union = UserPreferencesService.unionCompletedMissionIds(
+        withIds(const []), // fresher but empty server row (e.g. after reset)
+        withIds(const ['training_flight', 'training_recon']),
+      );
+      expect(
+        union.toSet(),
+        equals({'training_flight', 'training_recon'}),
+      );
+    });
+
+    test('a server row with FEWER ids keeps every local id', () {
+      final union = UserPreferencesService.unionCompletedMissionIds(
+        withIds(const ['training_flight']),
+        withIds(
+            const ['training_flight', 'training_recon', 'training_briefing']),
+      );
+      expect(
+        union.toSet(),
+        equals({'training_flight', 'training_recon', 'training_briefing'}),
+      );
+      // Monotonic: never smaller than the larger input.
+      expect(union.length, greaterThanOrEqualTo(3));
+    });
+
+    test('server-only ids the local cache lacks are also preserved', () {
+      final union = UserPreferencesService.unionCompletedMissionIds(
+        withIds(const ['training_briefing']),
+        withIds(const ['training_flight']),
+      );
+      expect(
+        union.toSet(),
+        equals({'training_briefing', 'training_flight'}),
+      );
+    });
+
+    test('tolerates a missing column on either side', () {
+      expect(
+        UserPreferencesService.unionCompletedMissionIds(
+          <String, dynamic>{'user_id': 'u1'},
+          withIds(const ['training_flight']),
+        ).toSet(),
+        equals({'training_flight'}),
+      );
+      expect(
+        UserPreferencesService.unionCompletedMissionIds(null, null),
+        isEmpty,
+      );
+    });
+  });
 }
