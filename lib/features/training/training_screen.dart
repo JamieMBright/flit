@@ -24,6 +24,9 @@ import '../triangulation/recon_tutorial_screen.dart';
 /// every base mode). Afterwards the same surface carries the optional
 /// Advanced Training track — one-time-reward lessons on sorties, hints,
 /// the license, fuel, the shop, and head-to-head play.
+/// How the pilot chose to fulfil the Wingman Duel mission.
+enum _DuelChoice { friends, practice }
+
 class TrainingScreen extends ConsumerStatefulWidget {
   const TrainingScreen({super.key});
 
@@ -205,12 +208,76 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
             .read(accountProvider.notifier)
             .completeTrainingObjective(mission.id);
       case TrainingMissionKind.challenge:
-        await Navigator.of(context).push(
-          MaterialPageRoute<void>(builder: (_) => const FriendsScreen()),
-        );
+        // A pilot with no friends yet must never be stuck on this mission, so
+        // offer both paths: duel a real rival, or fly a self-contained
+        // practice duel that completes the objective on its own.
+        final choice = await _showDuelChoice();
+        if (!mounted) return;
+        if (choice == _DuelChoice.friends) {
+          await Navigator.of(context).push(
+            MaterialPageRoute<void>(builder: (_) => const FriendsScreen()),
+          );
+        } else if (choice == _DuelChoice.practice) {
+          await Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (_) => PlayScreen(
+                totalRounds: challengePracticeDuelMission.rounds,
+                enabledClueTypes: challengePracticeDuelMission.allowedClues
+                    .map((c) => c.name)
+                    .toSet(),
+                region: GameRegion.world,
+                campaignMission: challengePracticeDuelMission,
+              ),
+            ),
+          );
+        }
     }
 
     await _maybeCelebrateWings(wasBasicsDone);
+  }
+
+  /// Ask how the pilot wants to complete Wingman Duel: challenge a real friend
+  /// or fly a self-contained practice duel. Returns null if dismissed.
+  Future<_DuelChoice?> _showDuelChoice() {
+    return showDialog<_DuelChoice>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: FlitColors.cardBackground,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        title: const Text(
+          'Throw the gauntlet',
+          style: TextStyle(
+            color: FlitColors.textPrimary,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        content: const Text(
+          'Challenge a friend to a real head-to-head — or, if you have no '
+          'rival yet, fly a practice duel to rehearse the format. Either '
+          'earns your wings.',
+          style: TextStyle(color: FlitColors.textSecondary),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(_DuelChoice.practice),
+            child: const Text(
+              'Practice Duel',
+              style: TextStyle(color: FlitColors.textSecondary),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(_DuelChoice.friends),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: FlitColors.accent,
+              foregroundColor: FlitColors.textPrimary,
+            ),
+            child: const Text('Duel a Friend'),
+          ),
+        ],
+      ),
+    );
   }
 
   /// The short, coach-led walkthrough shown before an Advanced Training

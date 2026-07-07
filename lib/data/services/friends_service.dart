@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/avatar_config.dart';
 import '../models/friend.dart';
+import '../models/friend_code.dart';
 import 'ttl_cache.dart';
 
 /// Service for managing friendships via Supabase.
@@ -78,6 +79,72 @@ class FriendsService {
       return data;
     } catch (e) {
       debugPrint('[FriendsService] searchUser failed: $e');
+      return null;
+    }
+  }
+
+  /// Prefix search over usernames for the "Find Friends" list. Case-insensitive
+  /// match on the start of the username; excludes self; capped at [limit].
+  /// Returns `[]` on any error (e.g. offline) so the UI degrades to empty.
+  Future<List<Map<String, dynamic>>> searchUsers(
+    String query, {
+    int limit = 20,
+  }) async {
+    if (_userId == null) return const [];
+    final trimmed = query.trim();
+    if (trimmed.isEmpty) return const [];
+    // Escape PostgREST LIKE wildcards so a literal % or _ can't broaden the
+    // match beyond what the player typed.
+    final escaped = trimmed.replaceAll('%', r'\%').replaceAll('_', r'\_');
+    try {
+      final rows = await _client
+          .from('profiles')
+          .select('id, username, display_name, avatar_url')
+          .ilike('username', '$escaped%')
+          .neq('id', _userId!)
+          .limit(limit);
+      return (rows as List).cast<Map<String, dynamic>>();
+    } catch (e) {
+      debugPrint('[FriendsService] searchUsers failed: $e');
+      return const [];
+    }
+  }
+
+  /// Look up a player by their shareable friend code. Returns the profile map
+  /// (id/username/display_name/avatar_url) or null if not found / invalid /
+  /// the backend predates the friend_code column.
+  Future<Map<String, dynamic>?> findByFriendCode(String rawCode) async {
+    if (_userId == null) return null;
+    final code = FriendCode.normalize(rawCode);
+    if (code == null) return null;
+    try {
+      final data = await _client
+          .from('profiles')
+          .select('id, username, display_name, avatar_url')
+          .eq('friend_code', code)
+          .neq('id', _userId!)
+          .maybeSingle();
+      return data;
+    } catch (e) {
+      // Column may not exist on older backends — feature-detect by degrading.
+      debugPrint('[FriendsService] findByFriendCode failed: $e');
+      return null;
+    }
+  }
+
+  /// This player's own friend code for sharing, or null if unavailable
+  /// (offline, not signed in, or the backend predates friend codes).
+  Future<String?> myFriendCode() async {
+    if (_userId == null) return null;
+    try {
+      final data = await _client
+          .from('profiles')
+          .select('friend_code')
+          .eq('id', _userId!)
+          .maybeSingle();
+      return data?['friend_code'] as String?;
+    } catch (e) {
+      debugPrint('[FriendsService] myFriendCode failed: $e');
       return null;
     }
   }
