@@ -86,21 +86,33 @@ class FriendsService {
   /// Prefix search over usernames for the "Find Friends" list. Case-insensitive
   /// match on the start of the username; excludes self; capped at [limit].
   /// Returns `[]` on any error (e.g. offline) so the UI degrades to empty.
+  /// Build the PostgREST `ilike` pattern for a "Find Friends" prefix search.
+  ///
+  /// Escapes LIKE wildcards (`%`, `_`) in [query] so a literal wildcard the
+  /// player types can't broaden the match, then appends `%` for a prefix
+  /// match. Returns the empty string for a whitespace-only query — a sentinel
+  /// the caller reads as "no query", short-circuiting before any DB work.
+  @visibleForTesting
+  static String buildSearchPattern(String query) {
+    final trimmed = query.trim();
+    if (trimmed.isEmpty) return '';
+    final escaped = trimmed.replaceAll('%', r'\%').replaceAll('_', r'\_');
+    return '$escaped%';
+  }
+
   Future<List<Map<String, dynamic>>> searchUsers(
     String query, {
     int limit = 20,
   }) async {
     if (_userId == null) return const [];
-    final trimmed = query.trim();
-    if (trimmed.isEmpty) return const [];
-    // Escape PostgREST LIKE wildcards so a literal % or _ can't broaden the
-    // match beyond what the player typed.
-    final escaped = trimmed.replaceAll('%', r'\%').replaceAll('_', r'\_');
+    final pattern = buildSearchPattern(query);
+    // Whitespace-only query → sentinel empty pattern → no DB round-trip.
+    if (pattern.isEmpty) return const [];
     try {
       final rows = await _client
           .from('profiles')
           .select('id, username, display_name, avatar_url')
-          .ilike('username', '$escaped%')
+          .ilike('username', pattern)
           .neq('id', _userId!)
           .limit(limit);
       return (rows as List).cast<Map<String, dynamic>>();
@@ -114,9 +126,12 @@ class FriendsService {
   /// (id/username/display_name/avatar_url) or null if not found / invalid /
   /// the backend predates the friend_code column.
   Future<Map<String, dynamic>?> findByFriendCode(String rawCode) async {
-    if (_userId == null) return null;
+    // Validate the code before touching auth/session state so an obviously
+    // invalid code is rejected with no DB work (and no Supabase dependency).
+    // Both guards only ever return null, so ordering doesn't change results.
     final code = FriendCode.normalize(rawCode);
     if (code == null) return null;
+    if (_userId == null) return null;
     try {
       final data = await _client
           .from('profiles')

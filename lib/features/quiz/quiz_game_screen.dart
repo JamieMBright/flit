@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/theme/flit_colors.dart';
 import '../../core/utils/haptics.dart';
+import '../../core/widgets/country_flag.dart';
 import '../../data/services/challenge_service.dart';
 import '../challenge/challenge_result_screen.dart';
 import '../../game/quiz/quiz_category.dart';
@@ -817,9 +818,10 @@ class _QuizGameScreenState extends State<QuizGameScreen>
                   // for international regions with ISO country codes.
                   if (question.category == QuizCategory.flagDescription &&
                       _hasIsoFlagEmoji) ...[
-                    Text(
-                      countryCodeToFlagEmoji(question.answerCode),
-                      style: const TextStyle(fontSize: 48),
+                    CountryFlag(
+                      code: question.answerCode,
+                      height: 44,
+                      width: 66,
                     ),
                     const SizedBox(height: 6),
                     Text(

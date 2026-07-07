@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/theme/flit_colors.dart';
+import '../../core/widgets/country_flag.dart';
 import '../../game/tutorial/campaign_mission.dart';
 import 'coach_portrait.dart';
 
@@ -40,9 +41,11 @@ class MissionDialog {
                       children: [
                         Row(
                           children: [
-                            Text(
-                              mission.coach.flagEmoji,
-                              style: const TextStyle(fontSize: 18),
+                            CountryFlag(
+                              code: mission.coach.countryCode,
+                              height: 14,
+                              width: 21,
+                              borderRadius: 2,
                             ),
                             const SizedBox(width: 6),
                             Expanded(
@@ -213,9 +216,11 @@ class MissionDialog {
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
-                    mission.coach.flagEmoji,
-                    style: const TextStyle(fontSize: 18),
+                  CountryFlag(
+                    code: mission.coach.countryCode,
+                    height: 14,
+                    width: 21,
+                    borderRadius: 2,
                   ),
                   const SizedBox(width: 6),
                   Text(

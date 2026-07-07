@@ -298,8 +298,27 @@ class AccountManagementService {
     }
   }
 
+  /// Ordered list of app-side tables the client-side cascade deletes from,
+  /// child/relationship tables first and `profiles` LAST (so FK-dependent rows
+  /// are gone before the profile row they reference). This is the single
+  /// source of truth for the cascade's coverage; [_clientSideCascade] deletes
+  /// from exactly these tables, in this order. Exposed so tests can pin the
+  /// coverage without a live Supabase connection.
+  @visibleForTesting
+  static const List<String> cascadeTables = [
+    'friendships',
+    'challenges',
+    'blocked_users',
+    'scores',
+    'account_state',
+    'user_settings',
+    'iap_receipts',
+    'profiles',
+  ];
+
   /// Fallback cascade run entirely from the client (used only when the edge
-  /// function is not deployed). Deletes every app-side table the user touches.
+  /// function is not deployed). Deletes every app-side table the user touches
+  /// (see [cascadeTables] for the ordered coverage).
   /// Cannot remove the `auth.users` row — that waits for the function deploy.
   Future<void> _clientSideCascade(String userId) async {
     final completed = <String>[];

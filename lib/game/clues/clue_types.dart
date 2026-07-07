@@ -41,7 +41,9 @@ class Clue {
     return Clue(
       type: ClueType.flag,
       targetCountryCode: countryCode,
-      displayData: {'flagEmoji': _countryCodeToFlagEmoji(countryCode)},
+      // The flag is drawn by the CountryFlag widget from targetCountryCode;
+      // no emoji is stored here.
+      displayData: const <String, dynamic>{},
     );
   }
 
@@ -437,7 +439,9 @@ class Clue {
   String get displayText {
     switch (type) {
       case ClueType.flag:
-        return displayData['flagEmoji'] as String;
+        // Flag is rendered by the CountryFlag widget; this text is a latent
+        // label only, never an emoji.
+        return CountryData.getCountry(targetCountryCode)?.name ?? '';
       case ClueType.outline:
         return '[Country Outline]';
       case ClueType.borders:
@@ -542,12 +546,39 @@ class Clue {
     }
   }
 
-  static String _countryCodeToFlagEmoji(String code) {
-    // Convert country code to flag emoji
-    // Each letter is converted to regional indicator symbol
-    final codeUnits = code.toUpperCase().codeUnits;
-    final flagCodeUnits = codeUnits.map((c) => c + 127397).toList();
-    return String.fromCharCodes(flagCodeUnits);
+  /// Whether [code] can honestly produce a clue of type [clueType].
+  ///
+  /// This is the public capability predicate used by the daily target selector
+  /// to filter the candidate pool BEFORE the seeded pick, so a themed daily can
+  /// never seed a target that can't satisfy its clue type (e.g. an island
+  /// nation with no neighbours on Border Day, or the Vatican — a 7-vertex
+  /// speck — on Outline Day). Without this filter, [Clue.random] silently falls
+  /// back to a flag clue, a theme mismatch the player can't explain.
+  ///
+  /// It shares ONE source of truth with [_isValidClue]: it builds the real
+  /// clue via [_buildClue] and validates it, so the two can never drift.
+  /// Requirements per type therefore exactly mirror [_isValidClue]:
+  ///   * `borders` → the country has at least one (non-"unknown") neighbour
+  ///   * `outline` → the country's polygon has ≥10 total vertices
+  ///   * `flag`    → always true
+  ///   * `capital` → a non-empty, non-"unknown" capital exists
+  ///   * `stats`   → the country has a populated stats entry
+  ///
+  /// The result is deterministic per (code, clueType) for the five world clue
+  /// types: `flag`/`outline`/`borders`/`capital` build from static data, and
+  /// while a `stats` clue draws a random trio, every field of a populated
+  /// entry is valid, so validity itself is stable. Returns false for an
+  /// unrecognised [clueType].
+  static bool canProduceClueType(String code, String clueType) {
+    ClueType? type;
+    for (final t in ClueType.values) {
+      if (t.name == clueType) {
+        type = t;
+        break;
+      }
+    }
+    if (type == null) return false;
+    return _isValidClue(_buildClue(type, code, null));
   }
 
   static List<String> _getNeighboringCountries(String code) {

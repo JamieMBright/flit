@@ -127,4 +127,57 @@ void main() {
       expect(fiveHints.emoji, '\u{1F534}');
     });
   });
+
+  group('DailyRoundResult.computeTimeScore', () {
+    int score({
+      required int timeMs,
+      required int hints,
+      bool completed = true,
+    }) =>
+        DailyRoundResult.computeTimeScore(
+          timeMs: timeMs,
+          hintsUsed: hints,
+          completed: completed,
+        );
+
+    test('an incomplete round always scores 0', () {
+      expect(score(timeMs: 5000, hints: 0, completed: false), 0);
+    });
+
+    test('escalating hint penalties: 500 / 1000 / 1500 / 2500', () {
+      // Fast time (<=10s) -> no time penalty, so only hint penalties apply.
+      expect(score(timeMs: 5000, hints: 0), 10000); // base
+      expect(score(timeMs: 5000, hints: 1), 9500); // -500
+      expect(score(timeMs: 5000, hints: 2), 8500); // -500-1000
+      expect(score(timeMs: 5000, hints: 3), 7000); // -500-1000-1500
+      expect(score(timeMs: 5000, hints: 4), 4500); // -500-1000-1500-2500
+    });
+
+    test('hint penalty caps at 4 tiers (extra hints add nothing)', () {
+      expect(score(timeMs: 5000, hints: 4), 4500);
+      expect(score(timeMs: 5000, hints: 7), 4500);
+    });
+
+    test('time penalty boundaries: no penalty at or below 10s', () {
+      expect(score(timeMs: 10000, hints: 0), 10000); // exactly 10s -> 0 penalty
+      expect(score(timeMs: 9999, hints: 0), 10000);
+    });
+
+    test('time penalty ramps linearly between 10s and 60s', () {
+      // 11s: ((11-10)/50*5000).round() = 100 -> 9900.
+      expect(score(timeMs: 11000, hints: 0), 9900);
+      // 35s: (25/50*5000) = 2500 -> 7500.
+      expect(score(timeMs: 35000, hints: 0), 7500);
+    });
+
+    test('time penalty saturates at 5000 for 60s and beyond', () {
+      expect(score(timeMs: 60000, hints: 0), 5000); // exactly 60s -> full 5000
+      expect(score(timeMs: 120000, hints: 0), 5000);
+    });
+
+    test('combined penalties can drive the raw score to 0', () {
+      // 4 hints (-5500) + 60s (-5000) = -10500 -> raw negative -> clamped 0.
+      expect(score(timeMs: 60000, hints: 4), 0);
+    });
+  });
 }

@@ -152,15 +152,17 @@ void main() {
   });
 
   group('Clue.displayText - Non-empty text for all types', () {
-    test('flag displayText is non-empty', () {
+    test('flag displayText is the country name, never an emoji', () {
       const clue = Clue(
         type: ClueType.flag,
         targetCountryCode: 'US',
-        displayData: {'flagEmoji': '🇺🇸'},
+        displayData: <String, dynamic>{},
       );
 
+      // The flag itself is drawn by the CountryFlag widget; displayText is a
+      // latent label that resolves to the country name (or empty), not an emoji.
       expect(clue.displayText, isNotEmpty);
-      expect(clue.displayText, equals('🇺🇸'));
+      expect(clue.displayText, equals('United States'));
     });
 
     test('outline displayText is non-empty', () {
@@ -274,25 +276,22 @@ void main() {
   });
 
   group('Clue Factory Methods', () {
-    test('Clue.flag creates flag clue with flag emoji', () {
+    test('Clue.flag creates a flag clue keyed on country code', () {
       final clue = Clue.flag('US');
 
       expect(clue.type, equals(ClueType.flag));
       expect(clue.targetCountryCode, equals('US'));
-      expect(clue.displayData.containsKey('flagEmoji'), isTrue);
-      expect(clue.displayData['flagEmoji'], isNotEmpty);
+      // The flag is rendered by CountryFlag from the code; no emoji is stored.
+      expect(clue.displayData.containsKey('flagEmoji'), isFalse);
     });
 
-    test('Clue.flag generates flag emoji for country code', () {
+    test('Clue.flag displayText resolves to the country name', () {
       final usClue = Clue.flag('US');
       final ukClue = Clue.flag('GB');
 
-      expect(usClue.displayData['flagEmoji'], isNotEmpty);
-      expect(ukClue.displayData['flagEmoji'], isNotEmpty);
-      expect(
-        usClue.displayData['flagEmoji'],
-        isNot(equals(ukClue.displayData['flagEmoji'])),
-      );
+      expect(usClue.displayText, equals('United States'));
+      expect(ukClue.displayText, equals('United Kingdom'));
+      expect(usClue.displayText, isNot(equals(ukClue.displayText)));
     });
   });
 
