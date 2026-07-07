@@ -67,13 +67,13 @@ void main() {
       expect(find.text('Friends & Challenges'), findsOneWidget);
       await TestHarness.takeScreenshot(tester, 'menu_friends');
 
-      // Tap the add-friend action → real _AddFriendDialog (a Dialog with the
-      // "Add Friend" header, a username field, and a "Send Request" button).
+      // Tap the add-friend action → real _FindFriendsDialog (a Dialog with the
+      // "Find Friends" header, a Search/Friend-code toggle, and a search field).
       await tester.tap(find.byIcon(Icons.person_add).first);
       await TestHarness.settle(tester, frames: 10);
       expect(find.byType(Dialog), findsWidgets);
-      expect(find.text('Add Friend'), findsOneWidget);
-      expect(find.text('Send Request'), findsOneWidget);
+      expect(find.text('Find Friends'), findsOneWidget);
+      expect(find.text('Friend code'), findsOneWidget);
       expect(find.byType(TextField), findsWidgets);
     });
 

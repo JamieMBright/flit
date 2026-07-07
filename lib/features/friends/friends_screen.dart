@@ -1,5 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/theme/flit_colors.dart';
@@ -13,6 +17,7 @@ import '../../data/models/challenge.dart';
 import '../../data/models/cosmetic.dart';
 import '../../data/models/seasonal_theme.dart';
 import '../../data/models/friend.dart';
+import '../../data/models/friend_code.dart';
 import '../../data/providers/account_provider.dart';
 import '../../game/tutorial/mode_requirements.dart';
 import '../../data/services/block_service.dart';
@@ -502,48 +507,28 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
   // Add friend
   // ---------------------------------------------------------------------------
 
-  void _showAddFriendDialog() {
-    showDialog<void>(
+  Future<void> _showAddFriendDialog() async {
+    final picked = await showDialog<Map<String, dynamic>>(
       context: context,
-      builder: (context) => _AddFriendDialog(
-        onAdd: (username) async {
-          Navigator.of(context).pop();
-          final user = await FriendsService.instance.searchUser(username);
-          if (!mounted) return;
-          if (user == null) {
-            ScaffoldMessenger.of(this.context).showSnackBar(
-              SnackBar(
-                content: Text('User @$username not found'),
-                backgroundColor: FlitColors.error,
-              ),
-            );
-            return;
-          }
-          final ok = await FriendsService.instance.sendFriendRequest(
-            user['id'] as String,
-          );
-          if (!mounted) return;
-          if (ok) {
-            ScaffoldMessenger.of(this.context).showSnackBar(
-              SnackBar(
-                content: Text('Friend request sent to @$username'),
-                backgroundColor: FlitColors.success,
-              ),
-            );
-            _loadData();
-          } else {
-            ScaffoldMessenger.of(this.context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  'Could not send request to @$username (already sent?)',
-                ),
-                backgroundColor: FlitColors.error,
-              ),
-            );
-          }
-        },
+      builder: (_) => const _FindFriendsDialog(),
+    );
+    if (picked == null || !mounted) return;
+    final username = picked['username'] as String? ?? 'pilot';
+    final ok = await FriendsService.instance.sendFriendRequest(
+      picked['id'] as String,
+    );
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          ok
+              ? 'Friend request sent to @$username'
+              : 'Could not send request to @$username (already sent?)',
+        ),
+        backgroundColor: ok ? FlitColors.success : FlitColors.error,
       ),
     );
+    if (ok) _loadData();
   }
 
   // ---------------------------------------------------------------------------
@@ -1995,22 +1980,106 @@ class _ExpandedH2HBreakdown extends StatelessWidget {
   }
 }
 
-class _AddFriendDialog extends StatefulWidget {
-  const _AddFriendDialog({required this.onAdd});
-
-  final void Function(String username) onAdd;
+/// "Find Friends" picker: search pilots by username prefix, add by shareable
+/// friend code, and show your own code to share. Pops with the chosen profile
+/// map (id/username/display_name/avatar_url) for the caller to send a request.
+class _FindFriendsDialog extends StatefulWidget {
+  const _FindFriendsDialog();
 
   @override
-  State<_AddFriendDialog> createState() => _AddFriendDialogState();
+  State<_FindFriendsDialog> createState() => _FindFriendsDialogState();
 }
 
-class _AddFriendDialogState extends State<_AddFriendDialog> {
-  final _controller = TextEditingController();
+class _FindFriendsDialogState extends State<_FindFriendsDialog> {
+  final _searchController = TextEditingController();
+  final _codeController = TextEditingController();
+
+  bool _codeMode = false;
+  Timer? _debounce;
+  bool _searching = false;
+  List<Map<String, dynamic>> _results = const [];
+  String? _codeError;
+  bool _codeLoading = false;
+
+  String? _myCode;
+
+  @override
+  void initState() {
+    super.initState();
+    FriendsService.instance.myFriendCode().then((code) {
+      if (mounted) setState(() => _myCode = code);
+    });
+  }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _debounce?.cancel();
+    _searchController.dispose();
+    _codeController.dispose();
     super.dispose();
+  }
+
+  void _onQueryChanged(String value) {
+    _debounce?.cancel();
+    final query = value.trim();
+    if (query.isEmpty) {
+      setState(() {
+        _results = const [];
+        _searching = false;
+      });
+      return;
+    }
+    setState(() => _searching = true);
+    _debounce = Timer(const Duration(milliseconds: 280), () async {
+      final rows = await FriendsService.instance.searchUsers(query);
+      if (!mounted || _searchController.text.trim() != query) return;
+      setState(() {
+        _results = rows;
+        _searching = false;
+      });
+    });
+  }
+
+  Future<void> _submitCode() async {
+    final raw = _codeController.text;
+    if (!FriendCode.isValid(raw)) {
+      setState(() => _codeError = 'Enter a valid 6-character code');
+      return;
+    }
+    setState(() {
+      _codeLoading = true;
+      _codeError = null;
+    });
+    final profile = await FriendsService.instance.findByFriendCode(raw);
+    if (!mounted) return;
+    if (profile == null) {
+      setState(() {
+        _codeLoading = false;
+        _codeError = 'No pilot found for that code';
+      });
+      return;
+    }
+    Navigator.of(context).pop(profile);
+  }
+
+  Future<void> _shareMyCode() async {
+    final code = _myCode;
+    if (code == null) return;
+    await SharePlus.instance.share(
+      ShareParams(
+        text: 'Add me on Flit! My pilot friend code is '
+            '${FriendCode.format(code)}',
+      ),
+    );
+  }
+
+  void _copyMyCode() {
+    final code = _myCode;
+    if (code == null) return;
+    Clipboard.setData(ClipboardData(text: FriendCode.format(code)));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Friend code copied')),
+    );
   }
 
   @override
@@ -2018,12 +2087,14 @@ class _AddFriendDialogState extends State<_AddFriendDialog> {
         backgroundColor: FlitColors.cardBackground,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         child: Padding(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.all(20),
           child: Column(
             mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const Text(
-                'Add Friend',
+                'Find Friends',
+                textAlign: TextAlign.center,
                 style: TextStyle(
                   color: FlitColors.textPrimary,
                   fontSize: 20,
@@ -2031,51 +2102,241 @@ class _AddFriendDialogState extends State<_AddFriendDialog> {
                 ),
               ),
               const SizedBox(height: 16),
-              TextField(
-                controller: _controller,
-                style: const TextStyle(color: FlitColors.textPrimary),
-                decoration: InputDecoration(
-                  hintText: 'Enter username',
-                  hintStyle: const TextStyle(color: FlitColors.textMuted),
-                  prefixText: '@',
-                  prefixStyle: const TextStyle(color: FlitColors.textSecondary),
-                  filled: true,
-                  fillColor: FlitColors.backgroundMid,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide.none,
+              _modeToggle(),
+              const SizedBox(height: 16),
+              if (_codeMode) _codeSection() else _searchSection(),
+              const SizedBox(height: 8),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text(
+                    'Close',
+                    style: TextStyle(color: FlitColors.textMuted),
                   ),
                 ),
-              ),
-              const SizedBox(height: 24),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  TextButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    child: const Text(
-                      'Cancel',
-                      style: TextStyle(color: FlitColors.textMuted),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  ElevatedButton(
-                    onPressed: () {
-                      if (_controller.text.isNotEmpty) {
-                        widget.onAdd(_controller.text);
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: FlitColors.accent,
-                      foregroundColor: FlitColors.textPrimary,
-                    ),
-                    child: const Text('Send Request'),
-                  ),
-                ],
               ),
             ],
           ),
         ),
+      );
+
+  Widget _modeToggle() => Row(
+        children: [
+          Expanded(
+              child: _toggleChip('Search', !_codeMode, () {
+            setState(() => _codeMode = false);
+          })),
+          const SizedBox(width: 8),
+          Expanded(
+              child: _toggleChip('Friend code', _codeMode, () {
+            setState(() => _codeMode = true);
+          })),
+        ],
+      );
+
+  Widget _toggleChip(String label, bool selected, VoidCallback onTap) =>
+      GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          decoration: BoxDecoration(
+            color: selected ? FlitColors.accent : FlitColors.backgroundMid,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          alignment: Alignment.center,
+          child: Text(
+            label,
+            style: TextStyle(
+              color:
+                  selected ? FlitColors.textPrimary : FlitColors.textSecondary,
+              fontWeight: FontWeight.bold,
+              fontSize: 13,
+            ),
+          ),
+        ),
+      );
+
+  Widget _searchSection() => Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          TextField(
+            controller: _searchController,
+            autofocus: true,
+            onChanged: _onQueryChanged,
+            style: const TextStyle(color: FlitColors.textPrimary),
+            decoration: InputDecoration(
+              hintText: 'Search by username',
+              hintStyle: const TextStyle(color: FlitColors.textMuted),
+              prefixIcon: const Icon(Icons.search, color: FlitColors.textMuted),
+              filled: true,
+              fillColor: FlitColors.backgroundMid,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide.none,
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxHeight: 260, minHeight: 0),
+            child: _searchResults(),
+          ),
+        ],
+      );
+
+  Widget _searchResults() {
+    if (_searching) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 24),
+        child: Center(
+          child: SizedBox(
+            width: 22,
+            height: 22,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+        ),
+      );
+    }
+    if (_searchController.text.trim().isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 20),
+        child: Text(
+          'Type a name to find fellow pilots',
+          textAlign: TextAlign.center,
+          style: TextStyle(color: FlitColors.textMuted, fontSize: 13),
+        ),
+      );
+    }
+    if (_results.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 20),
+        child: Text(
+          'No pilots found',
+          textAlign: TextAlign.center,
+          style: TextStyle(color: FlitColors.textMuted, fontSize: 13),
+        ),
+      );
+    }
+    return ListView.builder(
+      shrinkWrap: true,
+      itemCount: _results.length,
+      itemBuilder: (context, i) {
+        final r = _results[i];
+        final username = r['username'] as String? ?? 'pilot';
+        final display = r['display_name'] as String?;
+        return ListTile(
+          contentPadding: EdgeInsets.zero,
+          leading: CircleAvatar(
+            backgroundColor: FlitColors.accent,
+            child: Text(
+              username.isNotEmpty ? username[0].toUpperCase() : '?',
+              style: const TextStyle(color: FlitColors.textPrimary),
+            ),
+          ),
+          title: Text(
+            display ?? '@$username',
+            style: const TextStyle(color: FlitColors.textPrimary),
+          ),
+          subtitle: display != null
+              ? Text('@$username',
+                  style: const TextStyle(color: FlitColors.textMuted))
+              : null,
+          trailing: const Icon(Icons.person_add, color: FlitColors.accent),
+          onTap: () => Navigator.of(context).pop(r),
+        );
+      },
+    );
+  }
+
+  Widget _codeSection() => Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          TextField(
+            controller: _codeController,
+            autofocus: true,
+            textCapitalization: TextCapitalization.characters,
+            onChanged: (_) {
+              if (_codeError != null) setState(() => _codeError = null);
+            },
+            onSubmitted: (_) => _submitCode(),
+            style: const TextStyle(
+              color: FlitColors.textPrimary,
+              letterSpacing: 2,
+            ),
+            decoration: InputDecoration(
+              hintText: 'e.g. D45-63D',
+              hintStyle: const TextStyle(color: FlitColors.textMuted),
+              errorText: _codeError,
+              filled: true,
+              fillColor: FlitColors.backgroundMid,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide.none,
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          ElevatedButton(
+            onPressed: _codeLoading ? null : _submitCode,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: FlitColors.accent,
+              foregroundColor: FlitColors.textPrimary,
+            ),
+            child: _codeLoading
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Text('Find Pilot'),
+          ),
+          if (_myCode != null) ...[
+            const SizedBox(height: 20),
+            const Divider(color: FlitColors.cardBorder, height: 1),
+            const SizedBox(height: 16),
+            const Text(
+              'YOUR FRIEND CODE',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: FlitColors.textMuted,
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              FriendCode.format(_myCode),
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: FlitColors.textPrimary,
+                fontSize: 26,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 4,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                TextButton.icon(
+                  onPressed: _copyMyCode,
+                  icon: const Icon(Icons.copy, size: 16),
+                  label: const Text('Copy'),
+                ),
+                const SizedBox(width: 8),
+                TextButton.icon(
+                  onPressed: _shareMyCode,
+                  icon: const Icon(Icons.share, size: 16),
+                  label: const Text('Share'),
+                ),
+              ],
+            ),
+          ],
+        ],
       );
 }
 

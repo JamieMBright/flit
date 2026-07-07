@@ -479,6 +479,54 @@ const CampaignMission advancedFuelRunMission = CampaignMission(
   ],
 );
 
+/// Practice-duel payload for Wingman Duel — a self-contained solo run at
+/// duel pace, so a pilot with no friends yet can still complete the mission
+/// (no dead-end) and rehearse the head-to-head format before challenging a
+/// real rival. Shares the mission id `adv_challenge`, so finishing it records
+/// the objective through the normal campaign-completion path.
+const CampaignMission challengePracticeDuelMission = CampaignMission(
+  id: 'adv_challenge',
+  order: 9,
+  title: 'Practice Duel',
+  subtitle: 'Rehearse the head-to-head',
+  description:
+      'No rival handy? Fly a practice duel against the clock. In a real duel '
+      'both pilots race this very target and the higher score wins — so post '
+      'the best run you can. One target: the archipelago of my homeland, '
+      'capital Manila.',
+  coach: coachVillamor,
+  allowedClues: {ClueType.flag, ClueType.capital},
+  rounds: 1,
+  maxDifficulty: 0.2,
+  targetCountryCodes: ['PH'],
+  xpReward: 75,
+  coinReward: 75,
+  // Start over the Philippine Sea, facing west toward the islands.
+  startLat: 14.0,
+  startLng: 132.0,
+  startHeading: pi, // west
+  tips: [
+    CoachTip(
+      trigger: 'firstClue',
+      message: 'This is the drill, cadet: in a real duel your rival flies the '
+          'same target. Read the flag and capital, commit fast, post a score. '
+          'Look west — three stars and a sun, capital Manila.',
+    ),
+    CoachTip(
+      trigger: 'correctAnswer',
+      message: 'That is duel pace! You are ready for a real rival now — open '
+          'Friends any time and throw the gauntlet. One good run is all it '
+          'takes.',
+    ),
+    CoachTip(
+      trigger: 'lost',
+      message: 'Western Pacific, cadet — a red-and-blue flag with a golden '
+          'sun and three stars, capital Manila. Best guess and post it; a '
+          'duel rewards the pilot who commits.',
+    ),
+  ],
+);
+
 /// The six optional Advanced Training missions, in trail order.
 const List<TrainingMission> advancedTrainingMissions = [
   TrainingMission(
