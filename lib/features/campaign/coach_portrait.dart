@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/theme/flit_colors.dart';
+import '../../core/widgets/country_flag.dart';
 import '../../game/tutorial/coach.dart';
 
 /// Circular coach portrait — shows the coach's cartoonised asset image with
@@ -75,9 +76,11 @@ class CoachPortrait extends StatelessWidget {
           Positioned(
             right: 0,
             bottom: 0,
-            child: Text(
-              coach.flagEmoji,
-              style: TextStyle(fontSize: size * 0.28),
+            child: CountryFlag(
+              code: coach.countryCode,
+              height: size * 0.28,
+              width: size * 0.42,
+              borderRadius: 2,
             ),
           ),
         ],

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/flit_colors.dart';
+import '../../core/widgets/country_flag.dart';
 import '../../core/widgets/menu_content_wrapper.dart';
 import '../../data/providers/account_provider.dart';
 import '../../game/clues/clue_types.dart';
@@ -258,9 +259,11 @@ class _MissionCard extends StatelessWidget {
                         Row(
                           children: [
                             // Coach country flag
-                            Text(
-                              mission.coach.flagEmoji,
-                              style: const TextStyle(fontSize: 18),
+                            CountryFlag(
+                              code: mission.coach.countryCode,
+                              height: 14,
+                              width: 21,
+                              borderRadius: 2,
                             ),
                             const SizedBox(width: 8),
                             Expanded(

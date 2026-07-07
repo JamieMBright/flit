@@ -16,8 +16,12 @@ abstract final class FriendCode {
   /// Normalise raw user input into the canonical stored form, or return null
   /// if it can't be a valid code.
   ///
-  /// - Uppercases and drops anything that isn't alphanumeric (so `flit-d456`,
-  ///   `D456 3D`, `d4563d` all collapse to `D4563D`).
+  /// - Uppercases and drops anything that isn't alphanumeric (so `D45-63D`,
+  ///   `D45 63D`, `d4563d` all collapse to `D4563D`). Letters are *kept*, not
+  ///   stripped — only non-alphanumeric characters (spaces, dashes,
+  ///   punctuation) are removed. A `flit`-style prefix is therefore NOT
+  ///   dropped: `flitD4563D` keeps its letters, overshoots [length], and is
+  ///   rejected.
   /// - Folds common misreads onto the canonical alphabet: `I`/`L`→`1`,
   ///   `O`→`0`, `U`→`V`.
   /// - Requires exactly [length] characters, all in [alphabet].

@@ -241,6 +241,16 @@ class DailyChallenge {
             pool.where((c) => !usedCodes.contains(c.code)).toList();
         if (filtered.isNotEmpty) pool = filtered;
       }
+      // Mirror the capability filter GameSession.seeded applies, so the
+      // difficulty estimate reflects the same corrected candidate pool that
+      // real play draws from (e.g. islands are excluded on Border Day).
+      if (enabledClueTypes.isNotEmpty) {
+        final producible = pool
+            .where((c) =>
+                enabledClueTypes.any((t) => Clue.canProduceClueType(c.code, t)))
+            .toList();
+        if (producible.isNotEmpty) pool = producible;
+      }
       final countryIndex = rng.nextInt(pool.length);
       final country = pool[countryIndex];
       usedCodes.add(country.code);

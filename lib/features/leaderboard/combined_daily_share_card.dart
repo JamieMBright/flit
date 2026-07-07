@@ -75,6 +75,14 @@ class CombinedDailyShareCard extends StatelessWidget {
   static String _modePct(int? bps) =>
       bps == null ? '—' : '${(bps / 100).round()}%';
 
+  /// Test-only accessor for [_perfEmoji]'s colour thresholds.
+  @visibleForTesting
+  static String perfEmojiForTest(int? bps) => _perfEmoji(bps);
+
+  /// Test-only accessor for [_modePct]'s formatting (incl. null → "—").
+  @visibleForTesting
+  static String modePctForTest(int? bps) => _modePct(bps);
+
   int get _playedCount =>
       _combinedModes.where((m) => modeEfficiencyBps[m.region] != null).length;
 

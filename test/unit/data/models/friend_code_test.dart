@@ -10,7 +10,15 @@ void main() {
     test('uppercases and strips spaces and dashes', () {
       expect(FriendCode.normalize('d45-63d'), 'D4563D');
       expect(FriendCode.normalize(' D4 56 3D '), 'D4563D');
-      expect(FriendCode.normalize('flitD4563D'.substring(4)), 'D4563D');
+      // Mixed separators (dashes + spaces) around a lowercase code.
+      expect(FriendCode.normalize('d4-56 3d'), 'D4563D');
+    });
+
+    test('keeps letters — a flit-style prefix is NOT stripped', () {
+      // normalize only removes non-alphanumerics, so letters in a `flit`
+      // prefix survive, push the code past its 6-char length, and are
+      // rejected. It does NOT collapse to the trailing 6 chars.
+      expect(FriendCode.normalize('flitD4563D'), isNull);
     });
 
     test('folds ambiguous letters onto the canonical alphabet', () {
@@ -24,9 +32,16 @@ void main() {
       expect(FriendCode.normalize(''), isNull);
     });
 
-    test('rejects characters not in the alphabet after folding', () {
-      // Punctuation is stripped, leaving too few chars → null.
+    test('punctuation-only input is stripped and rejected by length', () {
+      // All six chars are non-alphanumeric, so they're stripped, leaving an
+      // empty string that fails the length check. (Folding maps every
+      // surviving char — I/L/O/U included — into the alphabet, so the later
+      // per-char alphabet check can never be what rejects real input; the
+      // length gate is.)
       expect(FriendCode.normalize('!!!!!!'), isNull);
+      // Sanity: strip embedded punctuation and a valid code still normalizes,
+      // confirming the null above is the length gate, not the char stripping.
+      expect(FriendCode.normalize('D45!63D'), 'D4563D');
     });
   });
 

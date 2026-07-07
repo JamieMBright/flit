@@ -314,6 +314,24 @@ class GameSession {
       if (filtered.isNotEmpty) pool = filtered;
     }
 
+    // Restrict the pool to countries that can HONESTLY produce at least one of
+    // the requested clue types. Without this, a themed daily (e.g. Border Day)
+    // could seed an island nation with no neighbours, and Clue.random would
+    // silently fall back to a FLAG clue — a theme mismatch the player can't
+    // explain. The filter runs on the deterministic candidate list before the
+    // seeded pick below, and preserves order, so every player with the same
+    // seed still gets an identical country and clue. Falls back to the
+    // unfiltered pool only if the filter would empty it (e.g. a single-country
+    // target that can't produce the type), matching the defensive pattern
+    // above rather than crashing.
+    if (allowedClueTypes != null && allowedClueTypes.isNotEmpty) {
+      final producible = pool
+          .where((c) =>
+              allowedClueTypes.any((t) => Clue.canProduceClueType(c.code, t)))
+          .toList();
+      if (producible.isNotEmpty) pool = producible;
+    }
+
     // Fallback to full pool if filtering yields nothing (shouldn't happen
     // with valid data, but avoids a crash).
     if (pool.isEmpty) {

@@ -56,16 +56,6 @@ class Coach {
   /// Falls back to a styled initial circle when null.
   final String? imageAsset;
 
-  /// Country flag emoji derived from [countryCode].
-  String get flagEmoji {
-    final codeUnits = countryCode.toUpperCase().codeUnits;
-    if (codeUnits.length != 2) return '';
-    return String.fromCharCodes([
-      codeUnits[0] + 0x1F1A5,
-      codeUnits[1] + 0x1F1A5,
-    ]);
-  }
-
   /// Short first name or surname for compact displays.
   String get shortName {
     // Use first name for single-word names, otherwise last segment.

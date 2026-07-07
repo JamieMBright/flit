@@ -851,6 +851,31 @@ class LeaderboardService {
   /// basis points, [LeaderboardEntry.combinedEfficiencyBps] the per-mode
   /// breakdown, and [LeaderboardEntry.rank] the true rank across all players.
   /// [totalPlayers] is the size of the full field that day.
+  /// Pure core of [fetchOwnCombinedDailyScore]: rank [rows] across the *full*
+  /// field and pick [userId]'s combined result.
+  ///
+  /// Returns the user's ranked [CombinedDailyScore] (with its true rank across
+  /// everyone, not just a top slice) together with [totalPlayers] — the number
+  /// of distinct users in the field that day. A user with rows in several
+  /// regions is counted once. Returns null when [userId] has no scores in the
+  /// field. This holds no network state, so it is unit-testable in isolation.
+  @visibleForTesting
+  static ({CombinedDailyScore self, int totalPlayers})? selfCombinedDailyScore(
+    Iterable<CombinedScoreRow> rows,
+    String userId,
+  ) {
+    final combined = computeCombinedDailyScores(rows);
+    CombinedDailyScore? self;
+    for (final c in combined) {
+      if (c.userId == userId) {
+        self = c;
+        break;
+      }
+    }
+    if (self == null) return null;
+    return (self: self, totalPlayers: combined.length);
+  }
+
   Future<({LeaderboardEntry entry, int totalPlayers})?>
       fetchOwnCombinedDailyScore({DateTime? dayUtc}) async {
     final userId = _client.auth.currentUser?.id;
@@ -874,7 +899,7 @@ class LeaderboardService {
       );
 
       // Rank over the *entire* field so self's rank is authoritative.
-      final combined = computeCombinedDailyScores(
+      final ranked = selfCombinedDailyScore(
         data.map(
           (r) => CombinedScoreRow(
             userId: r['user_id'] as String,
@@ -882,16 +907,10 @@ class LeaderboardService {
             score: r['score'] as int? ?? 0,
           ),
         ),
+        userId,
       );
-
-      CombinedDailyScore? self;
-      for (final c in combined) {
-        if (c.userId == userId) {
-          self = c;
-          break;
-        }
-      }
-      if (self == null) return null;
+      if (ranked == null) return null;
+      final self = ranked.self;
 
       final profiles = await _fetchProfiles([userId]);
       return (
@@ -905,7 +924,7 @@ class LeaderboardService {
           level: profiles[userId]?['level'] as int?,
           combinedEfficiencyBps: self.modeEfficiencyBps,
         ),
-        totalPlayers: combined.length,
+        totalPlayers: ranked.totalPlayers,
       );
     } catch (e) {
       debugPrint('[LeaderboardService] fetchOwnCombinedDailyScore failed: $e');
