@@ -13,11 +13,16 @@ class ReportStat {
 /// One per-round performance row: coloured emoji + label + value
 /// (e.g. 🟢  France  94%).
 class ReportRow {
-  const ReportRow(this.emoji, this.label, this.value);
+  const ReportRow(this.emoji, this.label, this.value, {this.time});
 
   final String emoji;
   final String label;
   final String value;
+
+  /// Optional per-row split time (e.g. a round's elapsed clock), shown muted
+  /// immediately left of [value]. Timed modes (Scramble, Recon) populate it;
+  /// untimed rows leave it null and render exactly as before.
+  final String? time;
 }
 
 /// The downloadable end-of-game summary card — a branded, image-ready
@@ -189,12 +194,25 @@ class MissionReportCard extends StatelessWidget {
                               ),
                             ),
                           ),
+                          if (row.time != null) ...[
+                            Text(
+                              row.time!,
+                              style: const TextStyle(
+                                color: FlitColors.textMuted,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                fontFeatures: [FontFeature.tabularFigures()],
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                          ],
                           Text(
                             row.value,
                             style: const TextStyle(
                               color: FlitColors.textPrimary,
                               fontSize: 11,
                               fontWeight: FontWeight.w800,
+                              fontFeatures: [FontFeature.tabularFigures()],
                             ),
                           ),
                         ],

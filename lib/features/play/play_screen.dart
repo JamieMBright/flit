@@ -2736,15 +2736,17 @@ class _ResultDialogState extends ConsumerState<_ResultDialog> {
       ? 10000
       : (10000 * difficultyMultiplier(r.countryCode)).round();
 
-  /// Per-clue rows for the report card: emoji + country + efficiency.
-  /// The daily challenge hides country names (a shared card must not
-  /// spoil the day's answers) — rounds are numbered instead.
+  /// Per-clue rows for the report card: emoji + country + split time +
+  /// efficiency. The daily challenge hides country names (a shared card must
+  /// not spoil the day's answers) — rounds are numbered instead. Each round's
+  /// split time sits muted just left of its efficiency %.
   List<ReportRow> _reportRows() => [
         for (final (i, r) in widget.roundResults.indexed)
           ReportRow(
             _roundEmoji(r),
             widget.isDailyChallenge ? 'Round ${i + 1}' : r.countryName,
             '${(r.score / _roundMax(r) * 100).clamp(0, 100).round()}%',
+            time: _formatTime(r.elapsed),
           ),
       ];
 
