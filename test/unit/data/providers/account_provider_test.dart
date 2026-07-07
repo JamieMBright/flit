@@ -8,6 +8,8 @@ import 'package:flit/data/providers/account_provider.dart';
 import 'package:flit/game/economy/consumables.dart';
 import 'package:flit/game/economy/fuel_tank.dart';
 import 'package:flit/game/economy/license_heat.dart';
+import 'package:flit/game/tutorial/campaign_mission.dart';
+import 'package:flit/game/tutorial/mode_requirements.dart';
 
 void main() {
   group('AccountNotifier.loadFromSupabase', () {
@@ -890,5 +892,69 @@ void main() {
         notifier.dispose();
       },
     );
+  });
+
+  group('Durable campaign completion gates (completed_mission_ids)', () {
+    AccountNotifier freshPilot() {
+      final notifier = AccountNotifier();
+      notifier.switchAccount(
+        notifier.state.currentPlayer.copyWith(id: 'u1', username: 'pilot'),
+      );
+      return notifier;
+    }
+
+    CampaignMissionResult complete(AccountNotifier n, String id) =>
+        n.completeCampaignMission(
+          missionId: id,
+          score: 5000,
+          rounds: 1,
+          xpReward: 50,
+          coinReward: 10,
+        );
+
+    test('completed missions land in the durable completedMissionIds set', () {
+      final notifier = freshPilot();
+      complete(notifier, trainingFlightMissionId);
+      expect(
+        notifier.state.completedMissionIds,
+        contains(trainingFlightMissionId),
+      );
+      notifier.dispose();
+    });
+
+    test('base mode stays locked until the full Basic Training set is done',
+        () {
+      final notifier = freshPilot();
+      expect(notifier.state.isGameModeUnlocked('standard_sortie'), isFalse);
+
+      complete(notifier, trainingFlightMissionId);
+      complete(notifier, trainingReconMissionId);
+      // Two of three — still locked.
+      expect(notifier.state.isGameModeUnlocked('standard_sortie'), isFalse);
+
+      complete(notifier, trainingBriefingMissionId);
+      // Full set complete — unlocked, reading off the durable set.
+      expect(notifier.state.isGameModeUnlocked('standard_sortie'), isTrue);
+      notifier.dispose();
+    });
+
+    test('single-mission daily unlock reads from the durable set', () {
+      final notifier = freshPilot();
+      expect(notifier.state.isGameModeUnlocked('daily_challenge'), isFalse);
+      complete(notifier, trainingFlightMissionId);
+      expect(notifier.state.isGameModeUnlocked('daily_challenge'), isTrue);
+      notifier.dispose();
+    });
+
+    test('finishing Basic Training promotes the pilot to Level 2', () {
+      final notifier = freshPilot();
+      expect(notifier.state.currentPlayer.level, equals(1));
+      complete(notifier, trainingFlightMissionId);
+      complete(notifier, trainingReconMissionId);
+      complete(notifier, trainingBriefingMissionId);
+      expect(notifier.state.basicTrainingComplete, isTrue);
+      expect(notifier.state.currentPlayer.level, greaterThanOrEqualTo(2));
+      notifier.dispose();
+    });
   });
 }

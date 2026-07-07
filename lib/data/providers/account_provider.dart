@@ -695,7 +695,11 @@ class AccountNotifier extends StateNotifier<AccountState> {
       freeFlightCoinDate: snapshot.freeFlightCoinDate,
       flightSchoolProgress: snapshot.toFlightSchoolProgress(),
       unchartedProgress: snapshot.toUnchartedProgress(),
-      campaignProgress: snapshot.toCampaignProgress(),
+      campaignProgress: _mergeCampaignProgress(
+        server: snapshot.toCampaignProgress(),
+        durableIds: snapshot.toCompletedMissionIds(),
+        local: sameUser ? state.campaignProgress : const {},
+      ),
       fuelTank: snapshot.toFuelTank(),
       refuelCanisters: snapshot.refuelCanisters,
       consumables: snapshot.toConsumableInventory(),
@@ -713,6 +717,17 @@ class AccountNotifier extends StateNotifier<AccountState> {
     // diverging permanently.
     if (sameUser &&
         _dailyStreakChanged(reconciledDailyStreak, serverDailyStreak)) {
+      _syncAccountState();
+    }
+
+    // Converge completed missions to the durable column. If the hydrated set
+    // has completions the server row lacked — because they only lived in the
+    // crash-safe cache / campaign_progress (legacy), or were unioned back in
+    // after a server-wins reset — push them up so the durable
+    // completed_mission_ids column catches up and future loads survive a cache
+    // drop. Cheap, debounced, and idempotent when the sets already match.
+    final durableServerIds = snapshot.toCompletedMissionIds();
+    if (state.completedMissionIds.length > durableServerIds.length) {
       _syncAccountState();
     }
 
@@ -963,6 +978,10 @@ class AccountNotifier extends StateNotifier<AccountState> {
       campaignProgress: state.campaignProgress.map(
         (k, v) => MapEntry(k, v.toJson()),
       ),
+      // Durable, server-persisted set of completed mission IDs — the unlock /
+      // promotion gate. Survives cache drops and server-side resets via the
+      // completed_mission_ids column + union-on-merge recovery.
+      completedMissionIds: state.completedMissionIds,
       // Economy state without dedicated columns rides inside the
       // client-owned license_data JSONB.
       licenseEconomyExtras: {
@@ -1353,6 +1372,42 @@ class AccountNotifier extends StateNotifier<AccountState> {
   // ---------------------------------------------------------------------------
   // Campaign progress
   // ---------------------------------------------------------------------------
+
+  /// Build the hydrated campaign-progress map as the UNION of every known
+  /// source of completion so a mission is never un-completed on load:
+  ///   * [server] — rich results from the campaign_progress JSONB (score/stars),
+  ///   * [local]  — in-memory results on a same-user refresh (may be newer),
+  ///   * [durableIds] — the durable completed_mission_ids column (ids only).
+  ///
+  /// [completedMissionIds] is derived from this map's keys, so folding the
+  /// durable id set in as stub results keeps every gate (basicTrainingComplete,
+  /// isGameModeUnlocked, the Level-2 promotion) reading off the same durable
+  /// set even when the rich per-mission JSONB was lost (e.g. no column, or a
+  /// server-side reset). Rich results win over stubs where both exist.
+  static Map<String, CampaignMissionResult> _mergeCampaignProgress({
+    required Map<String, CampaignMissionResult> server,
+    required Set<String> durableIds,
+    required Map<String, CampaignMissionResult> local,
+  }) {
+    final merged = <String, CampaignMissionResult>{...server};
+    // Local rich entries fill any the server lacked (newer client completions).
+    for (final entry in local.entries) {
+      merged.putIfAbsent(entry.key, () => entry.value);
+    }
+    // Durable ids with no rich result become stubs — completion is what gates.
+    for (final id in durableIds) {
+      merged.putIfAbsent(
+        id,
+        () => CampaignMissionResult(
+          missionId: id,
+          score: 0,
+          stars: 0,
+          completedAt: DateTime.now(),
+        ),
+      );
+    }
+    return merged;
+  }
 
   /// Record a completed campaign mission. Awards XP and coins.
   /// Returns the [CampaignMissionResult] with calculated stars.

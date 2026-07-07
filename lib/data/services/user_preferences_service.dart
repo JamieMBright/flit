@@ -257,6 +257,45 @@ class UserPreferencesService {
   /// after the cache was written (other device / server-side reset).
   static const _kCachedAtField = '_cached_at';
 
+  /// Durable server column holding the set of completed Basic Training /
+  /// campaign mission IDs. Feature-detected: stripped from writes when the
+  /// column is absent (pre-migration), unioned (never shrunk) on merge.
+  static const _kCompletedMissionIds = 'completed_mission_ids';
+
+  /// Baseline `account_state` columns known to exist server-side. Used to
+  /// feature-detect which keys are safe to upsert when no server row has been
+  /// observed yet (brand-new account). Columns added by later migrations
+  /// (e.g. [_kCompletedMissionIds]) are NOT in the baseline — they are only
+  /// written once observed on a loaded row, so a payload never fails the whole
+  /// upsert with PGRST204 for an unknown column. Keys the server does not have
+  /// (campaign_progress / uncharted_progress, which never had columns) are
+  /// likewise stripped so the write succeeds.
+  static const Set<String> _kBaselineAccountColumns = {
+    'user_id',
+    'avatar_config',
+    'license_data',
+    'unlocked_regions',
+    'owned_avatar_parts',
+    'equipped_plane_id',
+    'equipped_contrail_id',
+    'last_free_reroll_date',
+    'last_daily_challenge_date',
+    'updated_at',
+    'equipped_title_id',
+    'daily_streak_data',
+    'last_daily_result',
+    'owned_cosmetics',
+    'free_flight_coins_today',
+    'free_flight_coin_date',
+    'flight_school_progress',
+  };
+
+  /// Column names observed on the loaded `account_state` row — the ground
+  /// truth for which columns the server actually has. Populated in [load] from
+  /// the raw server row (before any local-cache merge). Null until the first
+  /// load with an existing row; callers fall back to [_kBaselineAccountColumns].
+  Set<String>? _knownAccountColumns;
+
   // Dirty flags — only the changed tables are written.
   bool _profileDirty = false;
   bool _settingsDirty = false;
@@ -343,6 +382,15 @@ class UserPreferencesService {
       var profileData = results[0];
       var settingsData = results[1];
       var accountData = results[2];
+
+      // Feature-detect account_state columns from the RAW server row (before
+      // the local-cache merge, which may inject client-only keys). This is the
+      // ground truth for which columns exist server-side, so we only ever
+      // upsert columns the server actually has — degrading gracefully before
+      // additive migrations (e.g. completed_mission_ids) are applied.
+      if (accountData != null) {
+        _knownAccountColumns = accountData.keys.toSet();
+      }
 
       if (profileData == null) {
         debugPrint(
@@ -479,6 +527,7 @@ class UserPreferencesService {
     Map<String, FlightSchoolProgress> flightSchoolProgress = const {},
     Map<String, UnchartedProgress> unchartedProgress = const {},
     Map<String, dynamic> campaignProgress = const {},
+    Set<String> completedMissionIds = const {},
     Map<String, dynamic> licenseEconomyExtras = const {},
   }) {
     _accountStateWriteVersion++;
@@ -506,6 +555,11 @@ class UserPreferencesService {
         (k, v) => MapEntry(k, v.toJson()),
       ),
       'campaign_progress': campaignProgress,
+      // Durable, feature-detected source of truth for mission completion (the
+      // unlock/promotion gate). Stripped from the network payload when the
+      // column is absent, but always kept in the crash-safe cache so the
+      // union-on-merge recovery can never un-complete a mission.
+      _kCompletedMissionIds: completedMissionIds.toList(),
     };
     _cacheLocally(_kLocalAccountState, _pendingAccountState!);
     _scheduleSave();
@@ -687,7 +741,13 @@ class UserPreferencesService {
             await client.from(table).insert(data);
           }
         } else {
-          await client.from(table).upsert(data);
+          // Feature-detect columns for account_state so a legacy queued write
+          // (enqueued before this build, possibly carrying campaign_progress /
+          // uncharted_progress / completed_mission_ids the server has no column
+          // for) can't fail forever on an unknown column.
+          final payload =
+              table == 'account_state' ? _accountPayloadForWrite(data) : data;
+          await client.from(table).upsert(payload);
         }
         // Success — remove the entry from the queue.
         await _queue.dequeue();
@@ -822,6 +882,68 @@ class UserPreferencesService {
     } catch (_) {}
   }
 
+  /// Filter an `account_state` write payload down to the columns the server
+  /// actually has. Uses columns observed on the loaded row when available,
+  /// else the compile-time baseline. Prevents an unknown column from failing
+  /// the whole upsert (PGRST204) — the crux of the feature-detect fallback.
+  Map<String, dynamic> _accountPayloadForWrite(Map<String, dynamic> full) =>
+      filterAccountPayloadForColumns(
+        full,
+        _knownAccountColumns ?? _kBaselineAccountColumns,
+      );
+
+  /// Pure feature-detect filter: keep only [knownColumns] (plus always drop the
+  /// client-only cache stamp). Exposed for testing the pre-migration fallback —
+  /// an unknown column must be stripped so it can never fail the whole upsert.
+  @visibleForTesting
+  static Map<String, dynamic> filterAccountPayloadForColumns(
+    Map<String, dynamic> full,
+    Set<String> knownColumns,
+  ) {
+    final out = <String, dynamic>{};
+    for (final entry in full.entries) {
+      if (entry.key == _kCachedAtField) continue;
+      if (knownColumns.contains(entry.key)) out[entry.key] = entry.value;
+    }
+    return out;
+  }
+
+  /// Baseline account_state columns (used as the fallback known-column set when
+  /// no server row has been observed). Exposed for testing.
+  @visibleForTesting
+  static Set<String> get baselineAccountColumns => _kBaselineAccountColumns;
+
+  /// Read the completed-mission id list from an account_state map (server row
+  /// or local cache), tolerating a missing key / wrong shape.
+  static List<String> _missionIdsOf(Map<String, dynamic>? data) {
+    final v = data?[_kCompletedMissionIds];
+    if (v is List) {
+      return v.map((e) => e.toString()).toList();
+    }
+    return const [];
+  }
+
+  /// Union of completed-mission ids across two account_state maps. Order is
+  /// stable: server ids first, then any local-only ids. This is monotonic —
+  /// the result is never smaller than either input, so a stale or empty
+  /// server row can never un-complete missions the client already knows about.
+  static List<String> _unionMissionIds(
+    Map<String, dynamic>? a,
+    Map<String, dynamic>? b,
+  ) {
+    return <String>{..._missionIdsOf(a), ..._missionIdsOf(b)}.toList();
+  }
+
+  /// Exposed for testing the union-on-merge guarantee: the result of merging a
+  /// server row's completed missions with a local cache's is never smaller than
+  /// either input, so a stale/empty server row can't un-complete a mission.
+  @visibleForTesting
+  static List<String> unionCompletedMissionIds(
+    Map<String, dynamic>? server,
+    Map<String, dynamic>? local,
+  ) =>
+      _unionMissionIds(server, local);
+
   /// Keys that had crash-safe data recovered during [load]. These are
   /// retained until the recovered data is confirmed flushed to Supabase,
   /// preventing data loss if the flush fails (e.g. network still down
@@ -875,6 +997,26 @@ class UserPreferencesService {
           : serverUpdated != null &&
               serverUpdated.isAfter(cachedAt.add(const Duration(minutes: 2)));
       if (serverIsFresher) {
+        // Mission completion is MONOTONIC and must survive even a server-wins
+        // reset: a fresher-but-emptier server row (e.g. a server-side account
+        // reset that bumped updated_at without any mission data) must never
+        // un-complete Basic Training / campaign missions the local cache still
+        // remembers. Union the id set into the server-authoritative snapshot
+        // and preserve the cache so the next flush pushes the union back up.
+        if (key == _kLocalAccountState) {
+          final serverIds = _missionIdsOf(serverData);
+          final union = _unionMissionIds(serverData, localData);
+          if (union.length > serverIds.length) {
+            debugPrint(
+              '[UserPreferencesService] server $key is fresher but local cache '
+              'has ${union.length - serverIds.length} extra completed '
+              'mission(s) — server wins all fields except completed missions '
+              '(unioned, never shrunk)',
+            );
+            _pendingRecoveryKeys.add(key);
+            return {...?serverData, _kCompletedMissionIds: union};
+          }
+        }
         debugPrint(
           '[UserPreferencesService] server $key is fresher than local cache '
           '($serverUpdated > $cachedAt) — server wins, cache dropped',
@@ -934,6 +1076,15 @@ class UserPreferencesService {
           } else {
             merged['best_time_ms'] = sTime ?? lTime;
           }
+        }
+
+        // For account_state, completed missions are monotonic in BOTH
+        // directions: local wins for ordinary fields, but the completed-mission
+        // set is the union so neither a stale server row nor a stale local
+        // cache can drop a completion recorded on the other side.
+        if (key == _kLocalAccountState) {
+          merged[_kCompletedMissionIds] =
+              _unionMissionIds(serverData, localData);
         }
 
         return merged;
@@ -1041,7 +1192,12 @@ class UserPreferencesService {
       }
 
       if (_accountStateDirty && _pendingAccountState != null) {
-        final payload = _pendingAccountState!;
+        // Strip keys the server has no column for (feature-detection). A
+        // single unknown column (e.g. completed_mission_ids pre-migration,
+        // or the never-migrated campaign_progress/uncharted_progress) would
+        // otherwise fail the ENTIRE upsert with PGRST204 and silently drop
+        // every field. The full state stays in the crash-safe cache.
+        final payload = _accountPayloadForWrite(_pendingAccountState!);
         final versionAtFlush = _accountStateWriteVersion;
         futures.add(
           client.from('account_state').upsert(payload).then((_) {
@@ -1358,6 +1514,20 @@ class UserPreferencesSnapshot {
       } catch (_) {
         return {};
       }
+    }
+    return {};
+  }
+
+  /// Durable set of completed Basic Training / campaign mission IDs, read from
+  /// the feature-detected `completed_mission_ids` column. Empty when the column
+  /// is absent (pre-migration) — completion then falls back to whatever
+  /// [toCampaignProgress] recovered from the crash-safe cache.
+  Set<String> toCompletedMissionIds() {
+    final data = accountState;
+    if (data == null) return {};
+    final v = data['completed_mission_ids'];
+    if (v is List) {
+      return v.map((e) => e.toString()).toSet();
     }
     return {};
   }
