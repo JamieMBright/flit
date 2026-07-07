@@ -304,7 +304,10 @@ void main() {
       notifier.activateConsumable(ConsumableType.goldSurge);
 
       // Daily scramble: fixedReward flag → no surge on the 150 lump.
-      var nonSurge = notifier.nonSurgeGoldMultiplier;
+      // recordGameCompletion grants XP *before* awarding coins, so a mid-call
+      // level-up would bump levelGoldMultiplier and shift the coin payout. Read
+      // the multiplier *after* the call — the level is then final and matches
+      // the one addCoins used at award time — so the assertion is level-stable.
       var before = notifier.state.currentPlayer.coins;
       await notifier.recordGameCompletion(
         elapsed: Duration.zero,
@@ -313,11 +316,11 @@ void main() {
         coinReward: 150,
         fixedReward: true,
       );
+      var nonSurge = notifier.nonSurgeGoldMultiplier;
       expect(notifier.state.currentPlayer.coins - before,
           (150 * nonSurge).round());
 
       // Daily triangulation: detected by region, no flag needed.
-      nonSurge = notifier.nonSurgeGoldMultiplier;
       before = notifier.state.currentPlayer.coins;
       await notifier.recordGameCompletion(
         elapsed: Duration.zero,
@@ -326,11 +329,11 @@ void main() {
         coinReward: 150,
         region: 'daily_triangulation',
       );
+      nonSurge = notifier.nonSurgeGoldMultiplier;
       expect(notifier.state.currentPlayer.coins - before,
           (150 * nonSurge).round());
 
       // Ordinary region completion DOES get the surge (strictly more).
-      final total = notifier.totalGoldMultiplier;
       before = notifier.state.currentPlayer.coins;
       await notifier.recordGameCompletion(
         elapsed: Duration.zero,
@@ -339,6 +342,8 @@ void main() {
         coinReward: 150,
         region: 'world',
       );
+      final total = notifier.totalGoldMultiplier;
+      nonSurge = notifier.nonSurgeGoldMultiplier;
       final surgedDelta = notifier.state.currentPlayer.coins - before;
       expect(surgedDelta, (150 * total).round());
       expect(surgedDelta, greaterThan((150 * nonSurge).round()));
