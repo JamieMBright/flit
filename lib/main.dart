@@ -19,6 +19,7 @@ import 'core/utils/web_flush_bridge.dart';
 import 'core/widgets/error_overlay_manager.dart';
 import 'data/services/ad_service.dart';
 import 'data/services/user_preferences_service.dart';
+import 'game/clues/country_stats_data.dart';
 import 'game/data/country_difficulty.dart';
 import 'game/quiz/alias_service.dart';
 import 'features/auth/login_screen.dart';
@@ -74,6 +75,11 @@ Future<void> main() async {
 
   // Load runtime country alias overrides (for fuzzy matching).
   await AliasService.instance.load();
+
+  // Load weekly-refreshed country stat overrides (head of state / population)
+  // from assets/data/country_stats.json. Fail-safe: on any error the game
+  // falls back to the baked-in Dart baseline.
+  await CountryStats.instance.load();
 
   // Hydrate ad daily-cap / frequency-cap bookkeeping (mobile only; no-op on
   // web). Placeholder ads only — no real ad SDK is wired. See docs/ADS.md.

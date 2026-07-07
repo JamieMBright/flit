@@ -1,0 +1,881 @@
+{
+  "_meta": {
+    "generated": "2026-07-07T15:25:34.986098Z",
+    "rowCount": 218,
+    "source": "seed"
+  },
+  "countries": {
+    "AD": {
+      "headOfState": "Xavier Espot Zamora",
+      "population": "80K"
+    },
+    "AE": {
+      "headOfState": "Sheikh Mohamed bin Zayed",
+      "population": "10M"
+    },
+    "AF": {
+      "headOfState": "Hibatullah Akhundzada",
+      "population": "41M"
+    },
+    "AG": {
+      "headOfState": "Gaston Browne",
+      "population": "100K"
+    },
+    "AL": {
+      "headOfState": "Edi Rama",
+      "population": "2.8M"
+    },
+    "AM": {
+      "headOfState": "Nikol Pashinyan",
+      "population": "3M"
+    },
+    "AO": {
+      "headOfState": "João Lourenço",
+      "population": "34M"
+    },
+    "AQ": {
+      "headOfState": "Antarctic Treaty System",
+      "population": "1-5K (researchers)"
+    },
+    "AR": {
+      "headOfState": "Javier Milei",
+      "population": "45M"
+    },
+    "AT": {
+      "headOfState": "Alexander Schallenberg",
+      "population": "9M"
+    },
+    "AU": {
+      "headOfState": "Anthony Albanese",
+      "population": "26M"
+    },
+    "AW": {
+      "headOfState": "Evelyn Wever-Croes",
+      "population": "100K"
+    },
+    "AX": {
+      "headOfState": "Veronica Thörnroos",
+      "population": "30K"
+    },
+    "AZ": {
+      "headOfState": "Ilham Aliyev",
+      "population": "10M"
+    },
+    "BA": {
+      "headOfState": "Borjana Krišto",
+      "population": "3.2M"
+    },
+    "BB": {
+      "headOfState": "Mia Mottley",
+      "population": "300K"
+    },
+    "BD": {
+      "headOfState": "Muhammad Yunus",
+      "population": "170M"
+    },
+    "BE": {
+      "headOfState": "King Philippe",
+      "population": "12M"
+    },
+    "BF": {
+      "headOfState": "Ibrahim Traoré",
+      "population": "23M"
+    },
+    "BG": {
+      "headOfState": "Dimitar Glavchev",
+      "population": "7M"
+    },
+    "BH": {
+      "headOfState": "King Hamad bin Isa Al Khalifa",
+      "population": "1.5M"
+    },
+    "BI": {
+      "headOfState": "Évariste Ndayishimiye",
+      "population": "13M"
+    },
+    "BJ": {
+      "headOfState": "Patrice Talon",
+      "population": "14M"
+    },
+    "BM": {
+      "headOfState": "David Burt",
+      "population": "60K"
+    },
+    "BN": {
+      "headOfState": "Sultan Hassanal Bolkiah",
+      "population": "450K"
+    },
+    "BO": {
+      "headOfState": "Rodrigo Paz",
+      "population": "12M"
+    },
+    "BR": {
+      "headOfState": "Lula da Silva",
+      "population": "214M"
+    },
+    "BS": {
+      "headOfState": "Philip Davis",
+      "population": "400K"
+    },
+    "BT": {
+      "headOfState": "King Jigme Khesar Namgyel Wangchuck",
+      "population": "800K"
+    },
+    "BW": {
+      "headOfState": "Duma Boko",
+      "population": "2.5M"
+    },
+    "BY": {
+      "headOfState": "Alexander Lukashenko",
+      "population": "9.1M"
+    },
+    "BZ": {
+      "headOfState": "John Briceño",
+      "population": "400K"
+    },
+    "CA": {
+      "headOfState": "Mark Carney",
+      "population": "38M"
+    },
+    "CD": {
+      "headOfState": "Félix Tshisekedi",
+      "population": "100M"
+    },
+    "CF": {
+      "headOfState": "Faustin-Archange Touadéra",
+      "population": "5.6M"
+    },
+    "CG": {
+      "headOfState": "Denis Sassou Nguesso",
+      "population": "6.1M"
+    },
+    "CH": {
+      "headOfState": "Karin Keller-Sutter",
+      "population": "9M"
+    },
+    "CI": {
+      "headOfState": "Alassane Ouattara",
+      "population": "27M"
+    },
+    "CK": {
+      "headOfState": "Mark Brown",
+      "population": "15K"
+    },
+    "CL": {
+      "headOfState": "Gabriel Boric",
+      "population": "19M"
+    },
+    "CM": {
+      "headOfState": "Paul Biya",
+      "population": "27M"
+    },
+    "CN": {
+      "headOfState": "Xi Jinping",
+      "population": "1.4B"
+    },
+    "CO": {
+      "headOfState": "Gustavo Petro",
+      "population": "51M"
+    },
+    "CR": {
+      "headOfState": "Rodrigo Chaves",
+      "population": "5M"
+    },
+    "CU": {
+      "headOfState": "Miguel Díaz-Canel",
+      "population": "11M"
+    },
+    "CV": {
+      "headOfState": "José Maria Neves",
+      "population": "600K"
+    },
+    "CW": {
+      "headOfState": "Gilmar Pisas",
+      "population": "150K"
+    },
+    "CY": {
+      "headOfState": "Nikos Christodoulides",
+      "population": "1.2M"
+    },
+    "CZ": {
+      "headOfState": "Petr Pavel",
+      "population": "11M"
+    },
+    "DE": {
+      "headOfState": "Friedrich Merz",
+      "population": "83M"
+    },
+    "DJ": {
+      "headOfState": "Ismaïl Omar Guelleh",
+      "population": "1.1M"
+    },
+    "DK": {
+      "headOfState": "King Frederik X",
+      "population": "6M"
+    },
+    "DM": {
+      "headOfState": "Roosevelt Skerrit",
+      "population": "70K"
+    },
+    "DO": {
+      "headOfState": "Luis Abinader",
+      "population": "11M"
+    },
+    "DZ": {
+      "headOfState": "Abdelmadjid Tebboune",
+      "population": "45M"
+    },
+    "EC": {
+      "headOfState": "Daniel Noboa",
+      "population": "18M"
+    },
+    "EE": {
+      "headOfState": "Kristen Michal",
+      "population": "1.3M"
+    },
+    "EG": {
+      "headOfState": "Abdel Fattah el-Sisi",
+      "population": "102M"
+    },
+    "EH": {
+      "headOfState": "Brahim Ghali",
+      "population": "600K"
+    },
+    "ER": {
+      "headOfState": "Isaias Afwerki",
+      "population": "3.7M"
+    },
+    "ES": {
+      "headOfState": "King Felipe VI",
+      "population": "47M"
+    },
+    "ET": {
+      "headOfState": "Abiy Ahmed",
+      "population": "120M"
+    },
+    "FI": {
+      "headOfState": "Alexander Stubb",
+      "population": "6M"
+    },
+    "FJ": {
+      "headOfState": "Sitiveni Rabuka",
+      "population": "900K"
+    },
+    "FK": {
+      "headOfState": "Alison Blake",
+      "population": "4K"
+    },
+    "FM": {
+      "headOfState": "Wesley Simina",
+      "population": "100K"
+    },
+    "FO": {
+      "headOfState": "Aksel V. Johannesen",
+      "population": "54K"
+    },
+    "FR": {
+      "headOfState": "Emmanuel Macron",
+      "population": "67M"
+    },
+    "GA": {
+      "headOfState": "Brice Oligui Nguema",
+      "population": "2.4M"
+    },
+    "GB": {
+      "headOfState": "King Charles III",
+      "population": "67M"
+    },
+    "GD": {
+      "headOfState": "Dickon Mitchell",
+      "population": "100K"
+    },
+    "GE": {
+      "headOfState": "Irakli Kobakhidze",
+      "population": "3.7M"
+    },
+    "GG": {
+      "headOfState": "Lyndon Trott",
+      "population": "63K"
+    },
+    "GH": {
+      "headOfState": "John Mahama",
+      "population": "33M"
+    },
+    "GI": {
+      "headOfState": "Fabian Picardo",
+      "population": "33K"
+    },
+    "GL": {
+      "headOfState": "Jens-Frederik Nielsen",
+      "population": "56K"
+    },
+    "GM": {
+      "headOfState": "Adama Barrow",
+      "population": "2.8M"
+    },
+    "GN": {
+      "headOfState": "Mamady Doumbouya",
+      "population": "14M"
+    },
+    "GQ": {
+      "headOfState": "Teodoro Obiang Nguema Mbasogo",
+      "population": "1.7M"
+    },
+    "GR": {
+      "headOfState": "Kyriakos Mitsotakis",
+      "population": "11M"
+    },
+    "GT": {
+      "headOfState": "Bernardo Arévalo",
+      "population": "18M"
+    },
+    "GU": {
+      "headOfState": "Lou Leon Guerrero",
+      "population": "200K"
+    },
+    "GW": {
+      "headOfState": "General Horta Inta-A Na Man",
+      "population": "2.1M"
+    },
+    "GY": {
+      "headOfState": "Irfaan Ali",
+      "population": "800K"
+    },
+    "HK": {
+      "headOfState": "John Lee",
+      "population": "7.5M"
+    },
+    "HN": {
+      "headOfState": "Xiomara Castro",
+      "population": "10M"
+    },
+    "HR": {
+      "headOfState": "Zoran Milanović",
+      "population": "4M"
+    },
+    "HT": {
+      "headOfState": "Alix Didier Fils-Aimé",
+      "population": "12M"
+    },
+    "HU": {
+      "headOfState": "Viktor Orbán",
+      "population": "10M"
+    },
+    "ID": {
+      "headOfState": "Prabowo Subianto",
+      "population": "276M"
+    },
+    "IE": {
+      "headOfState": "Micheál Martin",
+      "population": "5M"
+    },
+    "IL": {
+      "headOfState": "Benjamin Netanyahu",
+      "population": "9M"
+    },
+    "IM": {
+      "headOfState": "Alfred Cannan",
+      "population": "84K"
+    },
+    "IN": {
+      "headOfState": "Narendra Modi",
+      "population": "1.4B"
+    },
+    "IQ": {
+      "headOfState": "Mohammed Shia al-Sudani",
+      "population": "42M"
+    },
+    "IR": {
+      "headOfState": "Ali Khamenei",
+      "population": "87M"
+    },
+    "IS": {
+      "headOfState": "Kristrún Frostadóttir",
+      "population": "390K"
+    },
+    "IT": {
+      "headOfState": "Giorgia Meloni",
+      "population": "60M"
+    },
+    "JE": {
+      "headOfState": "Lyndon Farnham",
+      "population": "103K"
+    },
+    "JM": {
+      "headOfState": "Andrew Holness",
+      "population": "3M"
+    },
+    "JO": {
+      "headOfState": "King Abdullah II",
+      "population": "11M"
+    },
+    "JP": {
+      "headOfState": "Shigeru Ishiba",
+      "population": "125M"
+    },
+    "KE": {
+      "headOfState": "William Ruto",
+      "population": "54M"
+    },
+    "KG": {
+      "headOfState": "Sadyr Japarov",
+      "population": "7M"
+    },
+    "KH": {
+      "headOfState": "Hun Manet",
+      "population": "17M"
+    },
+    "KI": {
+      "headOfState": "Taneti Maamau",
+      "population": "100K"
+    },
+    "KM": {
+      "headOfState": "Azali Assoumani",
+      "population": "900K"
+    },
+    "KN": {
+      "headOfState": "Terrance Drew",
+      "population": "50K"
+    },
+    "KP": {
+      "headOfState": "Kim Jong Un",
+      "population": "26M"
+    },
+    "KR": {
+      "headOfState": "Han Duck-soo",
+      "population": "52M"
+    },
+    "KW": {
+      "headOfState": "Emir Meshal Al-Ahmad Al-Jaber Al-Sabah",
+      "population": "4.3M"
+    },
+    "KZ": {
+      "headOfState": "Kassym-Jomart Tokayev",
+      "population": "19M"
+    },
+    "LA": {
+      "headOfState": "Thongloun Sisoulith",
+      "population": "7.7M"
+    },
+    "LB": {
+      "headOfState": "Joseph Aoun",
+      "population": "5.5M"
+    },
+    "LC": {
+      "headOfState": "Philip J. Pierre",
+      "population": "200K"
+    },
+    "LI": {
+      "headOfState": "Prince Hans-Adam II",
+      "population": "40K"
+    },
+    "LK": {
+      "headOfState": "Anura Kumara Dissanayake",
+      "population": "22M"
+    },
+    "LR": {
+      "headOfState": "Joseph Boakai",
+      "population": "5.4M"
+    },
+    "LS": {
+      "headOfState": "Sam Matekane",
+      "population": "2.3M"
+    },
+    "LT": {
+      "headOfState": "Gitanas Nausėda",
+      "population": "2.7M"
+    },
+    "LU": {
+      "headOfState": "Luc Frieden",
+      "population": "660K"
+    },
+    "LV": {
+      "headOfState": "Edgars Rinkēvičs",
+      "population": "1.8M"
+    },
+    "LY": {
+      "headOfState": "Abdul Hamid Dbeibeh",
+      "population": "7M"
+    },
+    "MA": {
+      "headOfState": "King Mohammed VI",
+      "population": "37M"
+    },
+    "MC": {
+      "headOfState": "Prince Albert II",
+      "population": "39K"
+    },
+    "MD": {
+      "headOfState": "Maia Sandu",
+      "population": "2.5M"
+    },
+    "ME": {
+      "headOfState": "Jakov Milatović",
+      "population": "620K"
+    },
+    "MG": {
+      "headOfState": "Andry Rajoelina",
+      "population": "29M"
+    },
+    "MH": {
+      "headOfState": "Hilda Heine",
+      "population": "40K"
+    },
+    "MK": {
+      "headOfState": "Gordana Siljanovska-Davkova",
+      "population": "1.8M"
+    },
+    "ML": {
+      "headOfState": "Assimi Goïta",
+      "population": "23M"
+    },
+    "MM": {
+      "headOfState": "Min Aung Hlaing",
+      "population": "54M"
+    },
+    "MN": {
+      "headOfState": "Ukhnaagiin Khürelsükh",
+      "population": "3.4M"
+    },
+    "MO": {
+      "headOfState": "Sam Hou Fai",
+      "population": "700K"
+    },
+    "MR": {
+      "headOfState": "Mohamed Ould Ghazouani",
+      "population": "4.9M"
+    },
+    "MT": {
+      "headOfState": "Robert Abela",
+      "population": "540K"
+    },
+    "MU": {
+      "headOfState": "Navin Ramgoolam",
+      "population": "1.3M"
+    },
+    "MV": {
+      "headOfState": "Mohamed Muizzu",
+      "population": "520K"
+    },
+    "MW": {
+      "headOfState": "Peter Mutharika",
+      "population": "21M"
+    },
+    "MX": {
+      "headOfState": "Claudia Sheinbaum",
+      "population": "128M"
+    },
+    "MY": {
+      "headOfState": "Anwar Ibrahim",
+      "population": "33M"
+    },
+    "MZ": {
+      "headOfState": "Daniel Chapo",
+      "population": "32M"
+    },
+    "NA": {
+      "headOfState": "Netumbo Nandi-Ndaitwah",
+      "population": "3M"
+    },
+    "NC": {
+      "headOfState": "Alcide Ponga",
+      "population": "300K"
+    },
+    "NE": {
+      "headOfState": "Abdourahamane Tchiani",
+      "population": "27M"
+    },
+    "NG": {
+      "headOfState": "Bola Tinubu",
+      "population": "213M"
+    },
+    "NI": {
+      "headOfState": "Daniel Ortega",
+      "population": "7M"
+    },
+    "NL": {
+      "headOfState": "King Willem-Alexander",
+      "population": "18M"
+    },
+    "NO": {
+      "headOfState": "King Harald V",
+      "population": "5M"
+    },
+    "NP": {
+      "headOfState": "Sushila Karki",
+      "population": "30M"
+    },
+    "NR": {
+      "headOfState": "David Adeang",
+      "population": "10K"
+    },
+    "NZ": {
+      "headOfState": "Christopher Luxon",
+      "population": "5M"
+    },
+    "OM": {
+      "headOfState": "Sultan Haitham bin Tariq",
+      "population": "4.6M"
+    },
+    "PA": {
+      "headOfState": "José Raúl Mulino",
+      "population": "4M"
+    },
+    "PE": {
+      "headOfState": "Dina Boluarte",
+      "population": "34M"
+    },
+    "PG": {
+      "headOfState": "James Marape",
+      "population": "10M"
+    },
+    "PH": {
+      "headOfState": "Bongbong Marcos",
+      "population": "113M"
+    },
+    "PK": {
+      "headOfState": "Shehbaz Sharif",
+      "population": "230M"
+    },
+    "PL": {
+      "headOfState": "Andrzej Duda",
+      "population": "38M"
+    },
+    "PR": {
+      "headOfState": "Jenniffer González-Colón",
+      "population": "3M"
+    },
+    "PS": {
+      "headOfState": "Mahmoud Abbas",
+      "population": "5.4M"
+    },
+    "PT": {
+      "headOfState": "Luís Montenegro",
+      "population": "10M"
+    },
+    "PW": {
+      "headOfState": "Surangel Whipps Jr.",
+      "population": "20K"
+    },
+    "PY": {
+      "headOfState": "Santiago Peña",
+      "population": "7M"
+    },
+    "QA": {
+      "headOfState": "Emir Tamim bin Hamad Al Thani",
+      "population": "2.9M"
+    },
+    "RO": {
+      "headOfState": "Klaus Iohannis",
+      "population": "19M"
+    },
+    "RS": {
+      "headOfState": "Aleksandar Vučić",
+      "population": "7M"
+    },
+    "RU": {
+      "headOfState": "Vladimir Putin",
+      "population": "144M"
+    },
+    "RW": {
+      "headOfState": "Paul Kagame",
+      "population": "14M"
+    },
+    "SA": {
+      "headOfState": "Mohammed bin Salman",
+      "population": "36M"
+    },
+    "SB": {
+      "headOfState": "Jeremiah Manele",
+      "population": "700K"
+    },
+    "SC": {
+      "headOfState": "Wavel Ramkalawan",
+      "population": "100K"
+    },
+    "SD": {
+      "headOfState": "Abdel Fattah al-Burhan",
+      "population": "45M"
+    },
+    "SE": {
+      "headOfState": "King Carl XVI Gustaf",
+      "population": "10M"
+    },
+    "SG": {
+      "headOfState": "Lawrence Wong",
+      "population": "6M"
+    },
+    "SI": {
+      "headOfState": "Nataša Pirc Musar",
+      "population": "2.1M"
+    },
+    "SK": {
+      "headOfState": "Robert Fico",
+      "population": "5.4M"
+    },
+    "SL": {
+      "headOfState": "Julius Maada Bio",
+      "population": "8.6M"
+    },
+    "SM": {
+      "headOfState": "Captains Regent",
+      "population": "34K"
+    },
+    "SN": {
+      "headOfState": "Bassirou Diomaye Faye",
+      "population": "17M"
+    },
+    "SO": {
+      "headOfState": "Hassan Sheikh Mohamud",
+      "population": "18M"
+    },
+    "SR": {
+      "headOfState": "Jennifer Geerlings-Simons",
+      "population": "600K"
+    },
+    "SS": {
+      "headOfState": "Salva Kiir Mayardit",
+      "population": "11M"
+    },
+    "ST": {
+      "headOfState": "Carlos Vila Nova",
+      "population": "230K"
+    },
+    "SV": {
+      "headOfState": "Nayib Bukele",
+      "population": "6M"
+    },
+    "SY": {
+      "headOfState": "Ahmed al-Sharaa",
+      "population": "23M"
+    },
+    "SZ": {
+      "headOfState": "King Mswati III",
+      "population": "1.2M"
+    },
+    "TD": {
+      "headOfState": "Mahamat Déby",
+      "population": "18M"
+    },
+    "TG": {
+      "headOfState": "Faure Gnassingbé",
+      "population": "9M"
+    },
+    "TH": {
+      "headOfState": "Paetongtarn Shinawatra",
+      "population": "72M"
+    },
+    "TJ": {
+      "headOfState": "Emomali Rahmon",
+      "population": "10M"
+    },
+    "TL": {
+      "headOfState": "José Ramos-Horta",
+      "population": "1.3M"
+    },
+    "TM": {
+      "headOfState": "Serdar Berdimuhamedow",
+      "population": "6.3M"
+    },
+    "TN": {
+      "headOfState": "Kais Saied",
+      "population": "12M"
+    },
+    "TO": {
+      "headOfState": "Aisake Eke",
+      "population": "100K"
+    },
+    "TR": {
+      "headOfState": "Recep Tayyip Erdoğan",
+      "population": "85M"
+    },
+    "TT": {
+      "headOfState": "Kamla Persad-Bissessar",
+      "population": "1.5M"
+    },
+    "TV": {
+      "headOfState": "Feleti Teo",
+      "population": "10K"
+    },
+    "TW": {
+      "headOfState": "Lai Ching-te",
+      "population": "23.5M"
+    },
+    "TZ": {
+      "headOfState": "Samia Suluhu Hassan",
+      "population": "62M"
+    },
+    "UA": {
+      "headOfState": "Volodymyr Zelenskyy",
+      "population": "44M"
+    },
+    "UG": {
+      "headOfState": "Yoweri Museveni",
+      "population": "46M"
+    },
+    "US": {
+      "headOfState": "Donald Trump",
+      "population": "331M"
+    },
+    "UY": {
+      "headOfState": "Yamandú Orsi",
+      "population": "4M"
+    },
+    "UZ": {
+      "headOfState": "Shavkat Mirziyoyev",
+      "population": "36M"
+    },
+    "VA": {
+      "headOfState": "Pope Leo XIV",
+      "population": "800"
+    },
+    "VC": {
+      "headOfState": "Ralph Gonsalves",
+      "population": "100K"
+    },
+    "VE": {
+      "headOfState": "Nicolás Maduro",
+      "population": "28M"
+    },
+    "VN": {
+      "headOfState": "Lương Cường",
+      "population": "98M"
+    },
+    "VU": {
+      "headOfState": "Jotham Napat",
+      "population": "300K"
+    },
+    "WS": {
+      "headOfState": "La'auli Leuatea Schmidt",
+      "population": "200K"
+    },
+    "XC": {
+      "headOfState": "Tufan Erhürman",
+      "population": "380K"
+    },
+    "XK": {
+      "headOfState": "Albin Kurti",
+      "population": "1.6M"
+    },
+    "XS": {
+      "headOfState": "Abdirahman Mohamed Abdullahi",
+      "population": "5.7M"
+    },
+    "YE": {
+      "headOfState": "Rashad al-Alimi",
+      "population": "34M"
+    },
+    "ZA": {
+      "headOfState": "Cyril Ramaphosa",
+      "population": "60M"
+    },
+    "ZM": {
+      "headOfState": "Hakainde Hichilema",
+      "population": "20M"
+    },
+    "ZW": {
+      "headOfState": "Emmerson Mnangagwa",
+      "population": "16M"
+    }
+  }
+}
