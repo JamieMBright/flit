@@ -6,9 +6,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/theme/flit_colors.dart';
+import '../../core/utils/report_capture.dart';
 import '../../core/widgets/consumable_widgets.dart';
 import '../../core/widgets/menu_content_wrapper.dart';
 import '../../core/widgets/rating_tier_chip.dart';
+import '../../core/widgets/share_variant_sheet.dart';
+import 'combined_daily_share_card.dart';
 import '../../core/theme/rarity_colors.dart';
 import '../../data/models/avatar_config.dart';
 import '../../data/models/leaderboard_entry.dart';
@@ -133,6 +136,28 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
   List<LeaderboardEntry> _entries = [];
   LeaderboardEntry? _playerRank;
 
+  // Combined-daily share card capture.
+  final GlobalKey _combinedCardKey = GlobalKey();
+  bool _savingCombinedImage = false;
+  ShareVariant _combinedVariant = ShareVariant.anonymous;
+
+  /// The signed-in user's combined-daily entry (from [_entries] when they're
+  /// in the top slice, otherwise fetched over the full field). Drives the
+  /// SAVE IMAGE button and the offscreen [CombinedDailyShareCard].
+  LeaderboardEntry? _combinedSelfEntry;
+  int? _combinedTotalPlayers;
+
+  /// 1-based day number for the combined daily, sharing the triangulation
+  /// epoch (2026-07-04) so "Day N" reads consistently across modes.
+  static int get _combinedDayNumber {
+    final today = DateTime.now().toUtc();
+    final epoch = DateTime.utc(2026, 7, 4);
+    return DateTime.utc(today.year, today.month, today.day)
+            .difference(epoch)
+            .inDays +
+        1;
+  }
+
   String? get _userId => Supabase.instance.client.auth.currentUser?.id;
 
   @override
@@ -206,6 +231,9 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
 
       // Load player rank in parallel (mode-aware).
       _loadPlayerRank();
+
+      // Resolve the user's own combined entry for the shareable card.
+      _loadCombinedSelf(visible);
     } catch (e) {
       if (mounted) {
         setState(() {
@@ -228,6 +256,85 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
     );
     if (mounted) {
       setState(() => _playerRank = rank);
+    }
+  }
+
+  /// Ensure the signed-in user's combined-daily entry is available for the
+  /// share card. Uses the loaded [entries] when self is in the top slice;
+  /// otherwise fetches over the full field so a low-ranked self is never
+  /// dropped by the board's limit.
+  Future<void> _loadCombinedSelf(List<LeaderboardEntry> entries) async {
+    if (!_isCombined) {
+      if (_combinedSelfEntry != null && mounted) {
+        setState(() {
+          _combinedSelfEntry = null;
+          _combinedTotalPlayers = null;
+        });
+      }
+      return;
+    }
+    final userId = _userId;
+    if (userId == null) return;
+
+    LeaderboardEntry? self;
+    for (final e in entries) {
+      if (e.playerId == userId) {
+        self = e;
+        break;
+      }
+    }
+    if (self != null && self.combinedEfficiencyBps != null) {
+      if (mounted) {
+        setState(() {
+          _combinedSelfEntry = self;
+          _combinedTotalPlayers = entries.length;
+        });
+      }
+      return;
+    }
+
+    // Self ranked outside the fetched slice — compute over the full field.
+    final own = await LeaderboardService.instance.fetchOwnCombinedDailyScore();
+    if (!mounted || !_isCombined) return;
+    setState(() {
+      _combinedSelfEntry = own?.entry;
+      _combinedTotalPlayers = own?.totalPlayers;
+    });
+  }
+
+  /// Save/share the combined-daily card as an image. Mirrors the play-screen
+  /// capture flow: chooser → set variant → next frame → capture → share.
+  Future<void> _saveCombinedImage() async {
+    if (_savingCombinedImage) return;
+    final self = _combinedSelfEntry;
+    if (self == null) return;
+
+    final variant = await showShareVariantSheet(
+      context,
+      detailedSpoilerNote: 'shows your combined rank and per-mode scores',
+    );
+    if (variant == null || !mounted) return;
+    setState(() {
+      _combinedVariant = variant;
+      _savingCombinedImage = true;
+    });
+    try {
+      // Let the offscreen card rebuild in the chosen variant first.
+      await WidgetsBinding.instance.endOfFrame;
+      final png = await captureReportPng(_combinedCardKey);
+      if (png == null || !mounted) return;
+      final suffix = variant == ShareVariant.detailed ? 'detail' : 'anon';
+      await shareReportImage(
+        context,
+        png: png,
+        filename: 'flit-combined-daily-$suffix.png',
+        fallbackText: 'Flit — All Dailies\n'
+            'Combined ${_formatCombinedPct(self.score)} · '
+            '${_combinedBreakdown(self.combinedEfficiencyBps)}\n'
+            'jamiembright.github.io/flit',
+      );
+    } finally {
+      if (mounted) setState(() => _savingCombinedImage = false);
     }
   }
 
@@ -316,64 +423,98 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
             ],
           ),
         ),
-        body: MenuContentWrapper(
-          child: Column(
-            children: [
-              // Sub-tab chips: Today | Last Month | All Time.
-              // Combined is a per-day board, so only Today applies there.
-              _TimeframeChips(
-                selected: _timeframe,
-                onChanged: _onTimeframeChanged,
-                onlyToday: _isCombined,
+        body: Stack(
+          children: [
+            MenuContentWrapper(
+              child: Column(
+                children: [
+                  // Sub-tab chips: Today | Last Month | All Time.
+                  // Combined is a per-day board, so only Today applies there.
+                  _TimeframeChips(
+                    selected: _timeframe,
+                    onChanged: _onTimeframeChanged,
+                    onlyToday: _isCombined,
+                  ),
+                  // Sort chips: Score | Proficiency | Time (combined is always
+                  // ranked by efficiency, so no sort options).
+                  if (!_isCombined)
+                    _SortChips(selected: _sort, onChanged: _onSortChanged),
+                  const Divider(color: FlitColors.cardBorder, height: 1),
+                  // Player rank banner (score-based; hidden when not sorting
+                  // by score).
+                  if (!_isCombined &&
+                      _playerRank != null &&
+                      _sort == LeaderboardSort.score)
+                    _PlayerRankBanner(entry: _playerRank!),
+                  // Combined board: save the spoiler-free share card. Only
+                  // shown once the user's own combined entry is resolved.
+                  if (_isCombined && _combinedSelfEntry != null)
+                    _CombinedShareBar(
+                      saving: _savingCombinedImage,
+                      onSave: _saveCombinedImage,
+                    ),
+                  // Leaderboard list
+                  Expanded(
+                    child: _loading
+                        ? const Center(child: CircularProgressIndicator())
+                        : _errorMessage != null
+                            ? _ErrorState(
+                                message: _errorMessage!, onRetry: _loadData)
+                            : _entries.isEmpty
+                                ? const _EmptyState()
+                                : ListView.builder(
+                                    padding:
+                                        const EdgeInsets.symmetric(vertical: 8),
+                                    itemCount: _sortedEntries.length,
+                                    itemBuilder: (context, index) {
+                                      final e = _sortedEntries[index];
+                                      final isSelf = e.playerId == _userId;
+                                      // Embargo: hide round details for other
+                                      // players' daily-scramble scores from
+                                      // today so clues/answers aren't spoiled.
+                                      final embargoed = !isSelf &&
+                                          _currentMode ==
+                                              LeaderboardMode.dailyScramble &&
+                                          _isFromToday(e.timestamp);
+                                      return _LeaderboardRow(
+                                        entry: e,
+                                        rank: index + 1,
+                                        isCurrentPlayer: isSelf,
+                                        isEmbargoed: embargoed,
+                                        sort: _sort,
+                                        proficiencyPct:
+                                            _computeProficiencyPct(e),
+                                        isCombined: _isCombined,
+                                        onBlocked: _loadData,
+                                      );
+                                    },
+                                  ),
+                  ),
+                ],
               ),
-              // Sort chips: Score | Proficiency | Time (combined is always
-              // ranked by efficiency, so no sort options).
-              if (!_isCombined)
-                _SortChips(selected: _sort, onChanged: _onSortChanged),
-              const Divider(color: FlitColors.cardBorder, height: 1),
-              // Player rank banner (score-based; hidden when not sorting by score)
-              if (!_isCombined &&
-                  _playerRank != null &&
-                  _sort == LeaderboardSort.score)
-                _PlayerRankBanner(entry: _playerRank!),
-              // Leaderboard list
-              Expanded(
-                child: _loading
-                    ? const Center(child: CircularProgressIndicator())
-                    : _errorMessage != null
-                        ? _ErrorState(
-                            message: _errorMessage!, onRetry: _loadData)
-                        : _entries.isEmpty
-                            ? const _EmptyState()
-                            : ListView.builder(
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 8),
-                                itemCount: _sortedEntries.length,
-                                itemBuilder: (context, index) {
-                                  final e = _sortedEntries[index];
-                                  final isSelf = e.playerId == _userId;
-                                  // Embargo: hide round details for other
-                                  // players' daily-scramble scores from today
-                                  // so clues/answers aren't spoiled.
-                                  final embargoed = !isSelf &&
-                                      _currentMode ==
-                                          LeaderboardMode.dailyScramble &&
-                                      _isFromToday(e.timestamp);
-                                  return _LeaderboardRow(
-                                    entry: e,
-                                    rank: index + 1,
-                                    isCurrentPlayer: isSelf,
-                                    isEmbargoed: embargoed,
-                                    sort: _sort,
-                                    proficiencyPct: _computeProficiencyPct(e),
-                                    isCombined: _isCombined,
-                                    onBlocked: _loadData,
-                                  );
-                                },
-                              ),
+            ),
+            // Offscreen host: rendered off the visible area so the card is
+            // laid out and paintable for RepaintBoundary capture without
+            // showing on screen. Only present when self's combined data
+            // (score + per-mode breakdown) is in scope.
+            if (_combinedSelfEntry != null)
+              Positioned(
+                left: -10000,
+                top: 0,
+                child: RepaintBoundary(
+                  key: _combinedCardKey,
+                  child: CombinedDailyShareCard(
+                    combinedBps: _combinedSelfEntry!.score,
+                    modeEfficiencyBps:
+                        _combinedSelfEntry!.combinedEfficiencyBps ?? const {},
+                    detailed: _combinedVariant == ShareVariant.detailed,
+                    rank: _combinedSelfEntry!.rank,
+                    totalPlayers: _combinedTotalPlayers,
+                    dayNumber: _combinedDayNumber,
+                  ),
+                ),
               ),
-            ],
-          ),
+          ],
         ),
       );
 }
@@ -482,6 +623,47 @@ class _SortChips extends StatelessWidget {
 // =============================================================================
 // Player rank banner
 // =============================================================================
+
+/// "SAVE IMAGE" action for the combined daily board — builds the spoiler-free
+/// [CombinedDailyShareCard] and shares it as a PNG.
+class _CombinedShareBar extends StatelessWidget {
+  const _CombinedShareBar({required this.saving, required this.onSave});
+
+  final bool saving;
+  final VoidCallback onSave;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 4),
+      child: SizedBox(
+        width: double.infinity,
+        child: OutlinedButton.icon(
+          onPressed: saving ? null : onSave,
+          style: OutlinedButton.styleFrom(
+            foregroundColor: FlitColors.gold,
+            side: const BorderSide(color: FlitColors.gold),
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+          icon: saving
+              ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: FlitColors.gold,
+                  ),
+                )
+              : const Icon(Icons.ios_share_rounded, size: 18),
+          label: Text(saving ? 'PREPARING…' : 'SAVE IMAGE'),
+        ),
+      ),
+    );
+  }
+}
 
 class _PlayerRankBanner extends StatelessWidget {
   const _PlayerRankBanner({required this.entry});

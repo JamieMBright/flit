@@ -8,6 +8,7 @@ import '../../core/utils/report_capture.dart';
 import '../../core/widgets/consumable_widgets.dart';
 import '../../core/widgets/menu_content_wrapper.dart';
 import '../../core/widgets/mission_report_card.dart';
+import '../../core/widgets/share_variant_sheet.dart';
 import '../../data/models/daily_result.dart';
 import '../../data/providers/account_provider.dart';
 import '../../data/services/leaderboard_service.dart';
@@ -16,6 +17,7 @@ import '../../game/economy/supply_drop.dart';
 import '../../game/map/region.dart';
 import '../../game/quiz/flight_school_level.dart';
 import '../../game/quiz/quiz_category.dart';
+import '../../game/quiz/quiz_difficulty.dart';
 import '../../game/quiz/quiz_result_map.dart';
 import '../../game/quiz/quiz_session.dart';
 import '../../game/ui/ink_burst_overlay.dart';
@@ -79,6 +81,13 @@ class _QuizResultsScreenState extends ConsumerState<QuizResultsScreen>
   /// Wraps the report-card preview for PNG capture.
   final GlobalKey _reportKey = GlobalKey();
   bool _savingImage = false;
+
+  /// Which share-image flavour the report card renders. The Daily Briefing
+  /// defaults to anonymous (spoiler-free, no answer map, no revealed
+  /// answers); other quiz results default to the full detailed card (their
+  /// map was always shown).
+  late ShareVariant _shareVariant =
+      _isDailyBriefing ? ShareVariant.anonymous : ShareVariant.detailed;
 
   @override
   void initState() {
@@ -499,16 +508,27 @@ class _QuizResultsScreenState extends ConsumerState<QuizResultsScreen>
 
   Future<void> _saveImage() async {
     if (_savingImage) return;
-    setState(() => _savingImage = true);
+    final variant = await showShareVariantSheet(
+      context,
+      detailedSpoilerNote: 'reveals the region map and the answers',
+    );
+    if (variant == null || !mounted) return;
+    setState(() {
+      _shareVariant = variant;
+      _savingImage = true;
+    });
     try {
+      // Let the card rebuild in the chosen variant before capturing it.
+      await WidgetsBinding.instance.endOfFrame;
       final png = await captureReportPng(_reportKey);
       if (png == null || !mounted) return;
+      final suffix = variant == ShareVariant.detailed ? 'detail' : 'anon';
       await shareReportImage(
         context,
         png: png,
         filename: _isDailyBriefing
-            ? 'flit-briefing.png'
-            : 'flit-quiz-${widget.summary.mode.name}.png',
+            ? 'flit-briefing-$suffix.png'
+            : 'flit-quiz-${widget.summary.mode.name}-$suffix.png',
         fallbackText: _fallbackShareText,
       );
     } finally {
@@ -516,9 +536,52 @@ class _QuizResultsScreenState extends ConsumerState<QuizResultsScreen>
     }
   }
 
+  /// Area code → display name lookup for the quiz's own region (US state
+  /// code, UK county code, ISO country code, …), used to name answers on
+  /// the detailed report card. Region-scoped — never resolved against
+  /// world country data (see [_outcomeCodes]).
+  Map<String, String> get _regionAreaNames {
+    final region = widget.region;
+    if (region == null) return const {};
+    return {
+      for (final area in RegionalData.getAreas(region)) area.code: area.name,
+    };
+  }
+
+  /// The target answer code for a given question index, taken from any
+  /// attempt recorded against it (the target is the same across retries).
+  String? _questionCorrectCode(QuizSummary summary, int questionIndex) {
+    for (final r in summary.results) {
+      if (r.questionIndex == questionIndex) return r.correctCode;
+    }
+    return null;
+  }
+
+  /// Per-question reveal rows for the Daily Briefing's detailed share
+  /// variant: outcome emoji + the answer's country/area name + a
+  /// correct/missed mark. Never built for the anonymous variant — that
+  /// card must stay spoiler-free (emoji grid only).
+  List<ReportRow> _briefingRows(QuizSummary summary) {
+    final areaNames = _regionAreaNames;
+    final rows = <ReportRow>[];
+    for (var i = 0; i < summary.totalQuestions; i++) {
+      final code = _questionCorrectCode(summary, i);
+      if (code == null) continue;
+      final foundCorrect =
+          summary.results.any((r) => r.questionIndex == i && r.correct);
+      rows.add(ReportRow(
+        summary.questionEmoji(i),
+        areaNames[code] ?? code,
+        foundCorrect ? '\u{2713}' : '\u{2717}',
+      ));
+    }
+    return rows;
+  }
+
   Widget _buildReportCard(QuizSummary summary) {
     final outcomes = _outcomeCodes(summary);
     final region = widget.region;
+    final detailed = _shareVariant == ShareVariant.detailed;
     return RepaintBoundary(
       key: _reportKey,
       child: MissionReportCard(
@@ -527,12 +590,17 @@ class _QuizResultsScreenState extends ConsumerState<QuizResultsScreen>
             : summary.mode.displayName.toUpperCase(),
         subtitle: _isDailyBriefing
             ? '$_regionName · ${summary.correctCount}/${summary.totalQuestions} correct'
+                '${detailed ? ' · ${summary.difficulty.displayName}' : ''}'
             : '${summary.correctCount}/${summary.totalQuestions} correct',
         score: summary.totalScore,
         // Spoiler-free per-question outcome row — the same emoji as the
         // text share. Only for the short curated daily set; a full-region
         // practice sweep would overflow the card.
         emojiGrid: _isDailyBriefing ? summary.emojiRow : null,
+        // Named per-question breakdown — only for the Daily Briefing's
+        // detailed variant. The anonymous variant (and every non-daily
+        // result) leaves this empty so no answers leak.
+        rows: _isDailyBriefing && detailed ? _briefingRows(summary) : const [],
         stats: [
           ReportStat(
             'CORRECT',
@@ -541,12 +609,15 @@ class _QuizResultsScreenState extends ConsumerState<QuizResultsScreen>
           ReportStat('TIME', summary.elapsedFormatted),
           if (_coinsEarned > 0) ReportStat('COINS', '+$_coinsEarned'),
         ],
-        // Spoiler rule: the Daily Briefing is one-attempt-per-day, so the
-        // downloadable card never includes the answer map for it. Other
-        // quiz variants (Flight School practice, H2H) show the quiz's own
-        // REGION map tinted by outcome — never the world map, where
+        // Spoiler rule: the Daily Briefing defaults to the anonymous variant
+        // (one-attempt-per-day, so a shared image must not spoil the map or
+        // answers by default) but reveals the map when the player explicitly
+        // picks Detailed in the share-variant chooser. Other quiz variants
+        // (Flight School practice, H2H) default to Detailed, preserving
+        // their previous always-shown map. Either way this shows the quiz's
+        // own REGION map tinted by outcome — never the world map, where
         // region-scoped codes collide with ISO country codes.
-        map: !_isDailyBriefing &&
+        map: detailed &&
                 region != null &&
                 (outcomes.correct.isNotEmpty || outcomes.missed.isNotEmpty)
             ? ClipRRect(
