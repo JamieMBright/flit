@@ -13,6 +13,7 @@ import '../../core/widgets/mission_report_card.dart';
 import '../../core/widgets/menu_content_wrapper.dart';
 import '../../core/widgets/reveal_map.dart';
 import '../../core/widgets/consumable_widgets.dart';
+import '../../core/widgets/share_variant_sheet.dart';
 import '../../data/models/daily_result.dart';
 import '../../data/providers/account_provider.dart';
 import '../../game/clues/clue_types.dart';
@@ -321,6 +322,7 @@ class _TriangulationGameScreenState
         dayNumber: widget.daily?.dayNumber,
         isCapitalTarget: _isCapitalTarget,
         coinsEarned: _session.solvedRounds > 0 ? widget.coinReward : 0,
+        difficultyLabel: widget.daily?.difficultyLabelText,
       );
     } else if (_showingRoundResult) {
       body = _RoundResultView(
@@ -825,6 +827,7 @@ class _SummaryView extends StatefulWidget {
     required this.isCapitalTarget,
     this.dayNumber,
     this.coinsEarned = 0,
+    this.difficultyLabel,
   });
 
   final TriangulationSession session;
@@ -833,6 +836,11 @@ class _SummaryView extends StatefulWidget {
   final bool isCapitalTarget;
   final int? dayNumber;
   final int coinsEarned;
+
+  /// Flight-themed difficulty label for today's daily (e.g. "Crosswinds"),
+  /// shown only in the detailed share-card variant. Null for non-daily
+  /// sessions or if unavailable.
+  final String? difficultyLabel;
 
   @override
   State<_SummaryView> createState() => _SummaryViewState();
@@ -843,24 +851,100 @@ class _SummaryViewState extends State<_SummaryView> {
   final GlobalKey _reportKey = GlobalKey();
   bool _savingImage = false;
 
+  /// Which share-image flavour the report card renders. Dailies default to
+  /// anonymous (spoiler-free, no answer map, no named targets); non-daily
+  /// runs default to the full detailed card since there's no daily spoiler
+  /// to protect.
+  late ShareVariant _shareVariant =
+      widget.isDaily ? ShareVariant.anonymous : ShareVariant.detailed;
+
   TriangulationSession get session => widget.session;
   bool get isDaily => widget.isDaily;
   bool get isCapitalTarget => widget.isCapitalTarget;
   String get shareText => widget.shareText;
   int get coinsEarned => widget.coinsEarned;
 
+  /// Star/dot marker layers for the whole run's reveal map: every round's
+  /// target (star, coloured by solved/missed) plus its original clue
+  /// anchors and any wrong guesses (dots) — one map covering all rounds,
+  /// mirroring the per-round [RevealMap] built in [_RoundResultView].
+  ({List<RevealStar> stars, List<RevealDot> dots}) _revealLayers() {
+    final stars = <RevealStar>[];
+    final dots = <RevealDot>[];
+    for (final r in session.rounds) {
+      final round = r.round;
+      stars.add(
+        RevealStar(
+          round.targetCapitalLngLat,
+          color: r.solved ? FlitColors.gold : FlitColors.error,
+        ),
+      );
+      for (final c in round.clues) {
+        dots.add(RevealDot(c.capitalLngLat, color: FlitColors.accent));
+      }
+      for (final g in r.wrongGuesses) {
+        dots.add(
+          RevealDot(
+            g.capitalLngLat,
+            color: FlitColors.error,
+            lineTo: round.targetCapitalLngLat,
+          ),
+        );
+      }
+    }
+    return (stars: stars, dots: dots);
+  }
+
+  /// Per-round emoji + solved indicator, matching [_roundRow]'s squares
+  /// (proximity emojis for each wrong guess, then a check or cross).
+  static String _roundEmojiSquares(TriangulationRoundState state) {
+    final squares = StringBuffer();
+    for (final g in state.guesses.where((g) => !g.isCorrect)) {
+      squares.write(proximityEmoji(g.distanceKm));
+    }
+    squares.write(state.solved ? '✅' : '❌');
+    return squares.toString();
+  }
+
+  /// Per-round rows for the detailed report card: emoji squares + named
+  /// target + score, with the round's split time shown muted alongside.
+  /// Only built for the detailed variant — naming targets would spoil a
+  /// daily's answers if included in the anonymous card.
+  List<ReportRow> _reportRows() => [
+        for (final r in session.rounds)
+          ReportRow(
+            _roundEmojiSquares(r),
+            isCapitalTarget
+                ? r.round.targetCapitalName
+                : r.round.targetCountryName,
+            '${DailyResult.formatScore(r.score)} pts',
+            time: DailyResult.formatTime(r.elapsedMs),
+          ),
+      ];
+
   Future<void> _saveImage() async {
     if (_savingImage) return;
-    setState(() => _savingImage = true);
+    final variant = await showShareVariantSheet(
+      context,
+      detailedSpoilerNote: 'reveals the target map and the countries',
+    );
+    if (variant == null || !mounted) return;
+    setState(() {
+      _shareVariant = variant;
+      _savingImage = true;
+    });
     try {
+      // Let the card rebuild in the chosen variant before capturing it.
+      await WidgetsBinding.instance.endOfFrame;
       final png = await captureReportPng(_reportKey);
       if (png == null || !mounted) return;
+      final suffix = variant == ShareVariant.detailed ? 'detail' : 'anon';
       await shareReportImage(
         context,
         png: png,
         filename: isDaily
-            ? 'flit-recon-day${widget.dayNumber ?? 0}.png'
-            : 'flit-recon.png',
+            ? 'flit-recon-day${widget.dayNumber ?? 0}-$suffix.png'
+            : 'flit-recon-$suffix.png',
         fallbackText: shareText,
       );
     } finally {
@@ -869,6 +953,9 @@ class _SummaryViewState extends State<_SummaryView> {
   }
 
   Widget _buildReportCard() {
+    final detailed = _shareVariant == ShareVariant.detailed;
+    final layers = _revealLayers();
+    final difficulty = detailed ? (widget.difficultyLabel ?? '') : '';
     return RepaintBoundary(
       key: _reportKey,
       child: MissionReportCard(
@@ -876,9 +963,14 @@ class _SummaryViewState extends State<_SummaryView> {
         subtitle: [
           if (widget.dayNumber != null) 'Day ${widget.dayNumber}',
           '${isCapitalTarget ? 'capital' : 'country'} targets',
+          if (difficulty.isNotEmpty) difficulty,
         ].join(' · '),
         score: session.totalScore,
         emojiGrid: triangulationEmojiGrid(session),
+        // The detailed variant additionally names every target; the
+        // anonymous variant leaves rows empty so only the spoiler-free
+        // emoji grid shows.
+        rows: detailed ? _reportRows() : const [],
         stats: [
           ReportStat(
             'SOLVED',
@@ -887,6 +979,12 @@ class _SummaryViewState extends State<_SummaryView> {
           ReportStat('TIME', DailyResult.formatTime(session.totalTimeMs)),
           if (coinsEarned > 0) ReportStat('COINS', '+$coinsEarned'),
         ],
+        // The detailed variant reveals the answer map (targets + clues +
+        // wrong guesses); the anonymous variant omits it so a daily's
+        // answers stay secret.
+        map: detailed && layers.stars.isNotEmpty
+            ? RevealMapThumbnail(stars: layers.stars, dots: layers.dots)
+            : null,
       ),
     );
   }

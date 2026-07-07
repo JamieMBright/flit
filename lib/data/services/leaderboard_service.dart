@@ -839,6 +839,80 @@ class LeaderboardService {
     }
   }
 
+  /// Compute the signed-in user's combined-daily result over the *full* field
+  /// of players — not just the top slice returned by
+  /// [fetchCombinedDailyLeaderboard], where a low-ranked self can be dropped
+  /// by the `limit`. This guarantees the current user's own combined entry is
+  /// available for the shareable card even when they rank outside the top 50.
+  ///
+  /// Returns null when signed out or when the user has no daily-region scores
+  /// for the day. The returned [LeaderboardEntry] mirrors the combined board's
+  /// convention: [LeaderboardEntry.score] holds the combined efficiency in
+  /// basis points, [LeaderboardEntry.combinedEfficiencyBps] the per-mode
+  /// breakdown, and [LeaderboardEntry.rank] the true rank across all players.
+  /// [totalPlayers] is the size of the full field that day.
+  Future<({LeaderboardEntry entry, int totalPlayers})?>
+      fetchOwnCombinedDailyScore({DateTime? dayUtc}) async {
+    final userId = _client.auth.currentUser?.id;
+    if (userId == null) return null;
+
+    final day = (dayUtc ?? DateTime.now()).toUtc();
+    final startOfDay = DateTime.utc(day.year, day.month, day.day);
+    final endOfDay = startOfDay.add(const Duration(days: 1));
+
+    try {
+      final data = await withNetworkTimeout(
+        _client
+            .from('scores')
+            .select('score, region, user_id')
+            .inFilter('region', kCombinedDailyRegions)
+            .gte('created_at', startOfDay.toIso8601String())
+            .lt('created_at', endOfDay.toIso8601String())
+            .order('created_at', ascending: true)
+            .limit(5000),
+        label: 'fetchOwnCombinedDailyScore',
+      );
+
+      // Rank over the *entire* field so self's rank is authoritative.
+      final combined = computeCombinedDailyScores(
+        data.map(
+          (r) => CombinedScoreRow(
+            userId: r['user_id'] as String,
+            region: r['region'] as String? ?? '',
+            score: r['score'] as int? ?? 0,
+          ),
+        ),
+      );
+
+      CombinedDailyScore? self;
+      for (final c in combined) {
+        if (c.userId == userId) {
+          self = c;
+          break;
+        }
+      }
+      if (self == null) return null;
+
+      final profiles = await _fetchProfiles([userId]);
+      return (
+        entry: LeaderboardEntry(
+          rank: self.rank,
+          playerId: userId,
+          playerName: profiles[userId]?['username'] as String? ?? 'You',
+          time: Duration.zero,
+          score: self.combinedBps,
+          avatarUrl: profiles[userId]?['avatar_url'] as String?,
+          level: profiles[userId]?['level'] as int?,
+          combinedEfficiencyBps: self.modeEfficiencyBps,
+        ),
+        totalPlayers: combined.length,
+      );
+    } catch (e) {
+      debugPrint('[LeaderboardService] fetchOwnCombinedDailyScore failed: $e');
+      return null;
+    }
+  }
+
   /// Fetch the user's best score for daily scramble and training flight.
   ///
   /// Returns `{daily: {score, time_ms}, training: {score, time_ms}}`.

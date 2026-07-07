@@ -16,6 +16,7 @@ import '../../core/utils/math_utils.dart';
 import '../../core/utils/report_capture.dart';
 import '../../core/widgets/mission_report_card.dart';
 import '../../core/widgets/reveal_map.dart';
+import '../../core/widgets/share_variant_sheet.dart';
 import '../../core/utils/game_log.dart';
 import '../../core/utils/web_error_bridge.dart';
 import '../../core/widgets/consumable_widgets.dart';
@@ -2596,6 +2597,12 @@ class _ResultDialogState extends ConsumerState<_ResultDialog> {
   final GlobalKey _reportKey = GlobalKey();
   bool _savingImage = false;
 
+  /// Which share-image flavour the report card renders. Dailies default to
+  /// anonymous (spoiler-free, no answer map); other sessions default to the
+  /// full detailed card (their map was always shown).
+  late ShareVariant _shareVariant =
+      widget.isDailyChallenge ? ShareVariant.anonymous : ShareVariant.detailed;
+
   bool get _isMultiRound => widget.totalRounds > 1;
 
   /// Mode title for the mission report card, mirroring the mode naming
@@ -2706,14 +2713,25 @@ class _ResultDialogState extends ConsumerState<_ResultDialog> {
 
   Future<void> _saveImage() async {
     if (_savingImage) return;
-    setState(() => _savingImage = true);
+    final variant = await showShareVariantSheet(
+      context,
+      detailedSpoilerNote: 'reveals the flight path and the countries you flew',
+    );
+    if (variant == null || !mounted) return;
+    setState(() {
+      _shareVariant = variant;
+      _savingImage = true;
+    });
     try {
+      // Let the card rebuild in the chosen variant before capturing it.
+      await WidgetsBinding.instance.endOfFrame;
       final png = await captureReportPng(_reportKey);
       if (png == null || !mounted) return;
+      final suffix = variant == ShareVariant.detailed ? 'detail' : 'anon';
       await shareReportImage(
         context,
         png: png,
-        filename: 'flit-flight-report.png',
+        filename: 'flit-flight-report-$suffix.png',
         fallbackText: widget.dailyResult?.toShareText() ?? _fallbackShareText,
       );
     } finally {
@@ -2737,18 +2755,31 @@ class _ResultDialogState extends ConsumerState<_ResultDialog> {
       : (10000 * difficultyMultiplier(r.countryCode)).round();
 
   /// Per-clue rows for the report card: emoji + country + split time +
-  /// efficiency. The daily challenge hides country names (a shared card must
-  /// not spoil the day's answers) — rounds are numbered instead. Each round's
-  /// split time sits muted just left of its efficiency %.
-  List<ReportRow> _reportRows() => [
+  /// efficiency. The anonymous variant numbers the rounds (a spoiler-free
+  /// card must not reveal the day's answers); the detailed variant names the
+  /// countries. Each round's split time sits muted left of its efficiency %.
+  List<ReportRow> _reportRows({required bool detailed}) => [
         for (final (i, r) in widget.roundResults.indexed)
           ReportRow(
             _roundEmoji(r),
-            widget.isDailyChallenge ? 'Round ${i + 1}' : r.countryName,
+            detailed ? r.countryName : 'Round ${i + 1}',
             '${(r.score / _roundMax(r) * 100).clamp(0, 100).round()}%',
             time: _formatTime(r.elapsed),
           ),
       ];
+
+  /// Flight-themed difficulty label for the detailed card, averaged over the
+  /// round targets (e.g. "Crosswinds"). Empty when no coded rounds exist.
+  String _difficultyLabel() {
+    final coded =
+        widget.roundResults.where((r) => r.countryCode.isNotEmpty).toList();
+    if (coded.isEmpty) return '';
+    final avg = coded
+            .map((r) => countryDifficultyRating(r.countryCode))
+            .reduce((a, b) => a + b) /
+        coded.length;
+    return difficultyLabel(avg);
+  }
 
   /// Overall efficiency: total score over difficulty-weighted maximum,
   /// mirroring DailyResult.proficiencyPercent.
@@ -2764,6 +2795,7 @@ class _ResultDialogState extends ConsumerState<_ResultDialog> {
   }
 
   Widget _buildReportCard() {
+    final detailed = _shareVariant == ShareVariant.detailed;
     final layers = _revealLayers();
     final displayTime =
         _isMultiRound ? widget.cumulativeTime : widget.session.elapsed;
@@ -2771,6 +2803,7 @@ class _ResultDialogState extends ConsumerState<_ResultDialog> {
     final coins = widget.coinReward > 0
         ? widget.coinReward
         : widget.freeFlightCoinsEarned;
+    final difficulty = detailed ? _difficultyLabel() : '';
     return RepaintBoundary(
       key: _reportKey,
       child: MissionReportCard(
@@ -2779,9 +2812,10 @@ class _ResultDialogState extends ConsumerState<_ResultDialog> {
           if (widget.challengeFriendName != null)
             'vs ${widget.challengeFriendName}',
           if (!_isMultiRound) widget.session.targetName,
+          if (difficulty.isNotEmpty) difficulty,
         ].join(' · '),
         score: _isMultiRound ? widget.totalScore : widget.session.score,
-        rows: _reportRows(),
+        rows: _reportRows(detailed: detailed),
         stats: [
           ReportStat(
             'ROUNDS',
@@ -2793,10 +2827,9 @@ class _ResultDialogState extends ConsumerState<_ResultDialog> {
           ReportStat('TIME', _formatTime(displayTime)),
           if (coins > 0) ReportStat('COINS', '+$coins'),
         ],
-        // Spoiler rule: the daily challenge is one-attempt-per-day, so the
-        // downloadable card never includes the answer map for it. Other
-        // session types (training, free flight, dogfight) can show it.
-        map: !widget.isDailyChallenge && layers.stars.isNotEmpty
+        // The detailed variant reveals the answer map (flight path + targets);
+        // the anonymous variant omits it so a daily's answers stay secret.
+        map: detailed && layers.stars.isNotEmpty
             ? RevealMapThumbnail(
                 stars: layers.stars,
                 paths: layers.paths,
