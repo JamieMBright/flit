@@ -83,6 +83,7 @@ flutter:
 
   # Texture, audio, and image assets
   assets:
+    - assets/data/country_stats.json
     - assets/images/flags/
     - assets/textures/
     - assets/audio/music/

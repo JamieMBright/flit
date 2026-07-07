@@ -8,6 +8,7 @@ import '../data/uk_clues.dart';
 import '../data/us_state_clues.dart';
 import '../map/country_data.dart';
 import '../map/region.dart';
+import 'country_stats_data.dart';
 
 /// Types of clues that can be shown to the player.
 enum ClueType {
@@ -3566,6 +3567,19 @@ class Clue {
 
     // Build a mutable copy so we can swap in a random celebrity.
     final stats = Map<String, dynamic>.from(countryStats);
+
+    // Merge runtime overrides (headOfState/population) refreshed weekly from
+    // Wikidata into assets/data/country_stats.json. JSON wins when present.
+    // When the override asset never loaded (offline/tests/failure), this is a
+    // no-op and the baked-in Dart baseline is used unchanged. This only ever
+    // changes stat *text* — never the deterministic clue-type selection.
+    final overrides = CountryStats.instance.overridesFor(code);
+    if (overrides != null) {
+      for (final entry in overrides.entries) {
+        if (entry.value.isNotEmpty) stats[entry.key] = entry.value;
+      }
+    }
+
     final pool = celebrityPool[code];
     if (pool != null && pool.isNotEmpty) {
       final rng = random ?? Random();

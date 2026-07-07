@@ -1,0 +1,88 @@
+name: Refresh Country Data
+
+on:
+  schedule:
+    # Weekly, Mondays at 06:00 UTC.
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+    # Allow manual triggering from the Actions tab.
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  refresh-country-data:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Refresh country stats from Wikidata
+        env:
+          # Wikidata asks for a descriptive User-Agent identifying the bot.
+          WDQS_USER_AGENT: >-
+            FlitCountryDataBot/1.0
+            (https://github.com/JamieMBright/flit; country-stats weekly refresh)
+            Python-urllib
+        run: |
+          set -euo pipefail
+          python3 scripts/refresh_country_data.py
+
+      - name: Bail if nothing changed
+        id: diff
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- assets/data/country_stats.json; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "No changes to country_stats.json — skipping PR."
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "country_stats.json changed — will open a review PR."
+          fi
+
+      - name: Create review pull request
+        if: steps.diff.outputs.changed == 'true'
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ github.token }}
+          branch: chore/refresh-country-data
+          base: main
+          delete-branch: true
+          add-paths: assets/data/country_stats.json
+          commit-message: "chore: refresh country stats (head of state / population) from Wikidata"
+          title: "chore: weekly country-data refresh (REVIEW factual accuracy)"
+          body: |
+            ## Weekly country-data refresh
+
+            This PR was opened automatically by the **Refresh Country Data**
+            workflow. It updates only the `headOfState` and `population` fields
+            in `assets/data/country_stats.json`, sourced from
+            [Wikidata](https://www.wikidata.org/) (CC0).
+
+            **⚠️ Review factual accuracy before merging — do NOT auto-merge.**
+
+            Wikidata is community-edited and can contain transient vandalism or
+            stale entries. A human must sanity-check each changed leader /
+            population value against the diff before this lands on `main`.
+
+            Guardrails already applied by the refresh script:
+            - Aborts entirely if Wikidata returns an implausibly small result set.
+            - Never introduces new ISO codes (only updates existing countries).
+            - Missing leader → keeps the previous value (never blanks a field).
+            - Population accepted only within a sane range, then reformatted to
+              the game's `"331M"` / `"38K"` convention.
+
+            The baked-in Dart baseline in `lib/game/clues/clue_types.dart` stays
+            the offline fallback, so merging this only changes displayed stat
+            *text* — never gameplay or daily target selection.
+          labels: |
+            data-refresh
+            needs-review
