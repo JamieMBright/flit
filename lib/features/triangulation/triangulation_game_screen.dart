@@ -289,21 +289,39 @@ class _TriangulationGameScreenState
     // (region 'daily_triangulation') and award the completion coins.
     // Solving at least one round counts as completing the daily.
     await ref.read(accountProvider.notifier).recordGameCompletion(
-          elapsed: Duration(milliseconds: _session.totalTimeMs),
-          score: _session.totalScore,
-          roundsCompleted: _session.solvedRounds,
-          coinReward: _session.solvedRounds > 0 ? widget.coinReward : 0,
-          region: 'daily_triangulation',
-          roundEmojis: _session.rounds
-              .map(
-                (r) =>
-                    r.wrongGuesses
-                        .map((g) => proximityEmoji(g.distanceKm))
-                        .join() +
-                    (r.solved ? '✅' : '❌'),
-              )
-              .join(' '),
-        );
+      elapsed: Duration(milliseconds: _session.totalTimeMs),
+      score: _session.totalScore,
+      roundsCompleted: _session.solvedRounds,
+      coinReward: _session.solvedRounds > 0 ? widget.coinReward : 0,
+      region: 'daily_triangulation',
+      // One colour circle per round, using the same codepoints the
+      // leaderboard recognises (green solved-clean → red unsolved), so
+      // Recon rows light up like Scramble instead of rendering grey.
+      roundEmojis: _session.rounds.map((r) {
+        if (!r.solved) return '\u{1F534}'; // red — not solved
+        final wrong = r.wrongGuesses.length;
+        if (wrong == 0) return '\u{1F7E2}'; // green — clean solve
+        if (wrong <= 2) return '\u{1F7E1}'; // yellow — a couple of misses
+        return '\u{1F7E0}'; // orange — many misses
+      }).join(),
+      // Per-round detail so the leaderboard "round breakdown" sheet shows
+      // real cards instead of "Detailed clue data is not available", and
+      // difficulty%/proficiency% resolve on the row (mirrors Scramble's
+      // roundDetails shape).
+      roundDetails: [
+        for (final r in _session.rounds)
+          {
+            'country_name': r.round.targetCountryName,
+            'country_code': r.round.targetCountryCode,
+            'clue_type': 'bearings',
+            'time_ms': r.elapsedMs,
+            'score': r.score,
+            'raw_score': r.score,
+            'hints_used': r.hintUsed ? 1 : 0,
+            'completed': r.solved,
+          },
+      ],
+    );
   }
 
   String get _shareText => buildTriangulationShareText(

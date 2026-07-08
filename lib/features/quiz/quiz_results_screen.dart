@@ -218,12 +218,17 @@ class _QuizResultsScreenState extends ConsumerState<QuizResultsScreen>
 
       // 2. Shared scores table with region = 'briefing' for the leaderboard.
       //    Server-authoritative submit_score RPC (with direct-insert fallback).
+      //    Include the per-question emoji row + details so briefing entries
+      //    show circles (and a real round breakdown + difficulty/proficiency)
+      //    on the leaderboard, instead of a bare info icon and empty popup.
       await ScoreSubmitter.submit(client, {
         'user_id': userId,
         'score': summary.totalScore,
         'time_ms': summary.elapsedMs,
         'region': 'briefing',
         'rounds_completed': summary.correctCount,
+        'round_emojis': summary.emojiRow,
+        'round_details': _briefingRoundDetails(summary),
       });
 
       LeaderboardService.instance.invalidateCache();
@@ -588,6 +593,40 @@ class _QuizResultsScreenState extends ConsumerState<QuizResultsScreen>
       ));
     }
     return rows;
+  }
+
+  /// Per-question detail for the leaderboard round-breakdown, mirroring the
+  /// Scramble `roundDetails` shape so the shared breakdown sheet renders real
+  /// cards (and the row resolves difficulty%/proficiency%).
+  List<Map<String, dynamic>> _briefingRoundDetails(QuizSummary summary) {
+    final areaNames = _regionAreaNames;
+    final details = <Map<String, dynamic>>[];
+    for (var i = 0; i < summary.totalQuestions; i++) {
+      final code = _questionCorrectCode(summary, i);
+      if (code == null) continue;
+      QuizAnswerResult? winning;
+      QuizAnswerResult? any;
+      for (final r in summary.results) {
+        if (r.questionIndex != i) continue;
+        any = r;
+        if (r.correct) {
+          winning = r;
+          break;
+        }
+      }
+      final res = winning ?? any;
+      details.add({
+        'country_name': areaNames[code] ?? code,
+        'country_code': code,
+        'clue_type': 'briefing',
+        'time_ms': res?.elapsedMs ?? 0,
+        'score': res?.points ?? 0,
+        'raw_score': res?.points ?? 0,
+        'hints_used': res?.hintCount ?? 0,
+        'completed': winning != null,
+      });
+    }
+    return details;
   }
 
   Widget _buildReportCard(QuizSummary summary) {

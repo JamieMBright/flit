@@ -50,7 +50,13 @@ class _DailyChallengeScreenState extends ConsumerState<DailyChallengeScreen> {
 
   // Licence bonuses always apply — no unlicensed/licensed split.
 
-  bool get _hasDoneToday => ref.watch(accountProvider).hasDoneDailyToday;
+  /// Server-checked completion (locks the daily across devices). OR'd with the
+  /// local flag so a genuine completion locks immediately even before the
+  /// server round-trip returns.
+  bool _serverCompletedToday = false;
+
+  bool get _hasDoneToday =>
+      ref.watch(accountProvider).hasDoneDailyToday || _serverCompletedToday;
 
   @override
   void initState() {
@@ -68,6 +74,7 @@ class _DailyChallengeScreenState extends ConsumerState<DailyChallengeScreen> {
         service.fetchHallOfFame(),
         service.fetchDailyPlayerCount(),
         EconomyConfigService.instance.getConfig(),
+        service.hasPlayedDailyToday('daily'),
       ]);
       if (mounted) {
         final config = results[3] as EconomyConfig;
@@ -76,6 +83,9 @@ class _DailyChallengeScreenState extends ConsumerState<DailyChallengeScreen> {
           _hallOfFame = results[1] as List<Map<String, dynamic>>;
           _dailyPlayerCount = results[2] as int;
           _economyConfig = config;
+          // Cross-device lock: if the server already has today's Scramble score
+          // for this user, show the completed banner even on a fresh device.
+          _serverCompletedToday = results[4] as bool;
           // Rebuild challenge with config-driven reward if available.
           _challenge = DailyChallenge.forToday(
             baseRewardOverride: config.earnings.dailyScrambleBaseReward,
