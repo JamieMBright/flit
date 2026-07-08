@@ -78,6 +78,31 @@ void main() {
       expect(s.questionEmoji(0), '\u{1F7E2}');
     });
 
+    test('proficiencyPercent weights clean/hinted/missed answers', () {
+      // 6 questions: 3 clean (1.0), 1 with ≤2 hints (0.7), 1 heavy hints
+      // (0.4), 1 missed (0.0) → (3 + 0.7 + 0.4) / 6 = 68.33 → 68%.
+      final s = summary([
+        result(correct: true, questionIndex: 0),
+        result(correct: true, questionIndex: 1),
+        result(correct: true, questionIndex: 2),
+        result(correct: true, questionIndex: 3, hintCount: 2),
+        result(correct: true, questionIndex: 4, hintCount: 5),
+        result(correct: false, questionIndex: 5),
+      ]);
+      expect(s.proficiencyPercent, 68);
+    });
+
+    test('proficiencyPercent is 100 only when every answer is clean', () {
+      final all = [
+        for (var i = 0; i < 6; i++) result(correct: true, questionIndex: i)
+      ];
+      expect(summary(all).proficiencyPercent, 100);
+      final none = summary([
+        for (var i = 0; i < 6; i++) result(correct: false, questionIndex: i)
+      ]);
+      expect(none.proficiencyPercent, 0);
+    });
+
     test('emojiRow covers every question slot in order', () {
       final s = summary([
         result(correct: true, questionIndex: 0),

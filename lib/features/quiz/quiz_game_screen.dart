@@ -268,6 +268,18 @@ class _QuizGameScreenState extends State<QuizGameScreen>
 
     if (_session.isFinished) {
       _timer?.cancel();
+      // The Daily Briefing finishes on the final tap, so the explore-mode
+      // branch (which waits for a manual "See Results" tap) would otherwise
+      // leave the player stranded and could reveal the answer map — a spoiler
+      // for a shared daily. Auto-advance straight to results instead. Explore
+      // mode stays for Flight School practice.
+      if (widget.dailyBriefingDateKey != null) {
+        Future.delayed(const Duration(milliseconds: 600), () {
+          if (!mounted) return;
+          _navigateToResults();
+        });
+        return;
+      }
       Future.delayed(const Duration(milliseconds: 600), () {
         if (!mounted) return;
         // Mark all areas as completed and enter explore mode.
