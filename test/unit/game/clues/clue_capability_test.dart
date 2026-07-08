@@ -32,8 +32,20 @@ void main() {
       expect(countProducible('borders'), greaterThanOrEqualTo(150));
     });
 
-    test('outline is producible for nearly every country (>= 210)', () {
-      expect(countProducible('outline'), greaterThanOrEqualTo(210));
+    test('outline is producible for most countries, blobs excluded', () {
+      // The outline quality bar is 50+ total vertices: below that a
+      // silhouette is a featureless blob (San Marino, Aruba, Malta …) that
+      // can't be identified, so those countries serve their other clue types
+      // instead. ~196 of the 218 playable countries clear the bar; keep a
+      // little slack for data refreshes.
+      expect(countProducible('outline'), greaterThanOrEqualTo(190));
+      // And the bar actually bites: the blob tier must NOT be producible.
+      expect(Clue.canProduceClueType('SM', 'outline'), isFalse); // 19 verts
+      expect(Clue.canProduceClueType('AW', 'outline'), isFalse); // 25 verts
+      expect(Clue.canProduceClueType('MT', 'outline'), isFalse); // 43 verts
+      // While simple-but-recognisable large countries stay in.
+      expect(Clue.canProduceClueType('SO', 'outline'), isTrue); // 71 verts
+      expect(Clue.canProduceClueType('LY', 'outline'), isTrue); // 105 verts
     });
 
     test('an unrecognised clue type is never producible', () {
