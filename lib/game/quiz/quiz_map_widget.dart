@@ -4,6 +4,7 @@ import 'package:flame/components.dart' hide Matrix4;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../core/theme/flit_theme.dart';
 import '../map/region.dart';
 
 /// State visual status during a quiz.
@@ -117,40 +118,52 @@ class _QuizMapWidgetState extends State<QuizMapWidget>
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        return AnimatedBuilder(
-          animation: Listenable.merge([_pulseController, _transformController]),
-          builder: (context, child) {
-            final scale = _transformController.value.getMaxScaleOnAxis();
-            return InteractiveViewer(
-              transformationController: _transformController,
-              minScale: 1.0,
-              maxScale: 20.0,
-              panEnabled: true,
-              scaleEnabled: true,
-              child: GestureDetector(
-                onTapDown: (details) =>
-                    _handleTap(details.localPosition, constraints.biggest),
-                child: CustomPaint(
-                  size: constraints.biggest,
-                  painter: _UsaMapPainter(
-                    stateVisuals: widget.stateVisuals,
-                    highlightCode: widget.highlightCode,
-                    pulseValue: _pulseController.value,
-                    showLabels: widget.showLabels,
-                    eliminatedCodes: widget.eliminatedCodes,
-                    correctCodes: widget.correctCodes,
-                    excludedCodes: widget.excludedCodes,
-                    zoomScale: scale,
-                    satelliteImage: _satelliteImage,
+    // Cap the canvas width on wide (desktop) screens. The painter sizes its
+    // AK/HI/NE insets as a fraction of canvas width, so an ultra-wide canvas
+    // made the northeast inset balloon past the canvas height and paint a
+    // full-screen zoomed-NE layer over the main map. Capping width keeps every
+    // inset (and the letterboxed main map) correctly proportioned. The tap
+    // hit-test reads the same constraints, so it stays consistent.
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: kMaxContentWidth),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return AnimatedBuilder(
+              animation:
+                  Listenable.merge([_pulseController, _transformController]),
+              builder: (context, child) {
+                final scale = _transformController.value.getMaxScaleOnAxis();
+                return InteractiveViewer(
+                  transformationController: _transformController,
+                  minScale: 1.0,
+                  maxScale: 20.0,
+                  panEnabled: true,
+                  scaleEnabled: true,
+                  child: GestureDetector(
+                    onTapDown: (details) =>
+                        _handleTap(details.localPosition, constraints.biggest),
+                    child: CustomPaint(
+                      size: constraints.biggest,
+                      painter: _UsaMapPainter(
+                        stateVisuals: widget.stateVisuals,
+                        highlightCode: widget.highlightCode,
+                        pulseValue: _pulseController.value,
+                        showLabels: widget.showLabels,
+                        eliminatedCodes: widget.eliminatedCodes,
+                        correctCodes: widget.correctCodes,
+                        excludedCodes: widget.excludedCodes,
+                        zoomScale: scale,
+                        satelliteImage: _satelliteImage,
+                      ),
+                    ),
                   ),
-                ),
-              ),
+                );
+              },
             );
           },
-        );
-      },
+        ),
+      ),
     );
   }
 
@@ -410,7 +423,9 @@ class _UsaMapPainter extends CustomPainter {
 
   Rect _akInsetRect(Size size) {
     final insetW = size.width * _insetSize;
-    final insetH = insetW * 0.75;
+    // Clamp height to the canvas so an unconstrained (very wide) parent can't
+    // push the inset taller than the map and overflow it.
+    final insetH = (insetW * 0.75).clamp(0.0, size.height * 0.5);
     final left = size.width * _insetPadding;
     final top = size.height - insetH - size.height * _insetPadding;
     return Rect.fromLTWH(left, top, insetW, insetH);
@@ -418,7 +433,7 @@ class _UsaMapPainter extends CustomPainter {
 
   Rect _hiInsetRect(Size size) {
     final insetW = size.width * _insetSize;
-    final insetH = insetW * 0.55;
+    final insetH = (insetW * 0.55).clamp(0.0, size.height * 0.5);
     final akRect = _akInsetRect(size);
     final left = akRect.right + size.width * _insetPadding;
     final top = size.height - insetH - size.height * _insetPadding;
