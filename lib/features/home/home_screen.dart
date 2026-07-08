@@ -468,6 +468,27 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              // ── PILOT TRAINING — the campaign, in its own bracket at the
+              // very top. Deliberately un-highlighted (neutral card) so it
+              // reads as the home base rather than a promoted daily. ──
+              const _SectionLabel(
+                icon: Icons.warehouse_rounded,
+                label: 'PILOT TRAINING',
+              ),
+              const SizedBox(height: 12),
+              _GameModeCard(
+                title: 'Pilot Training',
+                subtitle: 'Learn to fly — progressive campaign missions',
+                icon: Icons.warehouse_rounded,
+                isLocked: _isLocked('campaign'),
+                unlockHint: _lockHint('campaign'),
+                onTap: () => _closeSheetAndNavigate(
+                  ctx,
+                  const CampaignScreen(),
+                ),
+              ),
+              const SizedBox(height: 20),
+
               // ── BASIC TRAINING — the new-pilot funnel, front and centre ──
               if (!account.basicTrainingComplete) ...[
                 const _SectionLabel(
@@ -547,20 +568,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 label: 'FLIGHT DECK',
               ),
               const SizedBox(height: 12),
-              // Pilot Training (campaign) — always first for new players
-              _GameModeCard(
-                title: 'Pilot Training',
-                subtitle: 'Learn to fly — progressive campaign missions',
-                icon: Icons.military_tech_rounded,
-                isHighlighted: true,
-                isLocked: _isLocked('campaign'),
-                unlockHint: _lockHint('campaign'),
-                onTap: () => _closeSheetAndNavigate(
-                  ctx,
-                  const CampaignScreen(),
-                ),
-              ),
-              const SizedBox(height: 10),
               _GameModeCard(
                 title: 'Free Flight',
                 subtitle: 'Explore the world at your own pace',

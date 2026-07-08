@@ -52,6 +52,9 @@ class FlitGame extends FlameGame
     this.onAltitudeChanged,
     this.onError,
     this.onWaypointSet,
+    this.onKeyboardTurn,
+    this.onKeyboardSpeedChanged,
+    this.onKeyboardAltitudeToggle,
     this.fuelBoostMultiplier = 1.0,
     this.isChallenge = false,
     this.planeColorScheme,
@@ -82,6 +85,14 @@ class FlitGame extends FlameGame
 
   /// Called when the player taps the globe to set a waypoint.
   final VoidCallback? onWaypointSet;
+
+  /// Keyboard-input notifications for the tutorial. On-screen buttons notify
+  /// the tutorial overlay directly from `play_screen`; keyboard input is
+  /// handled inside the game loop, so these callbacks let a keyboard steer /
+  /// speed change / altitude toggle count as a valid tutorial attempt too.
+  final VoidCallback? onKeyboardTurn;
+  final VoidCallback? onKeyboardSpeedChanged;
+  final VoidCallback? onKeyboardAltitudeToggle;
 
   /// Called when the game loop hits an unrecoverable error.
   final void Function(Object error, StackTrace? stack)? onError;
@@ -1658,27 +1669,46 @@ class FlitGame extends FlameGame
       _keyTurnDir = dir;
     }
 
+    // A fresh press of a steering key counts as a tutorial turn attempt. Fire
+    // once on the key-down that starts a new direction (not on hold/repeat).
+    if (event is KeyDownEvent &&
+        dir != 0 &&
+        (event.logicalKey == LogicalKeyboardKey.arrowLeft ||
+            event.logicalKey == LogicalKeyboardKey.arrowRight ||
+            event.logicalKey == LogicalKeyboardKey.keyA ||
+            event.logicalKey == LogicalKeyboardKey.keyD)) {
+      onKeyboardTurn?.call();
+    }
+
     // Altitude toggle on key-down only (not hold).
     // Disabled in flat map mode — regional modes have no altitude concept.
     if (event is KeyDownEvent) {
+      // Altitude: Space / ArrowUp / ArrowDown, plus Ctrl (the classic descend
+      // key). Any of these toggles altitude and counts as a tutorial attempt.
       if (!isFlatMapMode &&
           (event.logicalKey == LogicalKeyboardKey.space ||
               event.logicalKey == LogicalKeyboardKey.arrowUp ||
-              event.logicalKey == LogicalKeyboardKey.arrowDown)) {
+              event.logicalKey == LogicalKeyboardKey.arrowDown ||
+              event.logicalKey == LogicalKeyboardKey.controlLeft ||
+              event.logicalKey == LogicalKeyboardKey.controlRight)) {
         _plane.toggleAltitude();
         AudioManager.instance.playSfx(SfxType.altitudeChange);
+        onKeyboardAltitudeToggle?.call();
       }
 
       // Speed controls: 1/2/3 keys (with or without ctrl)
       if (event.logicalKey == LogicalKeyboardKey.digit1 ||
           event.logicalKey == LogicalKeyboardKey.numpad1) {
         setFlightSpeed(FlightSpeed.slow);
+        onKeyboardSpeedChanged?.call();
       } else if (event.logicalKey == LogicalKeyboardKey.digit2 ||
           event.logicalKey == LogicalKeyboardKey.numpad2) {
         setFlightSpeed(FlightSpeed.medium);
+        onKeyboardSpeedChanged?.call();
       } else if (event.logicalKey == LogicalKeyboardKey.digit3 ||
           event.logicalKey == LogicalKeyboardKey.numpad3) {
         setFlightSpeed(FlightSpeed.fast);
+        onKeyboardSpeedChanged?.call();
       }
     }
 

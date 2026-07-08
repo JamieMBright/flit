@@ -422,12 +422,20 @@ class _FreeFlightSetupScreenState extends ConsumerState<FreeFlightSetupScreen> {
                       ),
                       padding: const EdgeInsets.symmetric(vertical: 8),
                     ),
-                    child: Text(
-                      'FULL · ${notifier.instantRefuelCost}c',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w800,
-                      ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'FULL · ${notifier.instantRefuelCost}',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        const SizedBox(width: 3),
+                        const Icon(Icons.monetization_on, size: 12),
+                      ],
                     ),
                   ),
                 ),
@@ -452,12 +460,20 @@ class _FreeFlightSetupScreenState extends ConsumerState<FreeFlightSetupScreen> {
                       ),
                       padding: const EdgeInsets.symmetric(vertical: 8),
                     ),
-                    child: Text(
-                      '+25% · ${notifier.fuelTopUpCost}c',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w800,
-                      ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          '+25% · ${notifier.fuelTopUpCost}',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        const SizedBox(width: 3),
+                        const Icon(Icons.monetization_on, size: 12),
+                      ],
                     ),
                   ),
                 ),
