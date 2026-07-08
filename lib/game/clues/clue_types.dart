@@ -495,8 +495,13 @@ class Clue {
         return true;
       case ClueType.outline:
         // Check if polygons/points exist and have enough vertices to be
-        // recognisable.  Countries with fewer than 10 total vertices look
-        // like generic rectangles and are impossible to identify by shape.
+        // recognisable. Below ~50 total vertices a silhouette is a featureless
+        // blob (San Marino 19, Aruba 25, Barbados 28, Malta 43 — unguessable
+        // ovals), while genuinely simple-but-recognisable large countries sit
+        // safely above it (Somalia 71, Libya 105). Countries failing the bar
+        // fall back to their other clue types via the capability filter —
+        // strictly better than serving an unidentifiable landmass.
+        const minOutlineVertices = 50;
         final polygons = clue.displayData['polygons'] as List?;
         final points = clue.displayData['points'] as List?;
         if (polygons != null && polygons.isNotEmpty) {
@@ -504,9 +509,9 @@ class Clue {
           for (final poly in polygons) {
             totalVertices += (poly as List).length;
           }
-          return totalVertices >= 10;
+          return totalVertices >= minOutlineVertices;
         }
-        if (points != null && points.length >= 10) return true;
+        if (points != null && points.length >= minOutlineVertices) return true;
         return false;
       case ClueType.borders:
         // Check if neighbors list exists and is not empty
