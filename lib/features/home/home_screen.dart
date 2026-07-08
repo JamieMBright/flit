@@ -47,6 +47,7 @@ import '../training/training_screen.dart';
 import '../../game/tutorial/mode_requirements.dart';
 import '../../game/tutorial/training_missions.dart';
 import 'announcement_banner.dart';
+import 'todays_dailies_strip.dart';
 
 /// Home screen with animated map background and menu overlay.
 class HomeScreen extends ConsumerStatefulWidget {
@@ -289,6 +290,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          // Today's dailies at a glance — the player's efficiency on each of
+          // the three dailies + combined, tappable for a result/share sheet.
+          // Hides itself until at least one daily has been played today.
+          const TodaysDailiesStrip(),
           // Pilot hangar card — license + equipped plane front and centre so
           // boosting (hot pump, rerolls, plane upgrades) is always one tap away.
           _HangarCard(
