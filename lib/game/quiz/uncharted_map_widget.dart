@@ -683,8 +683,11 @@ class _UnchartedMapPainter extends CustomPainter {
     canvas.restore();
   }
 
-  /// Minimum canvas diameter below which an area is considered "tiny".
-  static const double _tinyThreshold = 18.0;
+  /// On-screen diameter below which an area is considered "tiny" and keeps its
+  /// dashed marker instead of flipping to a solid polygon. Kept large (~2.5×
+  /// the old 18px) so small countries stay dashed — and trackable — well into
+  /// the zoom range. Matches QuizRegionMapWidget._tinyThreshold.
+  static const double _tinyThreshold = 46.0;
 
   /// Radius of the dashed circle marker for tiny areas.
   static const double _markerRadius = 10.0;

@@ -8,6 +8,15 @@ import 'flit_colors.dart';
 /// content column is constrained by this value.
 const double kMaxContentWidth = 560;
 
+/// Maximum width for map / playfield surfaces (quiz maps, the post-flight
+/// reveal map). Unlike menu content — which wants a phone-like column — a map
+/// is a visual playfield and should use the space it's given on desktop, so
+/// this cap is much more generous. It still bounds ultra-wide monitors so a
+/// 2:1 map can't become absurdly tall or an inset can't balloon; the map's own
+/// aspect ratio does the rest of the fitting within this width. Never hit on
+/// phones/tablets in portrait, so their layout is unchanged.
+const double kMaxMapWidth = 1000;
+
 /// Theme configuration for Flit.
 /// Pop art lo-fi realism with vintage atlas warmth.
 abstract final class FlitTheme {

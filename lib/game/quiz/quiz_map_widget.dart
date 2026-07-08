@@ -118,15 +118,15 @@ class _QuizMapWidgetState extends State<QuizMapWidget>
 
   @override
   Widget build(BuildContext context) {
-    // Cap the canvas width on wide (desktop) screens. The painter sizes its
-    // AK/HI/NE insets as a fraction of canvas width, so an ultra-wide canvas
-    // made the northeast inset balloon past the canvas height and paint a
-    // full-screen zoomed-NE layer over the main map. Capping width keeps every
-    // inset (and the letterboxed main map) correctly proportioned. The tap
-    // hit-test reads the same constraints, so it stays consistent.
+    // Let the map use the space it's given (a map is a playfield, not a
+    // phone-column menu) up to a generous cap. The painter sizes its AK/HI/NE
+    // insets as a fraction of canvas width and letterboxes the main map, so
+    // this cap keeps insets proportioned and the map from becoming absurd on
+    // ultra-wide monitors; the inset-height clamps below are the real overflow
+    // guard. The tap hit-test reads the same constraints, so it stays aligned.
     return Center(
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: kMaxContentWidth),
+        constraints: const BoxConstraints(maxWidth: kMaxMapWidth),
         child: LayoutBuilder(
           builder: (context, constraints) {
             return AnimatedBuilder(
@@ -472,7 +472,9 @@ class _UsaMapPainter extends CustomPainter {
 
   Rect _neInsetRect(Size size) {
     final insetW = size.width * 0.42;
-    final insetH = insetW * 0.75;
+    // Clamp height to the canvas so a wide/short canvas can't push the NE inset
+    // taller than the map and paint a full-screen zoomed-NE layer over it.
+    final insetH = (insetW * 0.75).clamp(0.0, size.height * 0.5);
     final right = size.width - size.width * _insetPadding;
     final top = size.height - insetH - size.height * _insetPadding;
     return Rect.fromLTWH(right - insetW, top, insetW, insetH);
