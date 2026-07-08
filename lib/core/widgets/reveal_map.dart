@@ -4,6 +4,7 @@ import 'package:flame/components.dart' show Vector2;
 import 'package:flutter/material.dart';
 
 import '../theme/flit_colors.dart';
+import '../theme/flit_theme.dart';
 import '../../game/map/country_data.dart';
 
 /// Post-round reveal map shared by all game modes: an equirectangular
@@ -195,26 +196,34 @@ class _RevealMapState extends State<RevealMap> {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(12),
-          child: Container(
-            color: FlitColors.backgroundMid,
-            child: AspectRatio(
-              aspectRatio: 2,
-              child: InteractiveViewer(
-                transformationController: _controller,
-                maxScale: 12,
-                child: CustomPaint(
-                  painter: _RevealMapPainter(
-                    targetLngLat: widget.targetLngLat,
-                    clueLngLats: widget.clueLngLats,
-                    guessLngLats: widget.guessLngLats,
-                    stars: widget.stars,
-                    dots: widget.dots,
-                    paths: widget.paths,
-                    startLngLat: widget.startLngLat,
-                    finishLngLat: widget.finishLngLat,
-                    zoom: _zoom,
+        // Cap the map width on wide (desktop) screens so the 2:1 world map
+        // doesn't stretch edge-to-edge and dwarf the rest of the result — it
+        // keeps the same phone-like column width as the surrounding UI.
+        Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: kMaxContentWidth),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Container(
+                color: FlitColors.backgroundMid,
+                child: AspectRatio(
+                  aspectRatio: 2,
+                  child: InteractiveViewer(
+                    transformationController: _controller,
+                    maxScale: 12,
+                    child: CustomPaint(
+                      painter: _RevealMapPainter(
+                        targetLngLat: widget.targetLngLat,
+                        clueLngLats: widget.clueLngLats,
+                        guessLngLats: widget.guessLngLats,
+                        stars: widget.stars,
+                        dots: widget.dots,
+                        paths: widget.paths,
+                        startLngLat: widget.startLngLat,
+                        finishLngLat: widget.finishLngLat,
+                        zoom: _zoom,
+                      ),
+                    ),
                   ),
                 ),
               ),

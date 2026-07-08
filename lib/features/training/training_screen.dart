@@ -1006,7 +1006,7 @@ class _TrainingMissionCard extends StatelessWidget {
                             ),
                             Text(
                               '+${mission.xpReward} XP · '
-                              '+${mission.coinReward}c',
+                              '+${mission.coinReward} coins',
                               style: const TextStyle(
                                 color: FlitColors.gold,
                                 fontSize: 11,

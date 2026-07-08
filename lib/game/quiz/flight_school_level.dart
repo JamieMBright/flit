@@ -32,6 +32,19 @@ class FlightSchoolLevel {
 
   /// Whether this level supports rich US-specific categories.
   bool get hasRichClues => region == GameRegion.usStates;
+
+  /// Whether this level quizzes sovereign countries (vs sub-national
+  /// divisions like US states or French régions). The Daily Briefing draws
+  /// ONLY from country-level regions so a daily can never ask for a US state;
+  /// sub-national levels stay available in Flight School practice.
+  bool get isCountryLevel => const {
+        GameRegion.europe,
+        GameRegion.africa,
+        GameRegion.asia,
+        GameRegion.latinAmerica,
+        GameRegion.oceania,
+        GameRegion.caribbean,
+      }.contains(region);
 }
 
 /// Progress data for a single flight school level.

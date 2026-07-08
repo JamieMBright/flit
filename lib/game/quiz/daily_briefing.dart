@@ -167,17 +167,23 @@ class DailyBriefing {
   // ---------------------------------------------------------------------------
 
   /// Seeded weighted pick from the flight school levels.
+  ///
+  /// The daily draws ONLY from country-level regions (Europe, Africa, Asia,
+  /// Latin America, Oceania, Caribbean) — never sub-national levels like US
+  /// states or French régions — so a daily can't ask for e.g. "Annapolis →
+  /// Maryland". Sub-national levels remain playable in Flight School practice.
   static FlightSchoolLevel _pickLevel(Random rng) {
-    final totalWeight = flightSchoolLevels.fold<int>(
+    final pool = flightSchoolLevels.where((l) => l.isCountryLevel).toList();
+    final totalWeight = pool.fold<int>(
       0,
       (sum, l) => sum + (_levelWeights[l.id] ?? 1),
     );
     var roll = rng.nextInt(totalWeight);
-    for (final level in flightSchoolLevels) {
+    for (final level in pool) {
       roll -= _levelWeights[level.id] ?? 1;
       if (roll < 0) return level;
     }
-    return flightSchoolLevels.first;
+    return pool.first;
   }
 
   /// Number of blind (label-free) name questions for a region tier

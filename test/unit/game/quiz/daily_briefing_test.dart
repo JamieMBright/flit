@@ -244,24 +244,33 @@ void main() {
       }
     });
 
-    test('niche regions stay rare, well-known regions rotate', () {
-      const niche = {
+    test('daily only ever picks country-level regions, and rotates them', () {
+      // The daily must never surface a sub-national level (US states, French
+      // régions, etc.) — those made dailies too hard and confusing
+      // ("Capital: Annapolis → Maryland"). It draws only from country-level
+      // regions and still varies across the year.
+      const subNational = {
+        'us_states',
+        'france',
+        'germany',
+        'mexico',
         'uk_counties',
         'ireland',
         'canada',
-        'oceania',
-        'caribbean'
+        'india',
+        'brazil',
+        'australia',
       };
-      var nicheDays = 0;
       final seen = <String>{};
       for (final date in dates(365)) {
         final briefing = DailyBriefing.forDate(date);
         seen.add(briefing.level.id);
-        if (niche.contains(briefing.level.id)) nicheDays++;
+        expect(briefing.level.isCountryLevel, isTrue,
+            reason: '${briefing.level.id} is not country-level');
+        expect(subNational.contains(briefing.level.id), isFalse,
+            reason: '${briefing.level.id} must never appear in a daily');
       }
-      // Weighted at 5/33 (~15%); allow slack but stay near ~1 day in 7.
-      expect(nicheDays / 365, lessThan(0.25));
-      // The rotation genuinely varies regions.
+      // The rotation genuinely varies regions across the six country tiers.
       expect(seen.length, greaterThanOrEqualTo(4));
     });
   });

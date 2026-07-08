@@ -4,6 +4,7 @@ import 'package:flame/components.dart' hide Matrix4;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../core/theme/flit_theme.dart';
 import '../map/region.dart';
 import 'border_smoothing.dart';
 import 'quiz_map_widget.dart';
@@ -80,41 +81,49 @@ class _QuizRegionMapWidgetState extends State<QuizRegionMapWidget>
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        return AnimatedBuilder(
-          animation: Listenable.merge([_pulseController, _transformController]),
-          builder: (context, child) {
-            final scale = _transformController.value.getMaxScaleOnAxis();
-            return InteractiveViewer(
-              transformationController: _transformController,
-              minScale: 1.0,
-              maxScale: 20.0,
-              panEnabled: true,
-              scaleEnabled: true,
-              child: GestureDetector(
-                onTapDown: (details) =>
-                    _handleTap(details.localPosition, constraints.biggest),
-                child: CustomPaint(
-                  size: constraints.biggest,
-                  painter: _RegionMapPainter(
-                    region: widget.region,
-                    stateVisuals: widget.stateVisuals,
-                    highlightCode: widget.highlightCode,
-                    pulseValue: _pulseController.value,
-                    showLabels: widget.showLabels,
-                    eliminatedCodes: widget.eliminatedCodes,
-                    correctCodes: widget.correctCodes,
-                    excludedCodes: widget.excludedCodes,
-                    zoomScale: scale,
-                    satelliteImage: _satelliteImage,
+    // Cap the canvas width on wide (desktop) screens so the region map keeps a
+    // phone-like column and stays centred, matching QuizMapWidget.
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: kMaxContentWidth),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return AnimatedBuilder(
+              animation:
+                  Listenable.merge([_pulseController, _transformController]),
+              builder: (context, child) {
+                final scale = _transformController.value.getMaxScaleOnAxis();
+                return InteractiveViewer(
+                  transformationController: _transformController,
+                  minScale: 1.0,
+                  maxScale: 20.0,
+                  panEnabled: true,
+                  scaleEnabled: true,
+                  child: GestureDetector(
+                    onTapDown: (details) =>
+                        _handleTap(details.localPosition, constraints.biggest),
+                    child: CustomPaint(
+                      size: constraints.biggest,
+                      painter: _RegionMapPainter(
+                        region: widget.region,
+                        stateVisuals: widget.stateVisuals,
+                        highlightCode: widget.highlightCode,
+                        pulseValue: _pulseController.value,
+                        showLabels: widget.showLabels,
+                        eliminatedCodes: widget.eliminatedCodes,
+                        correctCodes: widget.correctCodes,
+                        excludedCodes: widget.excludedCodes,
+                        zoomScale: scale,
+                        satelliteImage: _satelliteImage,
+                      ),
+                    ),
                   ),
-                ),
-              ),
+                );
+              },
             );
           },
-        );
-      },
+        ),
+      ),
     );
   }
 

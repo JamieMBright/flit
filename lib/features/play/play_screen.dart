@@ -207,10 +207,6 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
   Duration _cumulativeTime = Duration.zero;
   bool _isHighAltitude = true;
   bool _gameReady = false;
-
-  /// Once true, the DescentMapView stays mounted even at high altitude so
-  /// in-flight tile requests are not aborted (avoiding ClientException spam).
-  bool _descentMapMounted = false;
   String? _error;
 
   /// Safety timeout — if the game engine hasn't signalled ready after 20s,
@@ -325,6 +321,13 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
         onAltitudeChanged: _onAltitudeChanged,
         onError: _onGameError,
         onWaypointSet: () => _tutorialKey.currentState?.onWaypointSet(),
+        // Keyboard input must advance the tutorial exactly like the on-screen
+        // buttons do — steer, speed (1/2/3) and altitude (Space/arrows/Ctrl).
+        onKeyboardTurn: () => _tutorialKey.currentState?.onTurnPressed(),
+        onKeyboardSpeedChanged: () =>
+            _tutorialKey.currentState?.onSpeedChanged(),
+        onKeyboardAltitudeToggle: () =>
+            _tutorialKey.currentState?.onAltitudeToggled(),
         isChallenge: widget.challengeFriendName != null,
         fuelBoostMultiplier: widget.fuelBoostMultiplier,
         planeColorScheme: widget.planeColorScheme,
@@ -445,7 +448,6 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
     if (mounted) {
       setState(() {
         _isHighAltitude = isHigh;
-        if (!isHigh) _descentMapMounted = true;
       });
       // Descending far from the target is the "wrong region" moment —
       // fire the mission-authored coach tip (campaign only; one-shot).
@@ -459,6 +461,10 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
   /// Each hint costs a small amount of fuel.
   void _useHint() {
     if (_session == null || _hintTier >= 4) return;
+    // Never surface clues/hints during the interactive tutorial — clues are
+    // introduced only after it completes, so an auto-hint or stray tap must
+    // not leak an unrelated clue card into the HUD mid-lesson.
+    if (_tutorialActive) return;
 
     // Deduct fuel for using a hint. If tank is empty, abort.
     if (!_game.useHintFuel()) return;
@@ -1951,34 +1957,13 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
                     tileUrl: GameSettings.instance.mapTileUrl,
                   ),
                 ),
-              )
-            // Globe mode — OSM tile map shown during descent transition.
-            // Crossfades with the globe shader between altitude 0.6→0.0.
-            // Once mounted, stays in the tree to avoid aborting in-flight
-            // tile requests on ascent (which caused ClientException spam).
-            else if (_gameReady &&
-                _session != null &&
-                (_game.plane.continuousAltitude < 0.6 || _descentMapMounted))
-              Positioned.fill(
-                child: Visibility(
-                  visible: _game.plane.continuousAltitude < 0.6,
-                  maintainState: true, // Keep alive to preserve tile cache
-                  child: Opacity(
-                    opacity: (1.0 - _game.plane.continuousAltitude / 0.6)
-                        .clamp(0.0, 1.0),
-                    child: RepaintBoundary(
-                      child: DescentMapView(
-                        centerLng: _game.worldPosition.x,
-                        centerLat: _game.worldPosition.y,
-                        heading: _game.cameraHeadingBearing,
-                        altitudeTransition: _game.plane.continuousAltitude,
-                        tileUrl: GameSettings.instance.mapTileUrl,
-                        trackPlane: true,
-                      ),
-                    ),
-                  ),
-                ),
               ),
+            // NOTE: The globe-descent OSM tile overlay was removed — animating
+            // flutter_map network tiles with per-frame rotation/zoom could not
+            // hold 60fps and made descent feel jerky. Descending now simply
+            // zooms the globe shader (smooth), and the altitude toggle + its
+            // tutorial steps are unaffected. The flat-map DescentMapView above
+            // (Uncharted / Flight School) is static and stays.
 
             // Game canvas – use builders to avoid white flash during init.
             // In descent mode the background is transparent so the OSM map
@@ -2053,7 +2038,11 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
               GameHud(
                 isHighAltitude: _isHighAltitude,
                 elapsedTime: _elapsed,
-                currentClue: _currentClue,
+                // Suppress the clue card entirely while the interactive
+                // tutorial runs — clues are introduced only after it completes
+                // (via the 'firstClue' coach tip), so nothing unrelated shows
+                // in the top corner mid-lesson.
+                currentClue: _tutorialActive ? null : _currentClue,
                 onAltitudeToggle: _game.isFlatMapMode
                     ? null
                     : () {
