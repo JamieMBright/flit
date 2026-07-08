@@ -357,6 +357,15 @@ class UserPreferencesService {
   ///
   /// Returns a [UserPreferencesSnapshot] containing the full state, or null if
   /// the user has no saved data yet (first login).
+  /// Parse a server row's `updated_at` (TIMESTAMPTZ ISO string) into a
+  /// DateTime for stale-write comparison. `millisecondsSinceEpoch` is absolute,
+  /// so it lines up with the queue's enqueue timestamps regardless of zone.
+  DateTime? _parseServerUpdatedAt(Map<String, dynamic>? row) {
+    final raw = row?['updated_at'];
+    if (raw is String) return DateTime.tryParse(raw);
+    return null;
+  }
+
   Future<UserPreferencesSnapshot?> load(String userId) async {
     _userId = userId;
     if (_userId == null) return null;
@@ -390,6 +399,23 @@ class UserPreferencesService {
       // additive migrations (e.g. completed_mission_ids) are applied.
       if (accountData != null) {
         _knownAccountColumns = accountData.keys.toSet();
+      }
+
+      // Cross-device stale-write guard (data-loss fix). retryPendingWrites()
+      // replays queued full-row account_state/profiles upserts with NO
+      // timestamp check, so a stale write left in this device's offline queue
+      // by a PRIOR session replays on the next launch and clobbers newer state
+      // written from another device — rolling back purchases, equips and
+      // license. Drop any queued writes for these tables that predate the
+      // server's current row (which was written by the other device), so only
+      // genuinely-newer offline writes survive to replay.
+      final profileUpdatedAt = _parseServerUpdatedAt(profileData);
+      if (profileUpdatedAt != null) {
+        await _queue.purgeTableOlderThan('profiles', profileUpdatedAt);
+      }
+      final accountUpdatedAt = _parseServerUpdatedAt(accountData);
+      if (accountUpdatedAt != null) {
+        await _queue.purgeTableOlderThan('account_state', accountUpdatedAt);
       }
 
       if (profileData == null) {
