@@ -196,12 +196,12 @@ class _RevealMapState extends State<RevealMap> {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        // Cap the map width on wide (desktop) screens so the 2:1 world map
-        // doesn't stretch edge-to-edge and dwarf the rest of the result — it
-        // keeps the same phone-like column width as the surrounding UI.
+        // A map is a playfield: on desktop let the 2:1 world map use a generous
+        // width (not the narrow menu column) but still bound it so it can't
+        // stretch edge-to-edge and dwarf the rest of the result.
         Center(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: kMaxContentWidth),
+            constraints: const BoxConstraints(maxWidth: kMaxMapWidth),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(12),
               child: Container(

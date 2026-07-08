@@ -81,11 +81,11 @@ class _QuizRegionMapWidgetState extends State<QuizRegionMapWidget>
 
   @override
   Widget build(BuildContext context) {
-    // Cap the canvas width on wide (desktop) screens so the region map keeps a
-    // phone-like column and stays centred, matching QuizMapWidget.
+    // A map is a playfield: let it use the space it's given up to a generous
+    // cap (matching QuizMapWidget) rather than the narrow menu column.
     return Center(
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: kMaxContentWidth),
+        constraints: const BoxConstraints(maxWidth: kMaxMapWidth),
         child: LayoutBuilder(
           builder: (context, constraints) {
             return AnimatedBuilder(
@@ -532,9 +532,12 @@ class _RegionMapPainter extends CustomPainter {
     return Vector2(sumX / points.length, sumY / points.length);
   }
 
-  /// Minimum canvas diameter (in logical pixels) below which an area is
-  /// considered "tiny" and gets an expanded marker.
-  static const double _tinyThreshold = 18.0;
+  /// On-screen diameter (in logical pixels) below which an area is considered
+  /// "tiny" and keeps its dashed marker instead of flipping to a solid polygon.
+  /// Kept deliberately large (~2.5× the old 18px) so a small country stays
+  /// dashed — and easy to keep track of — well into the zoom range, only
+  /// switching to a plain polygon once it's genuinely big on screen.
+  static const double _tinyThreshold = 46.0;
 
   /// Radius of the expanded marker drawn for tiny areas.
   static const double _markerRadius = 10.0;
