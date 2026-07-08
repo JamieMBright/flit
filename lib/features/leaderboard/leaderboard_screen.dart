@@ -48,12 +48,18 @@ const List<String> _emojiFontFallback = [
 Color _emojiToColor(String emoji) {
   switch (emoji) {
     case '\u{1F7E2}': // 🟢 green (perfect, no hints)
+    case '\u{1F7E9}': // 🟩 green square (legacy Recon proximity)
+    case '\u{2705}': // ✅ solved (legacy Recon)
       return const Color(0xFF4CAF50);
     case '\u{1F7E1}': // 🟡 yellow (1-2 hints)
+    case '\u{1F7E8}': // 🟨 yellow square (legacy Recon proximity)
       return const Color(0xFFFFD700);
     case '\u{1F7E0}': // 🟠 orange (3+ hints)
+    case '\u{1F7E7}': // 🟧 orange square (legacy Recon proximity)
       return const Color(0xFFFF9800);
     case '\u{1F534}': // 🔴 red (failed)
+    case '\u{1F7E5}': // 🟥 red square (legacy Recon proximity)
+    case '\u{274C}': // ❌ failed (legacy Recon)
       return const Color(0xFFCC4444);
     default:
       return const Color(0xFF666666);
@@ -485,6 +491,8 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
                                         proficiencyPct:
                                             _computeProficiencyPct(e),
                                         isCombined: _isCombined,
+                                        combinedSolo: _isCombined &&
+                                            (_combinedTotalPlayers ?? 2) <= 1,
                                         onBlocked: _loadData,
                                       );
                                     },
@@ -769,6 +777,7 @@ class _LeaderboardRow extends StatelessWidget {
     this.sort = LeaderboardSort.score,
     this.proficiencyPct,
     this.isCombined = false,
+    this.combinedSolo = false,
     this.onBlocked,
   });
 
@@ -796,6 +805,11 @@ class _LeaderboardRow extends StatelessWidget {
   /// When true this row belongs to the combined daily board: the entry's
   /// score holds efficiency basis points and a per-mode breakdown is shown.
   final bool isCombined;
+
+  /// When true the combined field has only this one player today, so the
+  /// efficiency % (best/top) is degenerate (always 100%) and is shown as "—"
+  /// rather than a misleading perfect score.
+  final bool combinedSolo;
 
   @override
   Widget build(BuildContext context) {
@@ -933,15 +947,40 @@ class _LeaderboardRow extends StatelessWidget {
                               );
                             }).toList(),
                           ),
-                          if (_difficultyPct != null) ...[
+                          if (_difficultyPct != null ||
+                              proficiencyPct != null) ...[
                             const SizedBox(height: 2),
-                            Text(
-                              '$_difficultyPct%',
-                              style: TextStyle(
-                                color: _difficultyColor,
-                                fontSize: 9,
-                                fontWeight: FontWeight.w600,
-                              ),
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                if (_difficultyPct != null)
+                                  Text(
+                                    '$_difficultyPct% diff',
+                                    style: TextStyle(
+                                      color: _difficultyColor,
+                                      fontSize: 9,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                if (_difficultyPct != null &&
+                                    proficiencyPct != null)
+                                  const Text(
+                                    '  ·  ',
+                                    style: TextStyle(
+                                      color: FlitColors.textMuted,
+                                      fontSize: 9,
+                                    ),
+                                  ),
+                                if (proficiencyPct != null)
+                                  Text(
+                                    '$proficiencyPct% prof',
+                                    style: const TextStyle(
+                                      color: FlitColors.accent,
+                                      fontSize: 9,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                              ],
                             ),
                           ],
                         ],
@@ -960,7 +999,7 @@ class _LeaderboardRow extends StatelessWidget {
             children: [
               if (isCombined) ...[
                 Text(
-                  _formatCombinedPct(entry.score),
+                  combinedSolo ? '—' : _formatCombinedPct(entry.score),
                   style: TextStyle(
                     color: isCurrentPlayer
                         ? FlitColors.accent

@@ -751,6 +751,38 @@ class LeaderboardService {
   /// Returned entries carry the combined efficiency in basis points as
   /// [LeaderboardEntry.score] and the per-mode breakdown in
   /// [LeaderboardEntry.combinedEfficiencyBps].
+  /// Whether the signed-in user has already submitted a score for [region]
+  /// today (UTC day), checked SERVER-SIDE so a daily locks across devices —
+  /// e.g. play Recon on desktop, then it shows as completed on mobile. Returns
+  /// false on network failure (falls back to the local gate rather than
+  /// hard-blocking a genuine first play). [region] is a `scores.region` value
+  /// such as `'daily'` (Scramble) or `'daily_triangulation'` (Recon).
+  Future<bool> hasPlayedDailyToday(String region) async {
+    final userId = _client.auth.currentUser?.id;
+    if (userId == null) return false;
+    final now = DateTime.now().toUtc();
+    final startOfDay = DateTime.utc(now.year, now.month, now.day);
+    final endOfDay = startOfDay.add(const Duration(days: 1));
+    try {
+      final row = await withNetworkTimeout(
+        _client
+            .from('scores')
+            .select('id')
+            .eq('user_id', userId)
+            .eq('region', region)
+            .gte('created_at', startOfDay.toIso8601String())
+            .lt('created_at', endOfDay.toIso8601String())
+            .limit(1)
+            .maybeSingle(),
+        label: 'hasPlayedDailyToday',
+      );
+      return row != null;
+    } catch (e) {
+      debugPrint('[LeaderboardService] hasPlayedDailyToday failed: $e');
+      return false;
+    }
+  }
+
   Future<List<LeaderboardEntry>> fetchCombinedDailyLeaderboard({
     DateTime? dayUtc,
     int limit = 50,

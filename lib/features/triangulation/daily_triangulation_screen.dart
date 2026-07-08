@@ -7,6 +7,7 @@ import '../../core/widgets/menu_content_wrapper.dart';
 import '../../data/models/daily_result.dart';
 import '../../data/models/economy_config.dart';
 import '../../data/services/economy_config_service.dart';
+import '../../data/services/leaderboard_service.dart';
 import '../../game/clues/clue_types.dart';
 import '../../game/data/country_difficulty.dart';
 import '../../game/triangulation/daily_triangulation.dart';
@@ -29,6 +30,10 @@ class _DailyTriangulationScreenState extends State<DailyTriangulationScreen> {
   int? _completedScore;
   bool _loading = true;
   EconomyConfig? _economyConfig;
+
+  /// Server-confirmed completion with no local record — i.e. today's Recon was
+  /// played on another device. Locks the lobby without local share detail.
+  bool _serverPlayed = false;
 
   @override
   void initState() {
@@ -58,12 +63,19 @@ class _DailyTriangulationScreenState extends State<DailyTriangulationScreen> {
 
   Future<void> _loadResult() async {
     final prefs = await SharedPreferences.getInstance();
+    // Cross-device lock: even with no local record, if the server already has
+    // today's Recon score for this user, treat the daily as played so a second
+    // device can't replay it for a better score.
+    final serverPlayed = await LeaderboardService.instance.hasPlayedDailyToday(
+      'daily_triangulation',
+    );
     if (!mounted) return;
     setState(() {
       _completedShareText =
           prefs.getString('daily_triangulation_${_daily.dateKey}');
       _completedScore =
           prefs.getInt('daily_triangulation_score_${_daily.dateKey}');
+      _serverPlayed = serverPlayed;
       _loading = false;
     });
   }
@@ -84,7 +96,7 @@ class _DailyTriangulationScreenState extends State<DailyTriangulationScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final played = _completedShareText != null;
+    final played = _completedShareText != null || _serverPlayed;
     return Scaffold(
       backgroundColor: FlitColors.backgroundDark,
       appBar: AppBar(
@@ -112,7 +124,12 @@ class _DailyTriangulationScreenState extends State<DailyTriangulationScreen> {
                       const SizedBox(height: 16),
                       _buildRules(),
                       const SizedBox(height: 24),
-                      if (played) _buildResult() else _buildPlayButton(),
+                      if (played)
+                        (_completedShareText != null
+                            ? _buildResult()
+                            : _buildAlreadyPlayedElsewhere())
+                      else
+                        _buildPlayButton(),
                     ],
                   ),
                 ),
@@ -120,6 +137,39 @@ class _DailyTriangulationScreenState extends State<DailyTriangulationScreen> {
       ),
     );
   }
+
+  /// Locked state shown when the server says today's Recon is done but this
+  /// device has no local result to display (played elsewhere).
+  Widget _buildAlreadyPlayedElsewhere() => Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: FlitColors.cardBackground,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: FlitColors.cardBorder),
+        ),
+        child: const Column(
+          children: [
+            Icon(Icons.check_circle, color: FlitColors.success, size: 32),
+            SizedBox(height: 10),
+            Text(
+              "Today's Recon is complete",
+              style: TextStyle(
+                color: FlitColors.textPrimary,
+                fontSize: 16,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            SizedBox(height: 6),
+            Text(
+              'You already flew this one (on another device). '
+              'A new Recon drops tomorrow.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: FlitColors.textSecondary, fontSize: 13),
+            ),
+          ],
+        ),
+      );
 
   Widget _buildHeader() => Container(
         width: double.infinity,

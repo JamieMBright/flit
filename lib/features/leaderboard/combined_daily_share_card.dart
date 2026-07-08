@@ -174,7 +174,12 @@ class CombinedDailyShareCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Text(
-                        _heroPct(combinedBps),
+                        // Efficiency (best/top) is degenerate when you're the
+                        // only player today — always 100% — so show "—" rather
+                        // than a misleading perfect score.
+                        (totalPlayers != null && totalPlayers! <= 1)
+                            ? '—'
+                            : _heroPct(combinedBps),
                         style: const TextStyle(
                           color: FlitColors.gold,
                           fontSize: 34,
