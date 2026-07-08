@@ -341,6 +341,16 @@ class _QuizResultsScreenState extends ConsumerState<QuizResultsScreen>
                             _buildBreakdown(summary),
                             const SizedBox(height: 16),
 
+                            // Per-question breakdown — only for the daily
+                            // briefing (your own completed daily), so you can
+                            // see which questions you nailed and which you
+                            // missed. Non-daily practice keeps the explorable
+                            // result map instead.
+                            if (_isDailyBriefing) ...[
+                              _buildQuestionBreakdown(summary),
+                              const SizedBox(height: 16),
+                            ],
+
                             // Downloadable mission report — captured
                             // exactly as shown.
                             _buildReportCard(summary),
@@ -473,21 +483,24 @@ class _QuizResultsScreenState extends ConsumerState<QuizResultsScreen>
   /// red missed), same pattern as the Scramble and Triangulation dailies.
   ///
   /// ```
-  ///      🛫 🗺️ 🛬
+  ///      🛫 📋 🛬
   /// Flit Daily Briefing — Europe
   /// 🟢🟢🟡🟢🔴🟢
-  /// Score: 8,420 pts
+  /// Score: 8,420 pts · 92%
   /// Time: 1m42s
-  /// jamiembright.github.io/flit
   /// ```
+  ///
+  /// The header uses a dossier/briefing glyph (📋) — distinct from the
+  /// Scramble's globe (🌍) and the Recon's compass (🧭) — and, like those two
+  /// dailies, carries no raw URL (plain-text share targets don't linkify it).
   String get _briefingShareText {
     final summary = widget.summary;
-    return '     \u{1F6EB} \u{1F5FA}\u{FE0F} \u{1F6EC}\n'
+    return '     \u{1F6EB} \u{1F4CB} \u{1F6EC}\n'
         'Flit Daily Briefing — $_regionName\n'
         '${summary.emojiRow}\n'
-        'Score: ${DailyResult.formatScore(summary.totalScore)} pts\n'
-        'Time: ${DailyResult.formatTime(summary.elapsedMs)}\n'
-        'jamiembright.github.io/flit';
+        'Score: ${DailyResult.formatScore(summary.totalScore)} pts · '
+        '${summary.proficiencyPercent}%\n'
+        'Time: ${DailyResult.formatTime(summary.elapsedMs)}';
   }
 
   String get _fallbackShareText {
@@ -495,8 +508,7 @@ class _QuizResultsScreenState extends ConsumerState<QuizResultsScreen>
     final summary = widget.summary;
     return 'Flit ${summary.mode.displayName} — Grade ${summary.grade}\n'
         '${summary.correctCount}/${summary.totalQuestions} correct · '
-        '${summary.totalScore} pts · ${summary.elapsedFormatted}\n'
-        'jamiembright.github.io/flit';
+        '${summary.totalScore} pts · ${summary.elapsedFormatted}';
   }
 
   void _copyShareText() {
@@ -871,6 +883,11 @@ class _QuizResultsScreenState extends ConsumerState<QuizResultsScreen>
               ),
             ),
             const SizedBox(height: 12),
+            _buildDetailRow(
+              Icons.military_tech,
+              'Proficiency',
+              '${summary.proficiencyPercent}%',
+            ),
             _buildDetailRow(Icons.timer, 'Time', summary.elapsedFormatted),
             _buildDetailRow(
               Icons.local_fire_department,
@@ -892,6 +909,73 @@ class _QuizResultsScreenState extends ConsumerState<QuizResultsScreen>
           ],
         ),
       );
+
+  /// On-screen per-question breakdown for the daily briefing: outcome emoji,
+  /// the answer's name, and a correct/missed mark for each of the six
+  /// questions. Shown on your own completed daily (no spoiler concern — you
+  /// just played it) so the result actually tells you what you got right.
+  Widget _buildQuestionBreakdown(QuizSummary summary) {
+    final areaNames = _regionAreaNames;
+    final rows = <Widget>[];
+    for (var i = 0; i < summary.totalQuestions; i++) {
+      final code = _questionCorrectCode(summary, i);
+      if (code == null) continue;
+      final correct =
+          summary.results.any((r) => r.questionIndex == i && r.correct);
+      rows.add(Padding(
+        padding: const EdgeInsets.symmetric(vertical: 5),
+        child: Row(
+          children: [
+            Text(summary.questionEmoji(i),
+                style: const TextStyle(fontSize: 14)),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                areaNames[code] ?? code,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: FlitColors.textPrimary,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            Icon(
+              correct ? Icons.check_circle : Icons.cancel,
+              size: 16,
+              color: correct ? FlitColors.success : FlitColors.error,
+            ),
+          ],
+        ),
+      ));
+    }
+    if (rows.isEmpty) return const SizedBox.shrink();
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: FlitColors.cardBackground,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: FlitColors.cardBorder),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'QUESTION BREAKDOWN',
+            style: TextStyle(
+              color: FlitColors.textMuted,
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 1.5,
+            ),
+          ),
+          const SizedBox(height: 8),
+          ...rows,
+        ],
+      ),
+    );
+  }
 
   Widget _buildDetailRow(IconData icon, String label, String value) => Padding(
         padding: const EdgeInsets.only(bottom: 10),

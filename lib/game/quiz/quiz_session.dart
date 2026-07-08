@@ -854,6 +854,27 @@ class QuizSummary {
       ? correctCount / (correctCount + wrongCount)
       : 0;
 
+  /// Proficiency 0–100: a quality-weighted correctness that mirrors the share
+  /// emoji — a clean answer scores full, a hinted answer scores less, a miss
+  /// scores zero. Gives a single "how well did you do" figure for the results
+  /// screen and share text (100% = every question answered clean, no hints).
+  int get proficiencyPercent {
+    if (totalQuestions == 0) return 0;
+    var quality = 0.0;
+    for (var i = 0; i < totalQuestions; i++) {
+      switch (questionEmoji(i)) {
+        case '\u{1F7E2}': // green — clean
+          quality += 1.0;
+        case '\u{1F7E1}': // yellow — ≤2 hints
+          quality += 0.7;
+        case '\u{1F7E0}': // orange — leaned on hints
+          quality += 0.4;
+        // red — wrong/missed: 0
+      }
+    }
+    return ((quality / totalQuestions) * 100).round();
+  }
+
   String get elapsedFormatted {
     final seconds = (elapsedMs / 1000).floor();
     final minutes = seconds ~/ 60;
