@@ -1051,8 +1051,15 @@ class AccountNotifier extends StateNotifier<AccountState> {
         coins: state.currentPlayer.coins + earned,
       ),
     );
-    _logCoinActivity(amount: earned, source: source);
-    _syncProfile();
+    // profiles.coins is RLS-pinned server-side — persist the credit through the
+    // server-authoritative earn_coins RPC (which also writes the coin_activity
+    // ledger). Fire-and-forget; the optimistic local balance above drives the
+    // UI and reconciles from the server on the next load.
+    _prefs.earnCoins(
+      amount: earned,
+      source: source,
+      balanceAfter: state.currentPlayer.coins,
+    );
     return earned;
   }
 
@@ -1069,6 +1076,15 @@ class AccountNotifier extends StateNotifier<AccountState> {
 
   /// Spend coins from current account.
   /// Returns true if successful, false if insufficient funds or invalid amount.
+  ///
+  /// [logActivity] doubles as the "who owns the server-side coin move" switch:
+  ///  * `true` (default) — this is a pure coin spend, so the debit is routed
+  ///    through the server-authoritative `spend_coins` RPC (which persists the
+  ///    balance and writes the ledger row).
+  ///  * `false` — the caller owns its own authoritative coin RPC
+  ///    (`send_coins` for gifts, `purchase_cosmetic` / `purchase_avatar_part`
+  ///    for shop buys), so we deduct LOCALLY ONLY to avoid a double charge; the
+  ///    caller's RPC performs and logs the real server-side debit.
   bool spendCoins(
     int amount, {
     String source = 'coins_spent',
@@ -1082,9 +1098,12 @@ class AccountNotifier extends StateNotifier<AccountState> {
       ),
     );
     if (logActivity) {
-      _logCoinActivity(amount: -amount, source: source);
+      _prefs.spendCoins(
+        amount: amount,
+        source: source,
+        balanceAfter: state.currentPlayer.coins,
+      );
     }
-    _syncProfile();
     return true;
   }
 
@@ -1799,7 +1818,12 @@ class AccountNotifier extends StateNotifier<AccountState> {
   /// If the server call fails (offline/network error), falls back to
   /// client-side deduction for offline resilience.
   bool purchaseAvatarPart(String partKey, int cost) {
-    if (!spendCoins(cost, source: 'avatar_part_purchase')) return false;
+    // logActivity:false → local-only deduct; purchase_avatar_part RPC below is
+    // the authoritative server-side charge (routing it through spend_coins too
+    // would double-charge).
+    if (!spendCoins(cost, source: 'avatar_part_purchase', logActivity: false)) {
+      return false;
+    }
     state = state.copyWith(
       ownedAvatarParts: {...state.ownedAvatarParts, partKey},
     );
@@ -1824,7 +1848,12 @@ class AccountNotifier extends StateNotifier<AccountState> {
   /// client-side deduction for offline resilience. The optimistic client-side
   /// state is applied immediately for responsive UI.
   bool purchaseCosmetic(String cosmeticId, int cost) {
-    if (!spendCoins(cost, source: 'cosmetic_purchase')) return false;
+    // logActivity:false → local-only deduct; purchase_cosmetic RPC below is the
+    // authoritative server-side charge (routing it through spend_coins too
+    // would double-charge).
+    if (!spendCoins(cost, source: 'cosmetic_purchase', logActivity: false)) {
+      return false;
+    }
     state = state.copyWith(
       ownedCosmetics: {...state.ownedCosmetics, cosmeticId},
     );

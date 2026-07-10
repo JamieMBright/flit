@@ -4319,6 +4319,27 @@ END $grant_allowlist$;
 -- =============================================================================
 
 
+-- ===========================================================================
+-- profiles.coins server-authoritative pin (Section 8a, refined) — 2026-07-10
+-- ---------------------------------------------------------------------------
+-- Pin ONLY `coins` on the profiles UPDATE policy so direct client coin writes
+-- are rejected; earn_coins / spend_coins (SECURITY DEFINER, auth.uid()) are the
+-- only credit/debit paths. xp / level / games_played / best_score stay guarded
+-- by the monotonic protect_profile_stats trigger (pinning them too would freeze
+-- progression and reject the client's whole-row profile upsert). Mirror of
+-- migrations/20260710_profiles_coins_pin.sql. Idempotent.
+-- ===========================================================================
+DROP POLICY IF EXISTS "Users can update own profile" ON public.profiles;
+CREATE POLICY "Users can update own profile"
+  ON public.profiles FOR UPDATE
+  USING (auth.uid() = id)
+  WITH CHECK (
+    auth.uid() = id
+    AND COALESCE(coins, 0) = COALESCE(
+      (SELECT p.coins FROM public.profiles p WHERE p.id = auth.uid()), 0)
+  );
+
+
 -- ---------------------------------------------------------------------------
 -- DONE
 -- ---------------------------------------------------------------------------

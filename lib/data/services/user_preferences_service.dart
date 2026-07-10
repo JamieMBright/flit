@@ -472,7 +472,10 @@ class UserPreferencesService {
       'avatar_url': player.avatarUrl,
       'level': player.level,
       'xp': player.xp,
-      'coins': player.coins,
+      // NOTE: `coins` is intentionally NOT written here. profiles.coins is
+      // RLS-pinned (server-authoritative) — a direct client write is rejected,
+      // which would fail this ENTIRE upsert. Coins persist only through the
+      // earn_coins / spend_coins RPCs (see earnCoins / spendCoins below).
       'games_played': player.gamesPlayed,
       'best_score': player.bestScore,
       'best_time_ms': player.bestTime?.inMilliseconds,
@@ -714,6 +717,131 @@ class UserPreferencesService {
   }
 
   // ---------------------------------------------------------------------------
+  // Server-authoritative coin balance writes
+  // ---------------------------------------------------------------------------
+
+  /// Persist a coin CREDIT through the server-authoritative `earn_coins` RPC.
+  ///
+  /// `profiles.coins` is RLS-pinned (finding #5/#10): a direct client write is
+  /// rejected, so `earn_coins` (SECURITY DEFINER, `auth.uid()`) is the only
+  /// credit path. It also inserts the `coin_activity` ledger row server-side, so
+  /// callers must NOT double-log on the RPC path. Transition-safe: on the
+  /// pre-RPC schema it falls back to a direct `coins` write + client-side ledger
+  /// row; on transient failure it enqueues an `rpc` retry. Fire-and-forget —
+  /// balances reconcile from the server on the next load.
+  Future<void> earnCoins({
+    required int amount,
+    required String source,
+    required int balanceAfter,
+  }) =>
+      _writeCoinsRpc(
+        fn: 'earn_coins',
+        amount: amount,
+        source: source,
+        balanceAfter: balanceAfter,
+        signedAmount: amount,
+        fallbackSource: 'coins_earned',
+      );
+
+  /// Persist a coin DEBIT through the server-authoritative `spend_coins` RPC.
+  /// See [earnCoins] for the transition/fallback contract.
+  Future<void> spendCoins({
+    required int amount,
+    required String source,
+    required int balanceAfter,
+  }) =>
+      _writeCoinsRpc(
+        fn: 'spend_coins',
+        amount: amount,
+        source: source,
+        balanceAfter: balanceAfter,
+        signedAmount: -amount,
+        fallbackSource: 'coins_spent',
+      );
+
+  Future<void> _writeCoinsRpc({
+    required String fn,
+    required int amount,
+    required String source,
+    required int balanceAfter,
+    required int signedAmount,
+    required String fallbackSource,
+  }) async {
+    await _ensureQueueInitialised();
+    final userId = _userId;
+    if (userId == null || userId.isEmpty || amount <= 0) return;
+
+    final trimmed = source.trim();
+    final safeSource = (trimmed.isEmpty ? fallbackSource : trimmed).substring(
+      0,
+      (trimmed.isEmpty ? fallbackSource : trimmed).length > 64
+          ? 64
+          : (trimmed.isEmpty ? fallbackSource : trimmed).length,
+    );
+    final params = <String, dynamic>{
+      'p_amount': amount,
+      'p_source': safeSource
+    };
+
+    final client = _clientOrNull;
+    if (client == null) {
+      await _queue.enqueue(fn, {'fn': fn, 'params': params}, 'rpc');
+      return;
+    }
+
+    try {
+      await client.rpc(fn, params: params);
+      // Success: the RPC updated coins AND wrote the coin_activity ledger row.
+    } on PostgrestException catch (e) {
+      if (e.code == '42883' || e.code == 'PGRST202') {
+        // Pre-RPC schema: the function isn't deployed yet. Write coins
+        // directly (RLS un-pinned on that schema) and log the ledger locally.
+        await _fallbackDirectCoinWrite(
+          client,
+          userId: userId,
+          balanceAfter: balanceAfter,
+          signedAmount: signedAmount,
+          source: safeSource,
+        );
+      } else {
+        await _queue.enqueue(fn, {'fn': fn, 'params': params}, 'rpc');
+      }
+    } catch (e) {
+      debugPrint('[UserPreferencesService] $fn failed, queuing for retry: $e');
+      await _queue.enqueue(fn, {'fn': fn, 'params': params}, 'rpc');
+    }
+  }
+
+  /// Pre-RPC-schema fallback: write coins directly and log the ledger row
+  /// client-side (the deployed RPCs do both server-side).
+  Future<void> _fallbackDirectCoinWrite(
+    SupabaseClient client, {
+    required String userId,
+    required int balanceAfter,
+    required int signedAmount,
+    required String source,
+  }) async {
+    try {
+      await client.from('profiles').update({'coins': balanceAfter}).eq(
+        'id',
+        userId,
+      );
+    } catch (_) {
+      await _queue.enqueue(
+        'profiles',
+        {'id': userId, 'coins': balanceAfter},
+        'upsert',
+      );
+    }
+    await saveCoinActivity(
+      username: '',
+      coinAmount: signedAmount,
+      source: source,
+      balanceAfter: balanceAfter,
+    );
+  }
+
+  // ---------------------------------------------------------------------------
   // Retry pending writes
   // ---------------------------------------------------------------------------
 
@@ -765,6 +893,29 @@ class UserPreferencesService {
             await ScoreSubmitter.submit(client, data);
           } else {
             await client.from(table).insert(data);
+          }
+        } else if (op == 'rpc') {
+          // Server-authoritative RPC (e.g. earn_coins / spend_coins) queued
+          // after a transient failure. Drop it if the function is absent on
+          // this DB — retrying an undeployed RPC can never succeed and would
+          // block the queue head-of-line.
+          final fn = (data['fn'] ?? table) as String;
+          final rawParams = data['params'];
+          final params = rawParams is Map
+              ? rawParams.map((k, v) => MapEntry(k.toString(), v))
+              : const <String, dynamic>{};
+          try {
+            await client.rpc(fn, params: params);
+          } on PostgrestException catch (e) {
+            if (e.code == '42883' || e.code == 'PGRST202') {
+              debugPrint(
+                '[UserPreferencesService] retryPendingWrites: dropping '
+                'undeployed rpc $fn',
+              );
+              await _queue.dequeue();
+              continue;
+            }
+            rethrow;
           }
         } else {
           // Feature-detect columns for account_state so a legacy queued write
@@ -938,6 +1089,12 @@ class UserPreferencesService {
   /// no server row has been observed). Exposed for testing.
   @visibleForTesting
   static Set<String> get baselineAccountColumns => _kBaselineAccountColumns;
+
+  /// The pending profiles upsert payload, or null when nothing is queued.
+  /// Exposed for testing the coins-exclusion invariant (coins is RLS-pinned and
+  /// must never ride the profile upsert).
+  @visibleForTesting
+  Map<String, dynamic>? get debugPendingProfile => _pendingProfile;
 
   /// Read the completed-mission id list from an account_state map (server row
   /// or local cache), tolerating a missing key / wrong shape.

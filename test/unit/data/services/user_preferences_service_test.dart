@@ -166,6 +166,37 @@ void main() {
       service.clear();
       expect(service.hasPendingWrites, isFalse);
     });
+
+    test('saveProfile payload OMITS coins (RLS-pinned) but keeps progression',
+        () {
+      // profiles.coins is server-authoritative (RLS-pinned): including it would
+      // make the whole-row upsert fail whenever the balance changed, freezing
+      // ALL progression. Coins persist only via earn_coins/spend_coins.
+      final service = UserPreferencesService.instance;
+      service.clear();
+
+      const player = Player(
+        id: 'u1',
+        username: 'pilot',
+        coins: 500,
+        xp: 120,
+        level: 3,
+        gamesPlayed: 9,
+      );
+      service.saveProfile(player);
+
+      final payload = service.debugPendingProfile;
+      expect(payload, isNotNull);
+      expect(payload!.containsKey('coins'), isFalse,
+          reason: 'coins is RLS-pinned; it must never ride the profile upsert');
+      // Progression columns MUST still be written (they are only rollback-
+      // guarded by the monotonic trigger, not pinned).
+      expect(payload['xp'], 120);
+      expect(payload['level'], 3);
+      expect(payload['games_played'], 9);
+
+      service.clear();
+    });
   });
 
   // -------------------------------------------------------------------------
