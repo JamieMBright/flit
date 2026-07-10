@@ -1073,57 +1073,49 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA public REVOKE EXECUTE ON FUNCTIONS FROM PUBLI
 -- (anon default is already empty; be explicit so future functions never leak.)
 
 -- 7b. Re-grant EXECUTE to `authenticated` for the exact client/owner allowlist.
---     Grouped by purpose so the owner can audit each line.
-
--- Coins / economy (self-scoped or owner-gated in body):
-GRANT EXECUTE ON FUNCTION public.earn_coins(INT, TEXT)                         TO authenticated;
-GRANT EXECUTE ON FUNCTION public.spend_coins(INT, TEXT)                        TO authenticated;
-GRANT EXECUTE ON FUNCTION public.purchase_cosmetic(UUID, TEXT, INT)            TO authenticated;
-GRANT EXECUTE ON FUNCTION public.purchase_avatar_part(UUID, TEXT, INT)         TO authenticated;
-GRANT EXECUTE ON FUNCTION public.send_coins(UUID, UUID, INT)                   TO authenticated;
-GRANT EXECUTE ON FUNCTION public.gift_cosmetic(UUID, UUID, TEXT, INT)          TO authenticated;
-GRANT EXECUTE ON FUNCTION public.gift_avatar_part(UUID, UUID, TEXT, INT)       TO authenticated;
-GRANT EXECUTE ON FUNCTION public.upsert_economy_config(JSONB)                  TO authenticated;
-GRANT EXECUTE ON FUNCTION public.upsert_difficulty_config(JSONB, JSONB)        TO authenticated;
-GRANT EXECUTE ON FUNCTION public.recalibrate_scores(JSONB)                     TO authenticated;
-GRANT EXECUTE ON FUNCTION public.admin_economy_summary()                       TO authenticated;
-
--- Scores / gameplay results:
-GRANT EXECUTE ON FUNCTION public.submit_score(INT, BIGINT, TEXT, INT, TEXT, JSONB) TO authenticated;
-
--- Challenges / H2H / matchmaking / ratings / claims:
-GRANT EXECUTE ON FUNCTION public.claim_challenge_coins(UUID)                   TO authenticated;
-GRANT EXECUTE ON FUNCTION public.claim_h2h_coins(UUID)                         TO authenticated;
-GRANT EXECUTE ON FUNCTION public.claim_daily_champion(TEXT, DATE)             TO authenticated;
-GRANT EXECUTE ON FUNCTION public.submit_challenge_round(UUID, INT, BOOLEAN, JSONB) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.apply_challenge_rating(UUID)                  TO authenticated;
-GRANT EXECUTE ON FUNCTION public.apply_sortie_rating(UUID)                     TO authenticated;
-GRANT EXECUTE ON FUNCTION public.match_pool_entry(UUID, UUID)                  TO authenticated;
-GRANT EXECUTE ON FUNCTION public.expire_stale_challenges()                     TO authenticated;
-
--- Social (block / unblock — self-scoped in body):
-GRANT EXECUTE ON FUNCTION public.block_user(UUID)                             TO authenticated;
-GRANT EXECUTE ON FUNCTION public.unblock_user(UUID)                           TO authenticated;
-
--- Admin panel (every one re-checks admin_role in body):
-GRANT EXECUTE ON FUNCTION public.admin_increment_stat(UUID, TEXT, INT)         TO authenticated;
-GRANT EXECUTE ON FUNCTION public.admin_set_stat(UUID, TEXT, INT)               TO authenticated;
-GRANT EXECUTE ON FUNCTION public.admin_set_license(UUID, JSONB)                TO authenticated;
-GRANT EXECUTE ON FUNCTION public.admin_set_avatar(UUID, JSONB)                 TO authenticated;
-GRANT EXECUTE ON FUNCTION public.admin_set_role(UUID, TEXT)                    TO authenticated;
-GRANT EXECUTE ON FUNCTION public.admin_unlock_all(UUID)                        TO authenticated;
-GRANT EXECUTE ON FUNCTION public.admin_ban_user(UUID, TEXT, INT)              TO authenticated;
-GRANT EXECUTE ON FUNCTION public.admin_unban_user(UUID, TEXT)                  TO authenticated;
-GRANT EXECUTE ON FUNCTION public.admin_resolve_report(BIGINT, TEXT, TEXT)      TO authenticated;
-GRANT EXECUTE ON FUNCTION public.admin_resolve_clue_report(BIGINT, TEXT, TEXT) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.admin_update_app_config(TEXT, TEXT, BOOLEAN, TEXT) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.admin_upsert_announcement(BIGINT, TEXT, TEXT, TEXT, INT, BOOLEAN, TIMESTAMPTZ, TIMESTAMPTZ) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.admin_set_feature_flag(TEXT, BOOLEAN, TEXT)   TO authenticated;
-GRANT EXECUTE ON FUNCTION public.admin_search_users(TEXT, INT)                 TO authenticated;
-GRANT EXECUTE ON FUNCTION public.admin_upsert_country_alias(TEXT, TEXT, BOOLEAN) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.admin_delete_country_alias(TEXT, TEXT, BOOLEAN) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.admin_upsert_border_display(TEXT, TEXT, BOOLEAN, INT, TEXT) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.admin_process_gdpr_request(BIGINT, TEXT, TEXT) TO authenticated;
+--     Tolerant by-name grant: for each allowlisted NAME, grant every existing
+--     overload found in this database. This avoids aborting when a hardcoded
+--     signature drifts from the deployed one (e.g. a param type differs) — a
+--     name that doesn't exist is simply skipped. The function BODY still decides
+--     who may act; this grant only makes the function reachable by authenticated.
+DO $grant_allowlist$
+DECLARE
+  allow text[] := ARRAY[
+    -- Coins / economy (self-scoped or owner-gated in body)
+    'earn_coins','spend_coins','purchase_cosmetic','purchase_avatar_part',
+    'send_coins','gift_cosmetic','gift_avatar_part','upsert_economy_config',
+    'upsert_difficulty_config','recalibrate_scores','admin_economy_summary',
+    -- Scores / gameplay results
+    'submit_score',
+    -- Challenges / H2H / matchmaking / ratings / claims
+    'claim_challenge_coins','claim_h2h_coins','claim_daily_champion',
+    'submit_challenge_round','apply_challenge_rating','apply_sortie_rating',
+    'match_pool_entry','expire_stale_challenges',
+    -- Social (block / unblock — self-scoped in body)
+    'block_user','unblock_user',
+    -- Admin panel (every one re-checks admin_role in body)
+    'admin_increment_stat','admin_set_stat','admin_set_license','admin_set_avatar',
+    'admin_set_role','admin_unlock_all','admin_ban_user','admin_unban_user',
+    'admin_resolve_report','admin_resolve_clue_report','admin_update_app_config',
+    'admin_upsert_announcement','admin_set_feature_flag','admin_search_users',
+    'admin_upsert_country_alias','admin_delete_country_alias',
+    'admin_upsert_border_display','admin_process_gdpr_request'
+  ];
+  r record;
+  granted int := 0;
+BEGIN
+  FOR r IN
+    SELECT p.oid::regprocedure::text AS sig
+    FROM pg_proc p
+    JOIN pg_namespace n ON n.oid = p.pronamespace
+    WHERE n.nspname = 'public'
+      AND p.proname = ANY(allow)
+  LOOP
+    EXECUTE format('GRANT EXECUTE ON FUNCTION %s TO authenticated', r.sig);
+    granted := granted + 1;
+  END LOOP;
+  RAISE NOTICE 'Section 7: granted EXECUTE to authenticated on % function overloads', granted;
+END $grant_allowlist$;
 
 -- service_role: explicit GRANT ... TO service_role lines in rebuild.sql/migrations
 -- are unaffected by the PUBLIC/anon revokes above (revoking PUBLIC does not touch
