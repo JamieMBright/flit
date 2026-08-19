@@ -11,6 +11,9 @@ const Object _sentinel = Object();
 enum AuthMethod {
   /// Supabase email + password account
   email,
+
+  /// Supabase anonymous account
+  anonymous,
 }
 
 /// Current authentication state.
@@ -35,6 +38,8 @@ class AuthState {
   /// True after sign-up when the user must verify their email before signing in.
   final bool needsEmailConfirmation;
 
+  bool get isGuest => authMethod == AuthMethod.anonymous;
+
   AuthState copyWith({
     bool? isAuthenticated,
     bool? isLoading,
@@ -58,9 +63,10 @@ class AuthState {
 
 /// Supabase-backed authentication service.
 ///
-/// Strategy: Email + password accounts via Supabase Auth.
+/// Strategy: Email + password and anonymous accounts via Supabase Auth.
 /// Profiles are auto-created by a database trigger on sign-up.
-/// All players must have accounts — no guest mode.
+/// Anonymous identities keep guest runs attached to a real user ID and can be
+/// upgraded in place to email + password accounts.
 class AuthService {
   AuthState _state = const AuthState();
 
@@ -77,12 +83,13 @@ class AuthService {
       final user = _client.auth.currentUser;
 
       if (session != null && user != null) {
-        final player = await _fetchOrCreateProfile(user);
+        final player = await _fetchProfileOrFallback(user);
         _state = AuthState(
           isAuthenticated: true,
           isLoading: false,
           player: player,
-          authMethod: AuthMethod.email,
+          authMethod:
+              user.isAnonymous ? AuthMethod.anonymous : AuthMethod.email,
           email: user.email,
         );
       } else {
@@ -98,6 +105,63 @@ class AuthService {
     }
 
     return _state;
+  }
+
+  /// Create a persisted anonymous account for guest play.
+  ///
+  /// Supabase stores the session locally, so the same guest and their scores
+  /// are restored on the next launch. Signing out discards access to the
+  /// anonymous identity.
+  Future<AuthState> signInAsGuest() async {
+    _state = _state.copyWith(isLoading: true, error: null);
+
+    try {
+      final response = await _client.auth.signInAnonymously();
+      final user = response.user;
+      if (user == null) {
+        _state = _state.copyWith(
+          isLoading: false,
+          error: 'Guest boarding failed. Please try again.',
+        );
+        return _state;
+      }
+
+      final guestName = guestNameForId(user.id);
+      await _client.auth.updateUser(
+        UserAttributes(
+          data: {'username': guestName, 'display_name': guestName},
+        ),
+      );
+      await _client.from('profiles').upsert({
+        'id': user.id,
+        'username': guestName,
+        'display_name': guestName,
+      }, onConflict: 'id');
+
+      final player = await _fetchProfileOrFallback(user);
+      _state = AuthState(
+        isAuthenticated: true,
+        player: player,
+        authMethod: AuthMethod.anonymous,
+      );
+    } on AuthException catch (e) {
+      _state = _state.copyWith(isLoading: false, error: e.message);
+    } catch (_) {
+      _state = _state.copyWith(
+        isLoading: false,
+        error: 'Guest boarding failed. Please try again.',
+      );
+    }
+
+    return _state;
+  }
+
+  /// Stable public name derived from the anonymous user's server-issued UUID.
+  static String guestNameForId(String userId) {
+    final compactId = userId.replaceAll('-', '').toUpperCase();
+    final suffix =
+        compactId.length <= 12 ? compactId : compactId.substring(0, 12);
+    return 'Guest_$suffix';
   }
 
   /// Sign up with email + password.
@@ -165,13 +229,62 @@ class AuthService {
         return _state;
       }
 
+      final currentUser = _client.auth.currentUser;
+      if (currentUser?.isAnonymous ?? false) {
+        final response = await _client.auth.updateUser(
+          UserAttributes(
+            email: email,
+            password: password,
+            data: {
+              'username': username,
+              'display_name': displayName ?? username,
+            },
+          ),
+          emailRedirectTo:
+              SupabaseConfig.siteUrl.isNotEmpty ? SupabaseConfig.siteUrl : null,
+        );
+        final user = response.user;
+        if (user == null) {
+          _state = _state.copyWith(
+            isLoading: false,
+            error: 'Account upgrade failed. Please try again.',
+          );
+          return _state;
+        }
+
+        await _client.from('profiles').upsert({
+          'id': user.id,
+          'username': username,
+          'display_name': displayName ?? username,
+        }, onConflict: 'id');
+
+        if (user.isAnonymous) {
+          _state = AuthState(
+            isAuthenticated: true,
+            isLoading: false,
+            player: await _fetchProfileOrFallback(user),
+            authMethod: AuthMethod.anonymous,
+            email: email,
+            needsEmailConfirmation: true,
+          );
+        } else {
+          _state = AuthState(
+            isAuthenticated: true,
+            isLoading: false,
+            player: await _fetchProfileOrFallback(user),
+            authMethod: AuthMethod.email,
+            email: email,
+          );
+        }
+        return _state;
+      }
+
       final response = await _client.auth.signUp(
-        email: email,
-        password: password,
-        data: {'username': username, 'display_name': displayName ?? username},
-        emailRedirectTo:
-            SupabaseConfig.siteUrl.isNotEmpty ? SupabaseConfig.siteUrl : null,
-      );
+          email: email,
+          password: password,
+          data: {'username': username, 'display_name': displayName ?? username},
+          emailRedirectTo:
+              SupabaseConfig.siteUrl.isNotEmpty ? SupabaseConfig.siteUrl : null);
 
       if (response.user != null) {
         // Supabase returns a "fake" user with empty identities when email
@@ -263,7 +376,7 @@ class AuthService {
       );
 
       if (response.user != null) {
-        final player = await _fetchOrCreateProfile(response.user!);
+        final player = await _fetchProfileOrFallback(response.user!);
         _state = AuthState(
           isAuthenticated: true,
           isLoading: false,
@@ -362,12 +475,12 @@ class AuthService {
     return _state;
   }
 
-  /// Fetch the player profile from Supabase, or build one from user metadata
-  /// if the profile row doesn't exist yet.
+  /// Fetch the player profile from Supabase, or build an in-memory fallback
+  /// from user metadata if the trigger-created profile row is unavailable.
   ///
   /// Reads the full profile including gameplay stats (level, xp, coins, etc.)
   /// so that progress is restored across sessions.
-  Future<Player> _fetchOrCreateProfile(User user) async {
+  Future<Player> _fetchProfileOrFallback(User user) async {
     try {
       final data = await _client
           .from('profiles')

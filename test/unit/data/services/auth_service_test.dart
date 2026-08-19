@@ -135,10 +135,27 @@ void main() {
       expect(AuthMethod.values, contains(AuthMethod.email));
     });
 
-    test('AuthMethod has exactly one value', () {
-      // The service supports email-only auth; confirm no extra methods were
-      // silently added.
-      expect(AuthMethod.values, hasLength(1));
+    test('anonymous is a valid AuthMethod value', () {
+      expect(AuthMethod.values, contains(AuthMethod.anonymous));
+    });
+
+    test('guest state is identified from the auth method', () {
+      const state = AuthState(authMethod: AuthMethod.anonymous);
+      expect(state.isGuest, isTrue);
+    });
+
+    test('email state is not a guest', () {
+      const state = AuthState();
+      expect(state.isGuest, isFalse);
+    });
+  });
+
+  group('AuthService.guestNameForId', () {
+    test('uses a stable uppercase UUID prefix', () {
+      expect(
+        AuthService.guestNameForId('1234abcd-5678-90ef-1234-567890abcdef'),
+        'Guest_1234ABCD5678',
+      );
     });
   });
 

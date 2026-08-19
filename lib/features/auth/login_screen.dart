@@ -16,14 +16,16 @@ import '../auth/maintenance_screen.dart';
 import '../auth/update_required_screen.dart';
 import '../home/home_screen.dart';
 
-/// Login/signup screen shown on first launch.
+/// Welcome and authentication screen shown on first launch.
 ///
-/// Authentication strategy: Email + password via Supabase Auth.
-/// All players must have accounts — no guest mode.
+/// Authentication strategy: Email + password or persistent anonymous Supabase
+/// accounts that can later be upgraded without losing runs.
 ///
 /// No Google Auth — email only, kept simple.
 class LoginScreen extends ConsumerStatefulWidget {
-  const LoginScreen({super.key});
+  const LoginScreen({super.key, this.upgradeGuest = false});
+
+  final bool upgradeGuest;
 
   @override
   ConsumerState<LoginScreen> createState() => _LoginScreenState();
@@ -44,7 +46,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   @override
   void initState() {
     super.initState();
-    _checkExistingSession();
+    if (widget.upgradeGuest) {
+      _mode = _AuthMode.signUp;
+    } else {
+      _checkExistingSession();
+    }
   }
 
   /// Auto-login if there's a valid Supabase session from a previous launch.
@@ -89,6 +95,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         }
         final notifier = ref.read(accountProvider.notifier);
         await notifier.loadFromSupabase(result.player!.id);
+        if (result.isGuest) notifier.grantGuestAccess();
         if (mounted) _navigateToHome();
       }
     }
@@ -220,6 +227,23 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               _error = null;
             }),
           ),
+          const SizedBox(height: 12),
+          _AuthButton(
+            label: 'PRIORITY BOARDING',
+            icon: Icons.flight_takeoff_rounded,
+            onTap: _continueAsGuest,
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Play as a guest — your runs are saved on this device '
+            'and can be claimed by creating an account.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: FlitColors.textSecondary,
+              fontSize: 12,
+              height: 1.4,
+            ),
+          ),
           const SizedBox(height: 24),
           Container(
             padding: const EdgeInsets.all(12),
@@ -255,24 +279,37 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             _BackButton(
-              onTap: () => setState(() {
-                _mode = _AuthMode.welcome;
-                _error = null;
-              }),
+              onTap: () {
+                if (widget.upgradeGuest) {
+                  Navigator.of(context).pop();
+                } else {
+                  setState(() {
+                    _mode = _AuthMode.welcome;
+                    _error = null;
+                  });
+                }
+              },
             ),
             const SizedBox(height: 16),
-            const Text(
-              'Create your account',
-              style: TextStyle(
+            Text(
+              widget.upgradeGuest
+                  ? 'Keep your guest runs'
+                  : 'Create your account',
+              style: const TextStyle(
                 color: FlitColors.textPrimary,
                 fontSize: 20,
                 fontWeight: FontWeight.w600,
               ),
             ),
             const SizedBox(height: 8),
-            const Text(
-              'Choose a pilot name and set your password.',
-              style: TextStyle(color: FlitColors.textSecondary, fontSize: 13),
+            Text(
+              widget.upgradeGuest
+                  ? 'Add login details to claim this guest identity.'
+                  : 'Choose a pilot name and set your password.',
+              style: const TextStyle(
+                color: FlitColors.textSecondary,
+                fontSize: 13,
+              ),
             ),
             const SizedBox(height: 24),
             _AuthTextField(
@@ -444,30 +481,41 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             ),
           ),
           const SizedBox(height: 8),
-          const Text(
-            'Click the link in your email, then come back and sign in.',
+          Text(
+            widget.upgradeGuest
+                ? 'Your guest and its runs remain available while you confirm.'
+                : 'Click the link in your email, then come back and sign in.',
             textAlign: TextAlign.center,
-            style: TextStyle(color: FlitColors.textMuted, fontSize: 13),
+            style: const TextStyle(color: FlitColors.textMuted, fontSize: 13),
           ),
           const SizedBox(height: 32),
-          _AuthButton(
-            label: 'SIGN IN',
-            isPrimary: true,
-            icon: Icons.login,
-            onTap: () => setState(() {
-              _mode = _AuthMode.signIn;
-              _error = null;
-            }),
-          ),
-          const SizedBox(height: 12),
-          _AuthButton(
-            label: 'BACK TO START',
-            icon: Icons.arrow_back,
-            onTap: () => setState(() {
-              _mode = _AuthMode.welcome;
-              _error = null;
-            }),
-          ),
+          if (widget.upgradeGuest)
+            _AuthButton(
+              label: 'KEEP PLAYING',
+              isPrimary: true,
+              icon: Icons.flight_takeoff,
+              onTap: () => Navigator.of(context).pop(),
+            )
+          else ...[
+            _AuthButton(
+              label: 'SIGN IN',
+              isPrimary: true,
+              icon: Icons.login,
+              onTap: () => setState(() {
+                _mode = _AuthMode.signIn;
+                _error = null;
+              }),
+            ),
+            const SizedBox(height: 12),
+            _AuthButton(
+              label: 'BACK TO START',
+              icon: Icons.arrow_back,
+              onTap: () => setState(() {
+                _mode = _AuthMode.welcome;
+                _error = null;
+              }),
+            ),
+          ],
         ],
       );
 
@@ -563,6 +611,31 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   // ── Actions ──
 
+  Future<void> _continueAsGuest() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+    final result = await _authService.signInAsGuest();
+    if (!mounted) return;
+    if (result.isAuthenticated && result.player != null) {
+      final notifier = ref.read(accountProvider.notifier);
+      await notifier.loadFromSupabase(result.player!.id);
+      notifier.grantGuestAccess();
+      if (!mounted) return;
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute<void>(
+          builder: (_) => const HomeScreen(openDailyGamesOnLaunch: true),
+        ),
+      );
+      return;
+    }
+    setState(() {
+      _isLoading = false;
+      _error = result.error ?? 'Guest boarding failed. Please try again.';
+    });
+  }
+
   Future<void> _resetPassword() async {
     final email = _emailController.text.trim();
 
@@ -646,7 +719,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           }
           final notifier = ref.read(accountProvider.notifier);
           await notifier.loadFromSupabase(result.player!.id);
-          if (mounted) _navigateToHome();
+          if (mounted) {
+            if (widget.upgradeGuest) {
+              Navigator.of(context).pop();
+            } else {
+              _navigateToHome();
+            }
+          }
         } else if (result.error != null) {
           setState(() => _error = result.error);
         }

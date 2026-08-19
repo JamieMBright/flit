@@ -398,6 +398,9 @@ const Object _sentinel = Object();
 
 /// Account state notifier.
 class AccountNotifier extends StateNotifier<AccountState> {
+  /// Matches the post-Basic-Training rank represented by the seeded missions.
+  static const int _guestPlayerLevel = 2;
+
   AccountNotifier()
       : super(
           AccountState(
@@ -943,6 +946,30 @@ class AccountNotifier extends StateNotifier<AccountState> {
   void switchAccount(Player player) {
     state = state.copyWith(currentPlayer: player);
     _syncProfile();
+  }
+
+  /// Preserve the guest bypass for Basic Training while persisting it to the
+  /// anonymous account so the same guest can revisit the daily modes.
+  void grantGuestAccess() {
+    if (state.basicTrainingComplete) return;
+    final completedAt = DateTime.now();
+    state = state.copyWith(
+      currentPlayer: state.currentPlayer.copyWith(
+        level: math.max(state.currentPlayer.level, _guestPlayerLevel),
+      ),
+      campaignProgress: {
+        ...state.campaignProgress,
+        for (final missionId in basicTrainingMissionIds)
+          missionId: CampaignMissionResult(
+            missionId: missionId,
+            score: 0,
+            stars: 1,
+            completedAt: completedAt,
+          ),
+      },
+    );
+    _syncProfile();
+    _syncAccountState();
   }
 
   // ── Internal sync helpers ────────────────────────────────────────────

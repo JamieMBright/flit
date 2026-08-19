@@ -51,7 +51,10 @@ import 'todays_dailies_strip.dart';
 
 /// Home screen with animated map background and menu overlay.
 class HomeScreen extends ConsumerStatefulWidget {
-  const HomeScreen({super.key});
+  const HomeScreen({super.key, this.openDailyGamesOnLaunch = false});
+
+  /// Opens a daily-only game chooser after the first frame.
+  final bool openDailyGamesOnLaunch;
 
   @override
   ConsumerState<HomeScreen> createState() => _HomeScreenState();
@@ -78,9 +81,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       vsync: this,
       duration: const Duration(seconds: 20),
     )..repeat();
-    _loadFeatureFlags();
+    final featureFlagsLoaded = _loadFeatureFlags();
     _checkMaintenanceMode();
     _checkDailyChampionRewards();
+    if (widget.openDailyGamesOnLaunch) {
+      _openDailyGamesAfter(featureFlagsLoaded);
+    }
+  }
+
+  Future<void> _openDailyGamesAfter(Future<void> featureFlagsLoaded) async {
+    await featureFlagsLoaded;
+    if (!mounted) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _showDailyGames(context);
+    });
   }
 
   /// Claim any daily-champion rewards owed for yesterday's boards
@@ -437,6 +451,73 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     } catch (e, stackTrace) {
       debugPrint('Navigation error: $e\n$stackTrace');
     }
+  }
+
+  void _showDailyGames(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: FlitColors.cardBackground,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      isScrollControlled: true,
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.85,
+        maxWidth: kMaxContentWidth,
+      ),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const _SectionLabel(
+                icon: Icons.push_pin_rounded,
+                label: "TODAY'S DAILY GAMES",
+              ),
+              const SizedBox(height: 12),
+              _GameModeCard(
+                title: 'Daily Recon',
+                subtitle: 'Track the hidden capital by its bearings',
+                icon: Icons.explore_rounded,
+                isHighlighted: true,
+                isRedHighlighted: true,
+                onTap: () => _closeSheetAndNavigate(
+                  ctx,
+                  const DailyTriangulationScreen(),
+                ),
+              ),
+              const SizedBox(height: 10),
+              if (_dailyScrambleEnabled) ...[
+                _GameModeCard(
+                  title: 'Daily Scramble',
+                  subtitle: "Today's challenge — compete for glory",
+                  icon: Icons.today_rounded,
+                  isHighlighted: true,
+                  isRedHighlighted: true,
+                  onTap: () => _closeSheetAndNavigate(
+                    ctx,
+                    const DailyChallengeScreen(),
+                  ),
+                ),
+                const SizedBox(height: 10),
+              ],
+              _GameModeCard(
+                title: 'Daily Briefing',
+                subtitle: 'Daily quiz challenge — same for all pilots',
+                icon: Icons.assignment_rounded,
+                isHighlighted: true,
+                isRedHighlighted: true,
+                onTap: () => _closeSheetAndNavigate(
+                  ctx,
+                  const DailyBriefingScreen(),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   void _showGameModes(BuildContext context) {
