@@ -24,7 +24,9 @@ void main() {
 
     expect(find.text('PRIORITY BOARDING'), findsOneWidget);
     expect(
-      find.text('Play as a guest — no login required. Guest progress is not saved.'),
+      find.text(
+        'Play as a guest — no login required. Guest progress is not saved.',
+      ),
       findsOneWidget,
     );
 
@@ -32,7 +34,10 @@ void main() {
     await TestHarness.settle(tester, frames: 12);
 
     expect(find.byType(HomeScreen), findsOneWidget);
-    expect(container.read(accountProvider).currentPlayer.username, 'Guest Pilot');
+    expect(
+      container.read(accountProvider).currentPlayer.username,
+      'Guest Pilot',
+    );
     expect(find.text("TODAY'S DAILY GAMES"), findsOneWidget);
   });
 }

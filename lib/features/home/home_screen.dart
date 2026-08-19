@@ -81,14 +81,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       vsync: this,
       duration: const Duration(seconds: 20),
     )..repeat();
-    _loadFeatureFlags();
+    final featureFlagsLoaded = _loadFeatureFlags();
     _checkMaintenanceMode();
     _checkDailyChampionRewards();
     if (widget.openDailyGamesOnLaunch) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _showDailyGames(context);
-      });
+      _openDailyGamesAfter(featureFlagsLoaded);
     }
+  }
+
+  Future<void> _openDailyGamesAfter(Future<void> featureFlagsLoaded) async {
+    await featureFlagsLoaded;
+    if (!mounted) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _showDailyGames(context);
+    });
   }
 
   /// Claim any daily-champion rewards owed for yesterday's boards

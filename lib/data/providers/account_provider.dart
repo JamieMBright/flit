@@ -398,6 +398,9 @@ const Object _sentinel = Object();
 
 /// Account state notifier.
 class AccountNotifier extends StateNotifier<AccountState> {
+  /// Matches the post-Basic-Training rank represented by the seeded missions.
+  static const int _guestPlayerLevel = 2;
+
   AccountNotifier()
       : super(
           AccountState(
@@ -955,7 +958,7 @@ class AccountNotifier extends StateNotifier<AccountState> {
         id: '',
         username: 'Guest Pilot',
         displayName: 'Guest Pilot',
-        level: 2,
+        level: _guestPlayerLevel,
       ),
       campaignProgress: {
         for (final missionId in basicTrainingMissionIds)
