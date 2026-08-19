@@ -279,24 +279,37 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             _BackButton(
-              onTap: () => setState(() {
-                _mode = _AuthMode.welcome;
-                _error = null;
-              }),
+              onTap: () {
+                if (widget.upgradeGuest) {
+                  Navigator.of(context).pop();
+                } else {
+                  setState(() {
+                    _mode = _AuthMode.welcome;
+                    _error = null;
+                  });
+                }
+              },
             ),
             const SizedBox(height: 16),
-            const Text(
-              'Create your account',
-              style: TextStyle(
+            Text(
+              widget.upgradeGuest
+                  ? 'Keep your guest runs'
+                  : 'Create your account',
+              style: const TextStyle(
                 color: FlitColors.textPrimary,
                 fontSize: 20,
                 fontWeight: FontWeight.w600,
               ),
             ),
             const SizedBox(height: 8),
-            const Text(
-              'Choose a pilot name and set your password.',
-              style: TextStyle(color: FlitColors.textSecondary, fontSize: 13),
+            Text(
+              widget.upgradeGuest
+                  ? 'Add login details to claim this guest identity.'
+                  : 'Choose a pilot name and set your password.',
+              style: const TextStyle(
+                color: FlitColors.textSecondary,
+                fontSize: 13,
+              ),
             ),
             const SizedBox(height: 24),
             _AuthTextField(
@@ -468,30 +481,41 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             ),
           ),
           const SizedBox(height: 8),
-          const Text(
-            'Click the link in your email, then come back and sign in.',
+          Text(
+            widget.upgradeGuest
+                ? 'Your guest and its runs remain available while you confirm.'
+                : 'Click the link in your email, then come back and sign in.',
             textAlign: TextAlign.center,
-            style: TextStyle(color: FlitColors.textMuted, fontSize: 13),
+            style: const TextStyle(color: FlitColors.textMuted, fontSize: 13),
           ),
           const SizedBox(height: 32),
-          _AuthButton(
-            label: 'SIGN IN',
-            isPrimary: true,
-            icon: Icons.login,
-            onTap: () => setState(() {
-              _mode = _AuthMode.signIn;
-              _error = null;
-            }),
-          ),
-          const SizedBox(height: 12),
-          _AuthButton(
-            label: 'BACK TO START',
-            icon: Icons.arrow_back,
-            onTap: () => setState(() {
-              _mode = _AuthMode.welcome;
-              _error = null;
-            }),
-          ),
+          if (widget.upgradeGuest)
+            _AuthButton(
+              label: 'KEEP PLAYING',
+              isPrimary: true,
+              icon: Icons.flight_takeoff,
+              onTap: () => Navigator.of(context).pop(),
+            )
+          else ...[
+            _AuthButton(
+              label: 'SIGN IN',
+              isPrimary: true,
+              icon: Icons.login,
+              onTap: () => setState(() {
+                _mode = _AuthMode.signIn;
+                _error = null;
+              }),
+            ),
+            const SizedBox(height: 12),
+            _AuthButton(
+              label: 'BACK TO START',
+              icon: Icons.arrow_back,
+              onTap: () => setState(() {
+                _mode = _AuthMode.welcome;
+                _error = null;
+              }),
+            ),
+          ],
         ],
       );
 
@@ -695,7 +719,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           }
           final notifier = ref.read(accountProvider.notifier);
           await notifier.loadFromSupabase(result.player!.id);
-          if (mounted) _navigateToHome();
+          if (mounted) {
+            if (widget.upgradeGuest) {
+              Navigator.of(context).pop();
+            } else {
+              _navigateToHome();
+            }
+          }
         } else if (result.error != null) {
           setState(() => _error = result.error);
         }

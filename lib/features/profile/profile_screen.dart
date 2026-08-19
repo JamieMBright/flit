@@ -546,21 +546,21 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   (route) => false,
                 );
               }
-
-              void _createAccount() {
-                Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => const LoginScreen(upgradeGuest: true),
-                  ),
-                );
-              }
             },
-            child: const Text(
-              'Sign Out',
-              style: TextStyle(color: FlitColors.error),
+            child: Text(
+              isGuest ? 'Reset Guest' : 'Sign Out',
+              style: const TextStyle(color: FlitColors.error),
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  void _createAccount() {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => const LoginScreen(upgradeGuest: true),
       ),
     );
   }
