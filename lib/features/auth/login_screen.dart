@@ -18,12 +18,14 @@ import '../home/home_screen.dart';
 
 /// Welcome and authentication screen shown on first launch.
 ///
-/// Authentication strategy: Email + password via Supabase Auth.
-/// Guests can bypass authentication to play the daily games without saving.
+/// Authentication strategy: Email + password or persistent anonymous Supabase
+/// accounts that can later be upgraded without losing runs.
 ///
 /// No Google Auth — email only, kept simple.
 class LoginScreen extends ConsumerStatefulWidget {
-  const LoginScreen({super.key});
+  const LoginScreen({super.key, this.upgradeGuest = false});
+
+  final bool upgradeGuest;
 
   @override
   ConsumerState<LoginScreen> createState() => _LoginScreenState();
@@ -44,7 +46,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   @override
   void initState() {
     super.initState();
-    _checkExistingSession();
+    if (widget.upgradeGuest) {
+      _mode = _AuthMode.signUp;
+    } else {
+      _checkExistingSession();
+    }
   }
 
   /// Auto-login if there's a valid Supabase session from a previous launch.
@@ -89,6 +95,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         }
         final notifier = ref.read(accountProvider.notifier);
         await notifier.loadFromSupabase(result.player!.id);
+        if (result.isGuest) notifier.grantGuestAccess();
         if (mounted) _navigateToHome();
       }
     }
@@ -228,8 +235,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           ),
           const SizedBox(height: 8),
           const Text(
-            'Play as a guest — no login required. '
-            'Guest progress is not saved.',
+            'Play as a guest — your runs are saved on this device '
+            'and can be claimed by creating an account.',
             textAlign: TextAlign.center,
             style: TextStyle(
               color: FlitColors.textSecondary,
@@ -580,13 +587,29 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   // ── Actions ──
 
-  void _continueAsGuest() {
-    ref.read(accountProvider.notifier).startGuestSession();
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute<void>(
-        builder: (_) => const HomeScreen(openDailyGamesOnLaunch: true),
-      ),
-    );
+  Future<void> _continueAsGuest() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+    final result = await _authService.signInAsGuest();
+    if (!mounted) return;
+    if (result.isAuthenticated && result.player != null) {
+      final notifier = ref.read(accountProvider.notifier);
+      await notifier.loadFromSupabase(result.player!.id);
+      notifier.grantGuestAccess();
+      if (!mounted) return;
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute<void>(
+          builder: (_) => const HomeScreen(openDailyGamesOnLaunch: true),
+        ),
+      );
+      return;
+    }
+    setState(() {
+      _isLoading = false;
+      _error = result.error ?? 'Guest boarding failed. Please try again.';
+    });
   }
 
   Future<void> _resetPassword() async {

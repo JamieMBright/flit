@@ -948,19 +948,17 @@ class AccountNotifier extends StateNotifier<AccountState> {
     _syncProfile();
   }
 
-  /// Start an in-memory guest session with the daily modes unlocked.
-  ///
-  /// Guest progress is intentionally not loaded from or written to Supabase.
-  void startGuestSession() {
+  /// Preserve the guest bypass for Basic Training while persisting it to the
+  /// anonymous account so the same guest can revisit the daily modes.
+  void grantGuestAccess() {
+    if (state.basicTrainingComplete) return;
     final completedAt = DateTime.now();
-    state = AccountState(
-      currentPlayer: const Player(
-        id: '',
-        username: 'Guest Pilot',
-        displayName: 'Guest Pilot',
-        level: _guestPlayerLevel,
+    state = state.copyWith(
+      currentPlayer: state.currentPlayer.copyWith(
+        level: math.max(state.currentPlayer.level, _guestPlayerLevel),
       ),
       campaignProgress: {
+        ...state.campaignProgress,
         for (final missionId in basicTrainingMissionIds)
           missionId: CampaignMissionResult(
             missionId: missionId,
@@ -970,6 +968,8 @@ class AccountNotifier extends StateNotifier<AccountState> {
           ),
       },
     );
+    _syncProfile();
+    _syncAccountState();
   }
 
   // ── Internal sync helpers ────────────────────────────────────────────

@@ -859,6 +859,16 @@ sequenceDiagram
 
 **Hydration guard**: On login, `hydrateFrom()` sets `_hydrating = true` to suppress `_syncToSupabase()` while populating fields from the database — preventing a circular write-back of the values just loaded.
 
+### Guest identity lifecycle
+
+Priority Boarding creates a Supabase anonymous user with a stable
+`Guest_<UUID prefix>` name. The SDK persists that session, and the guest uses
+the same `profiles`, `account_state`, and `scores` paths as an email account, so
+runs can appear on leaderboards and survive a revisit. Creating an account
+links email/password credentials to that same user ID. Signing out of an
+unconverted guest permanently discards the local claim capability; the next
+Priority Boarding action creates a new anonymous identity.
+
 ---
 
 ## State Residence Summary

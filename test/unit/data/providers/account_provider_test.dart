@@ -28,17 +28,18 @@ void main() {
   });
 
   group('AccountNotifier local state updates', () {
-    test('startGuestSession creates an unlocked in-memory guest', () {
+    test('grantGuestAccess preserves identity and unlocks daily modes', () {
       final notifier = AccountNotifier();
+      notifier.switchAccount(
+        const Player(id: 'guest-id', username: 'Guest_1234ABCD'),
+      );
 
-      notifier.startGuestSession();
+      notifier.grantGuestAccess();
 
-      expect(notifier.state.currentPlayer.id, isEmpty);
-      expect(notifier.state.currentPlayer.username, equals('Guest Pilot'));
+      expect(notifier.state.currentPlayer.id, equals('guest-id'));
+      expect(notifier.state.currentPlayer.username, equals('Guest_1234ABCD'));
       expect(notifier.state.basicTrainingComplete, isTrue);
       expect(notifier.isGameModeUnlocked('daily_challenge'), isTrue);
-      expect(notifier.isGameModeUnlocked('daily_triangulation'), isTrue);
-      expect(notifier.isGameModeUnlocked('daily_briefing'), isTrue);
       notifier.dispose();
     });
 

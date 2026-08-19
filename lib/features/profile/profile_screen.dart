@@ -501,6 +501,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 
   void _signOut() {
+    final isGuest =
+        Supabase.instance.client.auth.currentUser?.isAnonymous ?? false;
     showDialog<void>(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -513,9 +515,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           'Sign Out',
           style: TextStyle(color: FlitColors.textPrimary),
         ),
-        content: const Text(
-          'Are you sure you want to sign out?',
-          style: TextStyle(color: FlitColors.textSecondary),
+        content: Text(
+          isGuest
+              ? 'Signing out permanently gives up access to this guest, '
+                  'including the right to claim its runs. Continuing as a '
+                  'guest later creates a new guest identity.'
+              : 'Are you sure you want to sign out?',
+          style: const TextStyle(color: FlitColors.textSecondary),
         ),
         actions: [
           TextButton(
@@ -538,6 +544,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 Navigator.of(context).pushAndRemoveUntil(
                   MaterialPageRoute<void>(builder: (_) => const LoginScreen()),
                   (route) => false,
+                );
+              }
+
+              void _createAccount() {
+                Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const LoginScreen(upgradeGuest: true),
+                  ),
                 );
               }
             },
@@ -689,6 +703,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final account = ref.watch(accountProvider);
     final player = account.currentPlayer;
     final avatarConfig = ref.watch(avatarProvider);
+    final isGuest =
+        Supabase.instance.client.auth.currentUser?.isAnonymous ?? false;
 
     return Scaffold(
       backgroundColor: FlitColors.backgroundDark,
@@ -780,6 +796,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               const SizedBox(height: 24),
               // Actions
               _ProfileActions(
+                isGuest: isGuest,
+                onCreateAccount: _createAccount,
                 onEditProfile: _editProfile,
                 onChangePassword: _changePassword,
                 onGameHistory: _showGameHistory,
@@ -1069,6 +1087,8 @@ class _StatCard extends StatelessWidget {
 
 class _ProfileActions extends StatelessWidget {
   const _ProfileActions({
+    required this.isGuest,
+    required this.onCreateAccount,
     required this.onEditProfile,
     required this.onChangePassword,
     required this.onGameHistory,
@@ -1077,6 +1097,8 @@ class _ProfileActions extends StatelessWidget {
     required this.onSignOut,
   });
 
+  final bool isGuest;
+  final VoidCallback onCreateAccount;
   final VoidCallback onEditProfile;
   final VoidCallback onChangePassword;
   final VoidCallback onGameHistory;
@@ -1088,18 +1110,28 @@ class _ProfileActions extends StatelessWidget {
   Widget build(BuildContext context) => Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _ActionButton(
-            icon: Icons.edit,
-            label: 'Edit Profile',
-            onTap: onEditProfile,
-          ),
-          const SizedBox(height: 12),
-          _ActionButton(
-            icon: Icons.lock_outline,
-            label: 'Change Password',
-            onTap: onChangePassword,
-          ),
-          const SizedBox(height: 12),
+          if (isGuest) ...[
+            _ActionButton(
+              icon: Icons.person_add_alt_1,
+              label: 'Create Account & Keep Runs',
+              onTap: onCreateAccount,
+            ),
+            const SizedBox(height: 12),
+          ],
+          if (!isGuest) ...[
+            _ActionButton(
+              icon: Icons.edit,
+              label: 'Edit Profile',
+              onTap: onEditProfile,
+            ),
+            const SizedBox(height: 12),
+            _ActionButton(
+              icon: Icons.lock_outline,
+              label: 'Change Password',
+              onTap: onChangePassword,
+            ),
+            const SizedBox(height: 12),
+          ],
           _ActionButton(
             icon: Icons.history,
             label: 'Game History',
@@ -1125,16 +1157,19 @@ class _ProfileActions extends StatelessWidget {
             onTap: onExportData,
           ),
           const SizedBox(height: 12),
-          _ActionButton(
-            icon: Icons.delete_forever,
-            label: 'Delete Account',
-            isDestructive: true,
-            onTap: onDeleteAccount,
-          ),
-          const SizedBox(height: 24),
+          if (!isGuest) ...[
+            _ActionButton(
+              icon: Icons.delete_forever,
+              label: 'Delete Account',
+              isDestructive: true,
+              onTap: onDeleteAccount,
+            ),
+            const SizedBox(height: 24),
+          ] else
+            const SizedBox(height: 12),
           _ActionButton(
             icon: Icons.logout,
-            label: 'Sign Out',
+            label: isGuest ? 'Reset Guest Session' : 'Sign Out',
             isDestructive: true,
             onTap: onSignOut,
           ),
