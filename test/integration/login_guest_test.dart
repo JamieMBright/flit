@@ -1,6 +1,7 @@
 import 'package:flit/data/providers/account_provider.dart';
 import 'package:flit/features/auth/login_screen.dart';
 import 'package:flit/features/home/home_screen.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -16,7 +17,7 @@ void main() {
     await tester.pumpWidget(
       UncontrolledProviderScope(
         container: container,
-        child: const LoginScreen(),
+        child: const MaterialApp(home: LoginScreen()),
       ),
     );
     await TestHarness.settle(tester, frames: 12);
