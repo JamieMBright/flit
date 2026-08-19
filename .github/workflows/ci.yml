@@ -155,9 +155,12 @@ jobs:
           fi
           for attempt in 1 2; do
             echo "Build web attempt ${attempt}/2"
-            # O2 spends over an hour optimizing the 75k-point country dataset,
+            # O1 spends over an hour optimizing the 75k-point country dataset,
             # long enough for hosted runners to be reclaimed before completion.
-            if flutter build web --release --dart2js-optimization=O1 --base-href "/flit/" $DART_DEFINES 2>&1 | tee flutter-build.log; then
+            # O0 skips dart2js optimisation entirely — the bundle is larger but
+            # the build completes in minutes. Frame-rate-critical work is in the
+            # GPU fragment shader (globe.frag), not Dart, so runtime impact is minimal.
+            if flutter build web --release --dart2js-optimization=O0 --base-href "/flit/" $DART_DEFINES 2>&1 | tee flutter-build.log; then
               break
             fi
             if [ "$attempt" -eq 2 ]; then
