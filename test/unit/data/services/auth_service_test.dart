@@ -154,7 +154,7 @@ void main() {
     test('uses a stable uppercase UUID prefix', () {
       expect(
         AuthService.guestNameForId('1234abcd-5678-90ef-1234-567890abcdef'),
-        'Guest_1234ABCD',
+        'Guest_1234ABCD5678',
       );
     });
   });

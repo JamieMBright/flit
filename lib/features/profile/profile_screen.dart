@@ -501,8 +501,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 
   void _signOut() {
-    final isGuest =
-        Supabase.instance.client.auth.currentUser?.isAnonymous ?? false;
+    final authUser = Supabase.instance.client.auth.currentUser;
+    final isGuest = authUser?.isAnonymous ?? false;
     showDialog<void>(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -703,8 +703,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final account = ref.watch(accountProvider);
     final player = account.currentPlayer;
     final avatarConfig = ref.watch(avatarProvider);
-    final isGuest =
-        Supabase.instance.client.auth.currentUser?.isAnonymous ?? false;
+    final authUser = Supabase.instance.client.auth.currentUser;
+    final isGuest = authUser?.isAnonymous ?? false;
+    final isPendingUpgrade =
+        isGuest && (authUser?.newEmail?.isNotEmpty ?? false);
 
     return Scaffold(
       backgroundColor: FlitColors.backgroundDark,
@@ -797,6 +799,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               // Actions
               _ProfileActions(
                 isGuest: isGuest,
+                isPendingUpgrade: isPendingUpgrade,
                 onCreateAccount: _createAccount,
                 onEditProfile: _editProfile,
                 onChangePassword: _changePassword,
@@ -1088,6 +1091,7 @@ class _StatCard extends StatelessWidget {
 class _ProfileActions extends StatelessWidget {
   const _ProfileActions({
     required this.isGuest,
+    required this.isPendingUpgrade,
     required this.onCreateAccount,
     required this.onEditProfile,
     required this.onChangePassword,
@@ -1098,6 +1102,7 @@ class _ProfileActions extends StatelessWidget {
   });
 
   final bool isGuest;
+  final bool isPendingUpgrade;
   final VoidCallback onCreateAccount;
   final VoidCallback onEditProfile;
   final VoidCallback onChangePassword;
@@ -1110,11 +1115,24 @@ class _ProfileActions extends StatelessWidget {
   Widget build(BuildContext context) => Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          if (isGuest) ...[
+          if (isGuest && !isPendingUpgrade) ...[
             _ActionButton(
               icon: Icons.person_add_alt_1,
               label: 'Create Account & Keep Runs',
               onTap: onCreateAccount,
+            ),
+            const SizedBox(height: 12),
+          ] else if (isPendingUpgrade) ...[
+            const ListTile(
+              leading: Icon(Icons.mark_email_unread, color: FlitColors.gold),
+              title: Text(
+                'Email confirmation pending',
+                style: TextStyle(color: FlitColors.textPrimary),
+              ),
+              subtitle: Text(
+                'Confirm your email to finish claiming this guest.',
+                style: TextStyle(color: FlitColors.textSecondary),
+              ),
             ),
             const SizedBox(height: 12),
           ],

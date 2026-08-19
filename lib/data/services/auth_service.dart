@@ -83,7 +83,7 @@ class AuthService {
       final user = _client.auth.currentUser;
 
       if (session != null && user != null) {
-        final player = await _fetchOrCreateProfile(user);
+        final player = await _fetchProfileOrFallback(user);
         _state = AuthState(
           isAuthenticated: true,
           isLoading: false,
@@ -132,12 +132,13 @@ class AuthService {
           data: {'username': guestName, 'display_name': guestName},
         ),
       );
-      await _client.from('profiles').update({
+      await _client.from('profiles').upsert({
+        'id': user.id,
         'username': guestName,
         'display_name': guestName,
-      }).eq('id', user.id);
+      }, onConflict: 'id');
 
-      final player = await _fetchOrCreateProfile(user);
+      final player = await _fetchProfileOrFallback(user);
       _state = AuthState(
         isAuthenticated: true,
         player: player,
@@ -159,7 +160,7 @@ class AuthService {
   static String guestNameForId(String userId) {
     final compactId = userId.replaceAll('-', '').toUpperCase();
     final suffix =
-        compactId.length <= 8 ? compactId : compactId.substring(0, 8);
+        compactId.length <= 12 ? compactId : compactId.substring(0, 12);
     return 'Guest_$suffix';
   }
 
@@ -251,16 +252,17 @@ class AuthService {
           return _state;
         }
 
-        await _client.from('profiles').update({
+        await _client.from('profiles').upsert({
+          'id': user.id,
           'username': username,
           'display_name': displayName ?? username,
-        }).eq('id', user.id);
+        }, onConflict: 'id');
 
         if (user.isAnonymous) {
           _state = AuthState(
             isAuthenticated: true,
             isLoading: false,
-            player: await _fetchOrCreateProfile(user),
+            player: await _fetchProfileOrFallback(user),
             authMethod: AuthMethod.anonymous,
             email: email,
             needsEmailConfirmation: true,
@@ -269,7 +271,7 @@ class AuthService {
           _state = AuthState(
             isAuthenticated: true,
             isLoading: false,
-            player: await _fetchOrCreateProfile(user),
+            player: await _fetchProfileOrFallback(user),
             authMethod: AuthMethod.email,
             email: email,
           );
@@ -374,7 +376,7 @@ class AuthService {
       );
 
       if (response.user != null) {
-        final player = await _fetchOrCreateProfile(response.user!);
+        final player = await _fetchProfileOrFallback(response.user!);
         _state = AuthState(
           isAuthenticated: true,
           isLoading: false,
@@ -473,12 +475,12 @@ class AuthService {
     return _state;
   }
 
-  /// Fetch the player profile from Supabase, or build one from user metadata
-  /// if the profile row doesn't exist yet.
+  /// Fetch the player profile from Supabase, or build an in-memory fallback
+  /// from user metadata if the trigger-created profile row is unavailable.
   ///
   /// Reads the full profile including gameplay stats (level, xp, coins, etc.)
   /// so that progress is restored across sessions.
-  Future<Player> _fetchOrCreateProfile(User user) async {
+  Future<Player> _fetchProfileOrFallback(User user) async {
     try {
       final data = await _client
           .from('profiles')

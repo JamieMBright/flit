@@ -867,7 +867,8 @@ the same `profiles`, `account_state`, and `scores` paths as an email account, so
 runs can appear on leaderboards and survive a revisit. Creating an account
 links email/password credentials to that same user ID. Signing out of an
 unconverted guest permanently discards the local claim capability; the next
-Priority Boarding action creates a new anonymous identity.
+Priority Boarding action creates a new anonymous identity. Supabase Auth must
+have Anonymous Sign-Ins enabled for Priority Boarding to be available.
 
 ---
 
