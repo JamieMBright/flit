@@ -7,7 +7,7 @@ PLATFORM=${1:-all}
 
 build_web() {
     echo "🌐 Building web..."
-    flutter build web --release --dart2js-optimization=O2 --base-href "/flit/"
+    flutter build web --release --dart2js-optimization=O1 --base-href "/flit/"
     echo "✅ Web build complete: build/web/"
 }
 

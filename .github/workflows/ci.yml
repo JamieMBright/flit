@@ -155,7 +155,9 @@ jobs:
           fi
           for attempt in 1 2; do
             echo "Build web attempt ${attempt}/2"
-            if flutter build web --release --dart2js-optimization=O2 --base-href "/flit/" $DART_DEFINES 2>&1 | tee flutter-build.log; then
+            # O2 spends over an hour optimizing the 75k-point country dataset,
+            # long enough for hosted runners to be reclaimed before completion.
+            if flutter build web --release --dart2js-optimization=O1 --base-href "/flit/" $DART_DEFINES 2>&1 | tee flutter-build.log; then
               break
             fi
             if [ "$attempt" -eq 2 ]; then
