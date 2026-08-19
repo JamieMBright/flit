@@ -73,6 +73,20 @@ void main() {
       expect(find.text('Uncharted'), findsOneWidget);
     });
 
+    testWidgets('guest launch opens the daily-only game chooser',
+        (tester) async {
+      await TestHarness.pumpRealScreen(
+        tester,
+        const HomeScreen(openDailyGamesOnLaunch: true),
+      );
+      await TestHarness.settle(tester, frames: 12);
+
+      expect(find.text("TODAY'S DAILY GAMES"), findsOneWidget);
+      expect(find.text('Daily Recon'), findsOneWidget);
+      expect(find.text('Daily Briefing'), findsOneWidget);
+      expect(find.text('FLIGHT DECK'), findsNothing);
+    });
+
     testWidgets('fresh pilot sees the Basic Training funnel button',
         (tester) async {
       await TestHarness.pumpRealScreen(

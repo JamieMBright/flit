@@ -28,6 +28,20 @@ void main() {
   });
 
   group('AccountNotifier local state updates', () {
+    test('startGuestSession creates an unlocked in-memory guest', () {
+      final notifier = AccountNotifier();
+
+      notifier.startGuestSession();
+
+      expect(notifier.state.currentPlayer.id, isEmpty);
+      expect(notifier.state.currentPlayer.username, equals('Guest Pilot'));
+      expect(notifier.state.basicTrainingComplete, isTrue);
+      expect(notifier.isGameModeUnlocked('daily_challenge'), isTrue);
+      expect(notifier.isGameModeUnlocked('daily_triangulation'), isTrue);
+      expect(notifier.isGameModeUnlocked('daily_briefing'), isTrue);
+      notifier.dispose();
+    });
+
     test('recordGameCompletion updates profile stats in-memory', () async {
       final notifier = AccountNotifier();
 

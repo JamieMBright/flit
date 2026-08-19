@@ -945,6 +945,30 @@ class AccountNotifier extends StateNotifier<AccountState> {
     _syncProfile();
   }
 
+  /// Start an in-memory guest session with the daily modes unlocked.
+  ///
+  /// Guest progress is intentionally not loaded from or written to Supabase.
+  void startGuestSession() {
+    final completedAt = DateTime.now();
+    state = AccountState(
+      currentPlayer: const Player(
+        id: '',
+        username: 'Guest Pilot',
+        displayName: 'Guest Pilot',
+        level: 2,
+      ),
+      campaignProgress: {
+        for (final missionId in basicTrainingMissionIds)
+          missionId: CampaignMissionResult(
+            missionId: missionId,
+            score: 0,
+            stars: 1,
+            completedAt: completedAt,
+          ),
+      },
+    );
+  }
+
   // ── Internal sync helpers ────────────────────────────────────────────
 
   void _syncProfile() {

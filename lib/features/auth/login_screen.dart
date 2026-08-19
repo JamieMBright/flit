@@ -16,10 +16,10 @@ import '../auth/maintenance_screen.dart';
 import '../auth/update_required_screen.dart';
 import '../home/home_screen.dart';
 
-/// Login/signup screen shown on first launch.
+/// Welcome and authentication screen shown on first launch.
 ///
 /// Authentication strategy: Email + password via Supabase Auth.
-/// All players must have accounts — no guest mode.
+/// Guests can bypass authentication to play the daily games without saving.
 ///
 /// No Google Auth — email only, kept simple.
 class LoginScreen extends ConsumerStatefulWidget {
@@ -219,6 +219,23 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               _mode = _AuthMode.signIn;
               _error = null;
             }),
+          ),
+          const SizedBox(height: 12),
+          _AuthButton(
+            label: 'PRIORITY BOARDING',
+            icon: Icons.flight_takeoff_rounded,
+            onTap: _continueAsGuest,
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Play as a guest — no login required. '
+            'Guest progress is not saved.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: FlitColors.textSecondary,
+              fontSize: 12,
+              height: 1.4,
+            ),
           ),
           const SizedBox(height: 24),
           Container(
@@ -562,6 +579,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       );
 
   // ── Actions ──
+
+  void _continueAsGuest() {
+    ref.read(accountProvider.notifier).startGuestSession();
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute<void>(
+        builder: (_) => const HomeScreen(openDailyGamesOnLaunch: true),
+      ),
+    );
+  }
 
   Future<void> _resetPassword() async {
     final email = _emailController.text.trim();
