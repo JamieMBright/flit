@@ -2,6 +2,7 @@ import 'package:flame/components.dart' show Vector2;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:flit/core/country_data_loader.dart';
 import 'package:flit/features/quiz/briefing_tutorial_screen.dart';
 import 'package:flit/features/quiz/widgets/briefing_tutorial_map.dart';
 import 'package:flit/game/map/country_data.dart';
@@ -13,6 +14,10 @@ import 'package:flit/game/tutorial/training_missions.dart';
 /// tap handling, the demonstrated wrong tap, and that completion still reports
 /// a score for the campaign/unlock path (Daily Briefing + Basic Training).
 void main() {
+  setUpAll(() async {
+    await CountryDataLoader().load();
+  });
+
   Widget app(void Function(int) onComplete) => MaterialApp(
         home: BriefingTutorialScreen(onComplete: onComplete),
       );

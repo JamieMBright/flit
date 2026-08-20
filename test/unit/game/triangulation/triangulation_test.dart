@@ -1,6 +1,7 @@
 import 'package:flame/components.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:flit/core/country_data_loader.dart';
 import 'package:flit/core/services/game_settings.dart';
 import 'package:flit/core/utils/math_utils.dart';
 import 'package:flit/game/clues/clue_types.dart';
@@ -13,6 +14,10 @@ import 'package:flit/game/triangulation/triangulation_share.dart';
 import 'package:flit/game/triangulation/triangulation_target.dart';
 
 void main() {
+  setUpAll(() async {
+    await CountryDataLoader().load();
+  });
+
   group('bearing and distance helpers', () {
     test('due north bearing is 0', () {
       expect(

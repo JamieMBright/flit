@@ -1,3 +1,4 @@
+import 'package:flit/core/country_data_loader.dart';
 import 'package:flit/data/models/daily_challenge.dart';
 import 'package:flit/game/clues/clue_types.dart';
 import 'package:flit/game/map/country_data.dart';
@@ -13,6 +14,10 @@ import 'package:flutter_test/flutter_test.dart';
 /// candidate pool with this predicate before the seeded pick, so every clue it
 /// produces is in the day's theme, while staying fully deterministic.
 void main() {
+  setUpAll(() async {
+    await CountryDataLoader().load();
+  });
+
   final playable = CountryData.playableCountries;
 
   int countProducible(String clueType) =>
