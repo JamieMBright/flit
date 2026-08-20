@@ -21,6 +21,7 @@
 ///   which deadlocks on Flit's continuously-animated globe + pulse controllers.
 library test_harness;
 
+import 'package:flit/core/country_data_loader.dart';
 import 'package:flit/data/models/player.dart';
 import 'package:flit/data/providers/account_provider.dart';
 import 'package:flit/game/tutorial/mode_requirements.dart';
@@ -51,6 +52,7 @@ class TestHarness {
   static Future<void> ensureTestEnv() async {
     TestWidgetsFlutterBinding.ensureInitialized();
     SharedPreferences.setMockInitialValues({});
+    await CountryDataLoader().load();
     if (_supabaseReady) return;
     try {
       await Supabase.initialize(
