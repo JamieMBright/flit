@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'core/config/supabase_config.dart';
+import 'core/country_data_loader.dart';
 import 'core/services/audio_manager.dart';
 import 'core/services/game_settings.dart';
 import 'core/services/dev_overlay.dart';
@@ -80,6 +81,8 @@ Future<void> main() async {
   // from assets/data/country_stats.json. Fail-safe: on any error the game
   // falls back to the baked-in Dart baseline.
   await CountryStats.instance.load();
+
+  await CountryDataLoader().load();
 
   // Hydrate ad daily-cap / frequency-cap bookkeeping (mobile only; no-op on
   // web). Placeholder ads only — no real ad SDK is wired. See docs/ADS.md.

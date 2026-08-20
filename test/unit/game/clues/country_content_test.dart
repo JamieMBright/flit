@@ -1,6 +1,7 @@
 import 'package:flag/flag.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:flit/core/country_data_loader.dart';
 import 'package:flit/core/widgets/country_flag.dart';
 import 'package:flit/game/clues/clue_types.dart';
 import 'package:flit/game/map/country_data.dart';
@@ -10,6 +11,10 @@ import 'package:flit/game/map/country_data.dart';
 /// clues). This is what keeps clue pools large enough to avoid the
 /// repeated-clue problem — new countries can't ship half-filled.
 void main() {
+  setUpAll(() async {
+    await CountryDataLoader().load();
+  });
+
   final playable = CountryData.playableCountries;
 
   test('every playable country has a capital with coordinates', () {
