@@ -18,16 +18,17 @@ void main() {
     await CountryDataLoader().load();
   });
 
-  final playable = CountryData.playableCountries;
-
   int countProducible(String clueType) =>
-      playable.where((c) => Clue.canProduceClueType(c.code, clueType)).length;
+      CountryData.playableCountries
+        .where((country) => Clue.canProduceClueType(country.code, clueType))
+        .length;
 
   group('canProduceClueType — per single-clue theme coverage', () {
     test('flag / capital / stats are producible for every playable country',
         () {
       // Flag is always valid; capital and stats are contractually complete for
       // every playable country (see country_content_test).
+      final playable = CountryData.playableCountries;
       expect(countProducible('flag'), playable.length);
       expect(countProducible('capital'), playable.length);
       expect(countProducible('stats'), playable.length);

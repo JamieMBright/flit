@@ -15,11 +15,11 @@ void main() {
     await CountryDataLoader().load();
   });
 
-  final playable = CountryData.playableCountries;
+  List<CountryShape> playable() => CountryData.playableCountries;
 
   test('every playable country has a capital with coordinates', () {
     final missing = [
-      for (final c in playable)
+      for (final c in playable())
         if (CountryData.getCapital(c.code) == null) '${c.code} (${c.name})',
     ];
     expect(missing, isEmpty,
@@ -28,7 +28,7 @@ void main() {
 
   test('every playable country has leader and language stats', () {
     final missing = <String>[];
-    for (final c in playable) {
+    for (final c in playable()) {
       final stats = Clue.getAllCountryStats(c.code);
       if ((stats['headOfState'] ?? '').isEmpty ||
           (stats['language'] ?? '').isEmpty) {
@@ -51,7 +51,7 @@ void main() {
       'celebrity',
     ];
     final incomplete = <String>[];
-    for (final c in playable) {
+    for (final c in playable()) {
       final stats = Clue.getAllCountryStats(c.code);
       for (final field in requiredFields) {
         if ((stats[field] ?? '').isEmpty) {
@@ -67,7 +67,7 @@ void main() {
     // (assets/images/flags/). The emoji fallback is a safety net, not an
     // acceptable steady state for a playable country.
     final unrenderable = [
-      for (final c in playable)
+      for (final c in playable())
         if (!Flag.flagsCode.contains(c.code.toLowerCase()) &&
             !CountryFlag.bundledCodes.contains(c.code.toUpperCase()))
           '${c.code} (${c.name})',
@@ -81,7 +81,7 @@ void main() {
     // than 3 degrees must have a properly detailed outline, and nothing
     // playable may be missing polygons entirely.
     final crude = <String>[];
-    for (final c in playable) {
+    for (final c in playable()) {
       final info = CountryData.getCountry(c.code);
       final polys = info?.polygons ?? const [];
       final points = polys.fold<int>(0, (s, p) => s + p.length);
