@@ -112,6 +112,14 @@ void main() {
     expect(crude, isEmpty, reason: 'Crude/missing outlines: $crude');
   });
 
+  test('Tuvalu outline preserves separate island rings', () {
+    final polygons = CountryData.getCountry('TV')!.polygons;
+    expect(polygons.length, greaterThan(1));
+    for (final polygon in polygons) {
+      expect(polygon.first, polygon.last);
+    }
+  });
+
   test('spot-check known facts stay sane', () {
     expect(Clue.getAllCountryStats('FR')['language'], contains('French'));
     expect(Clue.getNeighbors('CH'), contains('Germany'));
