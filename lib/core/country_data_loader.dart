@@ -28,13 +28,7 @@ class CountryDataLoader {
         name: country['name'] as String,
         capital: country['capital'] as String?,
         polygons: (country['polygons'] as List<dynamic>).map((polygon) =>
-            (polygon as List<dynamic>).map((point) {
-              final coordinates = point as List<dynamic>;
-              return Vector2(
-                (coordinates[0] as num).toDouble(),
-                (coordinates[1] as num).toDouble(),
-              );
-            }).toList(growable: false)).toList(growable: false),
+            _decodePolygon(polygon as List<dynamic>)).toList(growable: false),
       );
     }).toList(growable: false);
     _majorCities = (data['cities'] as List<dynamic>).map((raw) {
@@ -52,6 +46,19 @@ class CountryDataLoader {
       );
     }).toList(growable: false);
     _loaded = true;
+  }
+
+  List<Vector2> _decodePolygon(List<dynamic> coordinates) {
+    if (coordinates.length.isOdd) {
+      throw const FormatException('Polygon coordinate count must be even.');
+    }
+    return [
+      for (var i = 0; i < coordinates.length; i += 2)
+        Vector2(
+          (coordinates[i] as num).toDouble(),
+          (coordinates[i + 1] as num).toDouble(),
+        ),
+    ];
   }
 
   List<CountryShape> get countries {
