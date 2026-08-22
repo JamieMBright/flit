@@ -1,1 +1,0 @@
-{"timestamp":"2026-08-22T06:48:11.085Z","sessionId":"web-1787381291085-ak2vz7i5u","appVersion":"v1.438","platform":"web","deviceInfo":"web-browser","severity":"critical","error":"[Async Error] TypeError: Load failed","context":{"source":"js_error_handler","url":"https://jamiembright.github.io/flit/"},"_receivedAt":"2026-08-22T06:48:11.964Z","_id":"1787381291966-3deuqoqv"}
