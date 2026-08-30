@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 
 import '../../core/constants/store_urls.dart';
 import '../../core/theme/flit_colors.dart';
@@ -37,6 +40,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _displayNameController = TextEditingController();
+  StreamSubscription<sb.AuthState>? _authSubscription;
 
   bool _isLoading = false;
   String? _error;
@@ -46,6 +50,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   @override
   void initState() {
     super.initState();
+    _authSubscription =
+        sb.Supabase.instance.client.auth.onAuthStateChange.listen((state) {
+      if (state.event == sb.AuthChangeEvent.passwordRecovery && mounted) {
+        setState(() {
+          _mode = _AuthMode.setNewPassword;
+          _error = null;
+          _passwordController.clear();
+        });
+      }
+    });
     if (widget.upgradeGuest) {
       _mode = _AuthMode.signUp;
     } else {
@@ -96,13 +110,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         final notifier = ref.read(accountProvider.notifier);
         await notifier.loadFromSupabase(result.player!.id);
         if (result.isGuest) notifier.grantGuestAccess();
-        if (mounted) _navigateToHome();
+        // Don't auto-navigate if a password recovery link was opened — the
+        // passwordRecovery auth event will have already set the mode.
+        if (mounted && _mode != _AuthMode.setNewPassword) _navigateToHome();
       }
     }
   }
 
   @override
   void dispose() {
+    _authSubscription?.cancel();
     _usernameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
@@ -153,6 +170,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         _buildForgotPassword(),
                       if (_mode == _AuthMode.resetEmailSent)
                         _buildResetEmailSent(),
+                      if (_mode == _AuthMode.setNewPassword)
+                        _buildSetNewPassword(),
                       if (_error != null) ...[
                         const SizedBox(height: 16),
                         _ErrorBanner(message: _error!),
@@ -609,6 +628,59 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         ],
       );
 
+  // ── Set new password (after clicking reset email link) ──
+
+  Widget _buildSetNewPassword() => Column(
+        children: [
+          const Icon(
+            Icons.lock_reset,
+            color: FlitColors.gold,
+            size: 64,
+          ),
+          const SizedBox(height: 24),
+          const Text(
+            'Set new password',
+            style: TextStyle(
+              color: FlitColors.textPrimary,
+              fontSize: 22,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Choose a new password for your account.',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: FlitColors.textSecondary, fontSize: 13),
+          ),
+          const SizedBox(height: 24),
+          _AuthTextField(
+            controller: _passwordController,
+            label: 'New password',
+            hint: 'At least 6 characters',
+            obscureText: _obscurePassword,
+            autofillHints: const [AutofillHints.newPassword],
+            textInputAction: TextInputAction.done,
+            onSubmitted: (_) => _saveNewPassword(),
+            suffixIcon: IconButton(
+              icon: Icon(
+                _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                color: FlitColors.textMuted,
+                size: 20,
+              ),
+              onPressed: () =>
+                  setState(() => _obscurePassword = !_obscurePassword),
+            ),
+          ),
+          const SizedBox(height: 20),
+          _AuthButton(
+            label: 'SAVE PASSWORD',
+            isPrimary: true,
+            icon: Icons.check_circle_outline,
+            onTap: _saveNewPassword,
+          ),
+        ],
+      );
+
   // ── Actions ──
 
   Future<void> _continueAsGuest() async {
@@ -659,6 +731,51 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           setState(() => _error = result.error);
         } else {
           setState(() => _mode = _AuthMode.resetEmailSent);
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _error = 'Something went wrong. Please try again.';
+        });
+      }
+    }
+  }
+
+  Future<void> _saveNewPassword() async {
+    final password = _passwordController.text;
+
+    if (password.length < 6) {
+      setState(() => _error = 'Password must be at least 6 characters');
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      final result =
+          await _authService.changePassword(newPassword: password);
+
+      if (mounted) {
+        setState(() => _isLoading = false);
+
+        if (result.error != null) {
+          setState(() => _error = result.error);
+        } else {
+          setState(() {
+            _mode = _AuthMode.signIn;
+            _passwordController.clear();
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Password updated — please sign in.'),
+              duration: Duration(seconds: 4),
+            ),
+          );
         }
       }
     } catch (e) {
@@ -816,6 +933,7 @@ enum _AuthMode {
   confirmEmail,
   forgotPassword,
   resetEmailSent,
+  setNewPassword,
 }
 
 // ── Shared widgets ──
