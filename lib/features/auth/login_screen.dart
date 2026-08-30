@@ -766,6 +766,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         if (result.error != null) {
           setState(() => _error = result.error);
         } else {
+          // Sign out the recovery session so the user must sign in fresh
+          // with their new credentials.
+          await _authService.signOut();
+          if (!mounted) return;
           setState(() {
             _mode = _AuthMode.signIn;
             _passwordController.clear();
