@@ -2099,21 +2099,25 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
             // Mobile steering control. Joystick mode replaces the corner
             // buttons while keeping the clue card independently reachable.
             if (_gameReady && _session != null) ...[
-              if (GameSettings.instance.enableJoystick)
+              if (GameSettings.instance.enableJoystick || _tutorialActive)
                 Positioned(
                   left: 0,
                   right: 0,
-                  bottom: MediaQuery.of(context).padding.bottom + 72,
+                  bottom: MediaQuery.of(context).padding.bottom + 8,
                   child: Center(
                     child: JoystickWidget(
+                      size: (MediaQuery.of(context).size.width * 0.2)
+                          .clamp(64.0, 80.0)
+                          .toDouble(),
                       onChanged: _game.setJoystickTurn,
                       onReleased: _game.releaseJoystickTurn,
-                      onEngaged: () =>
-                          _tutorialKey.currentState?.onJoystickDragged(),
+                      onDirectionChanged: (direction) => _tutorialKey
+                          .currentState
+                          ?.onJoystickDragged(direction),
                     ),
                   ),
-                )
-              else ...[
+                ),
+              if (!GameSettings.instance.enableJoystick || _tutorialActive) ...[
                 Positioned(
                   left: 16,
                   bottom: MediaQuery.of(context).padding.bottom + 80,

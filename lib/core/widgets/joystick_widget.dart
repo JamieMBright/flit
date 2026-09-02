@@ -4,16 +4,16 @@ import '../theme/flit_colors.dart';
 
 /// Converts a horizontal joystick displacement into a signed turn strength.
 ///
-/// A small deadzone prevents accidental drift. The quadratic curve keeps
+/// A generous deadzone prevents accidental drift. The cubic curve keeps
 /// corrections gentle near the centre and reaches full lock at the edge.
 double joystickTurnStrength(double displacement, double radius) {
   if (radius <= 0) return 0;
   final normalized = (displacement / radius).clamp(-1.0, 1.0);
   final magnitude = normalized.abs();
-  const deadzone = 0.08;
+  const deadzone = 0.16;
   if (magnitude <= deadzone) return 0;
-  final curvedMagnitude = ((magnitude - deadzone) / (1 - deadzone));
-  return normalized.sign * curvedMagnitude * curvedMagnitude;
+  final curvedMagnitude = (magnitude - deadzone) / (1 - deadzone);
+  return normalized.sign * curvedMagnitude * curvedMagnitude * curvedMagnitude;
 }
 
 /// Central thumb control for continuous left/right steering.
@@ -22,13 +22,16 @@ class JoystickWidget extends StatefulWidget {
     super.key,
     required this.onChanged,
     required this.onReleased,
-    this.onEngaged,
-    this.size = 112,
+    this.onDirectionChanged,
+    this.size = 76,
   });
 
   final ValueChanged<double> onChanged;
   final VoidCallback onReleased;
-  final VoidCallback? onEngaged;
+
+  /// Called once when a held pointer first produces meaningful movement in a
+  /// direction. The value is -1 for left and 1 for right.
+  final ValueChanged<int>? onDirectionChanged;
   final double size;
 
   @override
@@ -62,7 +65,7 @@ class _JoystickWidgetState extends State<JoystickWidget> {
     final strength = joystickTurnStrength(displacement, _travelRadius);
     if (!_engagementReported && strength.abs() > 0) {
       _engagementReported = true;
-      widget.onEngaged?.call();
+      widget.onDirectionChanged?.call(strength.sign.toInt());
     }
     setState(() => _displacement = displacement);
     widget.onChanged(strength);

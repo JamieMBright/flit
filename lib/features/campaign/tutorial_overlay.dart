@@ -33,6 +33,9 @@ enum TutorialPhase {
   /// Spotlight on the central joystick when it is enabled.
   tryJoystick,
 
+  /// Ask which steering control the player prefers.
+  chooseControl,
+
   /// Spotlight on globe. Player must set multiple waypoints.
   tryWaypoint,
 
@@ -88,11 +91,14 @@ class TutorialOverlayState extends State<TutorialOverlay>
 
   /// Count-based progression trackers.
   int _turnCount = 0;
+  int _joystickCount = 0;
+  int? _lastJoystickDirection;
   int _waypointCount = 0;
   int _speedChangeCount = 0;
 
   /// Thresholds for progressing past each phase.
   static const _turnThreshold = 3;
+  static const _joystickThreshold = 3;
   static const _waypointThreshold = 10;
   static const _speedThreshold = 3;
 
@@ -156,11 +162,7 @@ class TutorialOverlayState extends State<TutorialOverlay>
     if (_phase == TutorialPhase.tryTurning) {
       _turnCount++;
       if (_turnCount >= _turnThreshold) {
-        _advanceAfterDelay(
-          GameSettings.instance.enableJoystick
-              ? TutorialPhase.tryJoystick
-              : TutorialPhase.tryWaypoint,
-        );
+        _advanceAfterDelay(TutorialPhase.tryJoystick);
       } else {
         setState(() {}); // Refresh message with updated count
       }
@@ -168,10 +170,22 @@ class TutorialOverlayState extends State<TutorialOverlay>
   }
 
   /// Called when the joystick produces a meaningful lateral movement.
-  void onJoystickDragged() {
+  void onJoystickDragged(int direction) {
     if (_phase == TutorialPhase.tryJoystick) {
-      _advanceAfterDelay(TutorialPhase.tryWaypoint);
+      if (_lastJoystickDirection == direction) return;
+      _lastJoystickDirection = direction;
+      _joystickCount++;
+      if (_joystickCount >= _joystickThreshold) {
+        _advanceAfterDelay(TutorialPhase.chooseControl);
+      } else {
+        setState(() {});
+      }
     }
+  }
+
+  void _selectControl(bool useJoystick) {
+    GameSettings.instance.enableJoystick = useJoystick;
+    _finishTutorial();
   }
 
   /// Called when the player taps the globe (sets a waypoint).
@@ -222,6 +236,7 @@ class TutorialOverlayState extends State<TutorialOverlay>
       // For action phases, tapping does nothing — player must use the control.
       case TutorialPhase.tryTurning:
       case TutorialPhase.tryJoystick:
+      case TutorialPhase.chooseControl:
       case TutorialPhase.tryWaypoint:
       case TutorialPhase.trySpeed:
       case TutorialPhase.tryAltitude:
@@ -272,9 +287,19 @@ class TutorialOverlayState extends State<TutorialOverlay>
         }
         return 'One more turn and you\'ll fly like a natural!';
       case TutorialPhase.tryJoystick:
-        return 'Now try the central joystick. Hold the circle and slide '
-            'left or right to bank gently or make a sharper turn. Let go '
-            'to fly straight again.';
+        final remaining = _joystickThreshold - _joystickCount;
+        if (_joystickCount == 0) {
+          return 'Now try the central joystick. Hold the circle and slide '
+              'left or right to bank gently or make a sharper turn. Let go '
+              'to fly straight again. Try moving side to side '
+              '$_joystickThreshold times.';
+        }
+        return 'Good control. Move to the other side, then back again. '
+            '$remaining more direction changes to go.';
+      case TutorialPhase.chooseControl:
+        return 'Which control felt better? Choose arrows for quick taps, or '
+            'the joystick for smooth, precise banking. You can change this '
+            'later in Settings.';
       case TutorialPhase.tryWaypoint:
         final remaining = _waypointThreshold - _waypointCount;
         if (_waypointCount == 0) {
@@ -336,11 +361,11 @@ class TutorialOverlayState extends State<TutorialOverlay>
       case TutorialPhase.complete:
         return null;
       case TutorialPhase.tryTurning:
-        return GameSettings.instance.enableJoystick
-            ? TutorialTarget.joystick
-            : TutorialTarget.turnButtons;
+        return TutorialTarget.turnButtons;
       case TutorialPhase.tryJoystick:
         return TutorialTarget.joystick;
+      case TutorialPhase.chooseControl:
+        return null;
       case TutorialPhase.tryWaypoint:
         return TutorialTarget.globe;
       case TutorialPhase.trySpeed:
@@ -414,6 +439,31 @@ class TutorialOverlayState extends State<TutorialOverlay>
               ],
             ),
           ),
+          if (_phase == TutorialPhase.chooseControl)
+            Positioned(
+              left: 24,
+              right: 24,
+              bottom: safePadding.bottom + 132,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: _ControlChoiceButton(
+                      label: 'ARROWS',
+                      icon: Icons.swap_horiz,
+                      onPressed: () => _selectControl(false),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _ControlChoiceButton(
+                      label: 'JOYSTICK',
+                      icon: Icons.gamepad_outlined,
+                      onPressed: () => _selectControl(true),
+                    ),
+                  ),
+                ],
+              ),
+            ),
         ],
       ),
     );
@@ -422,6 +472,7 @@ class TutorialOverlayState extends State<TutorialOverlay>
   bool get _isActionPhase =>
       _phase == TutorialPhase.tryTurning ||
       _phase == TutorialPhase.tryJoystick ||
+      _phase == TutorialPhase.chooseControl ||
       _phase == TutorialPhase.tryWaypoint ||
       _phase == TutorialPhase.trySpeed ||
       _phase == TutorialPhase.tryAltitude ||
@@ -430,6 +481,33 @@ class TutorialOverlayState extends State<TutorialOverlay>
   /// Whether the current phase advances on a simple tap (not a control action).
   bool get _isTapPhase =>
       _phase == TutorialPhase.welcome || _phase == TutorialPhase.ready;
+}
+
+class _ControlChoiceButton extends StatelessWidget {
+  const _ControlChoiceButton({
+    required this.label,
+    required this.icon,
+    required this.onPressed,
+  });
+
+  final String label;
+  final IconData icon;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) => ElevatedButton.icon(
+        onPressed: onPressed,
+        icon: Icon(icon),
+        label: Text(label),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: FlitColors.accent,
+          foregroundColor: FlitColors.backgroundDark,
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+        ),
+      );
 }
 
 /// HUD element regions for spotlight positioning.

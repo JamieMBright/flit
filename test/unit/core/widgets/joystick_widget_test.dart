@@ -56,7 +56,7 @@ void main() {
         JoystickWidget(
           onChanged: (_) {},
           onReleased: () {},
-          onEngaged: () => engagements++,
+          onDirectionChanged: (_) => engagements++,
         ),
       );
 
