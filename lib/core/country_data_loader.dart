@@ -27,8 +27,9 @@ class CountryDataLoader {
         code: country['code'] as String,
         name: country['name'] as String,
         capital: country['capital'] as String?,
-        polygons: (country['polygons'] as List<dynamic>).map((polygon) =>
-            _decodePolygon(polygon as List<dynamic>)).toList(growable: false),
+        polygons: (country['polygons'] as List<dynamic>)
+            .map((polygon) => _decodePolygon(polygon as List<dynamic>))
+            .toList(growable: false),
       );
     }).toList(growable: false);
     _majorCities = (data['cities'] as List<dynamic>).map((raw) {

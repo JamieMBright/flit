@@ -8,7 +8,8 @@ import 'helpers/test_harness.dart';
 void main() {
   setUpAll(TestHarness.ensureTestEnv);
 
-  testWidgets('priority boarding explains persistent guest runs', (tester) async {
+  testWidgets('priority boarding explains persistent guest runs',
+      (tester) async {
     final container = ProviderContainer();
     addTearDown(container.dispose);
 

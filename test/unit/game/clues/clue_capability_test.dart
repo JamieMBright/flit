@@ -18,10 +18,9 @@ void main() {
     await CountryDataLoader().load();
   });
 
-  int countProducible(String clueType) =>
-      CountryData.playableCountries
-        .where((country) => Clue.canProduceClueType(country.code, clueType))
-        .length;
+  int countProducible(String clueType) => CountryData.playableCountries
+      .where((country) => Clue.canProduceClueType(country.code, clueType))
+      .length;
 
   group('canProduceClueType — per single-clue theme coverage', () {
     test('flag / capital / stats are producible for every playable country',

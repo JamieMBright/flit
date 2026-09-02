@@ -93,7 +93,7 @@ class GameSettings extends ChangeNotifier {
   /// Bump this when you need to force-override specific settings for all
   /// players. The migration in [loadFromLocal] checks the stored version
   /// and resets affected fields to the new defaults.
-  static const int _settingsVersion = 2;
+  static const int _settingsVersion = 3;
 
   /// Set to `true` when [loadFromLocal] detects the stored version is behind
   /// [_settingsVersion]. When set, [hydrateFrom] skips overwriting the
@@ -107,6 +107,7 @@ class GameSettings extends ChangeNotifier {
     UserPreferencesService.instance.saveSettings(
       turnSensitivity: _turnSensitivity,
       invertControls: _invertControls,
+      enableJoystick: _enableJoystick,
       enableNight: _enableNight,
       enableClouds: _enableClouds,
       cloudCoverage: _cloudCoverage,
@@ -133,6 +134,7 @@ class GameSettings extends ChangeNotifier {
   Future<void> hydrateFrom({
     required double turnSensitivity,
     required bool invertControls,
+    required bool enableJoystick,
     required bool enableNight,
     required bool enableClouds,
     double? cloudCoverage,
@@ -150,6 +152,7 @@ class GameSettings extends ChangeNotifier {
     try {
       this.turnSensitivity = turnSensitivity;
       this.invertControls = invertControls;
+      this.enableJoystick = enableJoystick;
       // When a migration is pending, keep the forced cloud/night defaults
       // instead of reverting to stale Supabase values.
       if (_pendingMigration) {
@@ -185,6 +188,7 @@ class GameSettings extends ChangeNotifier {
         'version': _settingsVersion,
         'turn_sensitivity': _turnSensitivity,
         'invert_controls': _invertControls,
+        'enable_joystick': _enableJoystick,
         'enable_night': _enableNight,
         'enable_clouds': _enableClouds,
         'cloud_coverage': _cloudCoverage,
@@ -222,6 +226,7 @@ class GameSettings extends ChangeNotifier {
       _turnSensitivity =
           (data['turn_sensitivity'] as num?)?.toDouble() ?? _turnSensitivity;
       _invertControls = data['invert_controls'] as bool? ?? _invertControls;
+      _enableJoystick = data['enable_joystick'] as bool? ?? _enableJoystick;
 
       // Migration v2: force cloud and night defaults on all players.
       if (storedVersion < 2) {
@@ -313,6 +318,17 @@ class GameSettings extends ChangeNotifier {
 
   set invertControls(bool value) {
     _invertControls = value;
+    notifyListeners();
+  }
+
+  /// Whether touch steering uses the central thumb joystick instead of the
+  /// corner turn buttons. Defaults to false for existing players.
+  bool _enableJoystick = false;
+
+  bool get enableJoystick => _enableJoystick;
+
+  set enableJoystick(bool value) {
+    _enableJoystick = value;
     notifyListeners();
   }
 

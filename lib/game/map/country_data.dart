@@ -51,7 +51,17 @@ abstract class CountryData {
   }
 
   static const Set<String> excludedTerritories = {
-    'AI', 'AS', 'MS', 'NF', 'NU', 'PM', 'PN', 'SH', 'UM', 'VG', 'WF',
+    'AI',
+    'AS',
+    'MS',
+    'NF',
+    'NU',
+    'PM',
+    'PN',
+    'SH',
+    'UM',
+    'VG',
+    'WF',
   };
 
   static List<CountryShape> get playableCountries => countries

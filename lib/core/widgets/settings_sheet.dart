@@ -141,6 +141,16 @@ class _SettingsSheetContentState extends State<_SettingsSheetContent> {
             },
           ),
           const Divider(color: FlitColors.cardBorder, height: 1),
+          _SettingsToggle(
+            label: 'Joystick Steering',
+            icon: Icons.gamepad_outlined,
+            value: GameSettings.instance.enableJoystick,
+            onChanged: (value) {
+              GameSettings.instance.enableJoystick = value;
+              setState(() {});
+            },
+          ),
+          const Divider(color: FlitColors.cardBorder, height: 1),
           _SettingsSlider(
             label: 'Turn Sensitivity',
             icon: Icons.speed,

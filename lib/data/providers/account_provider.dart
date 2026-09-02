@@ -741,6 +741,7 @@ class AccountNotifier extends StateNotifier<AccountState> {
       await GameSettings.instance.hydrateFrom(
         turnSensitivity: snapshot.turnSensitivity,
         invertControls: snapshot.invertControls,
+        enableJoystick: snapshot.enableJoystick,
         enableNight: snapshot.enableNight,
         enableClouds: snapshot.enableClouds,
         cloudCoverage: snapshot.cloudCoverage,

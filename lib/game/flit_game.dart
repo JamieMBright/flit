@@ -224,6 +224,12 @@ class FlitGame extends FlameGame
   /// How long the current button turn has been held (seconds).
   double _buttonTurnHoldTime = 0.0;
 
+  /// Signed continuous turn strength supplied by the central joystick.
+  double _joystickTurn = 0.0;
+
+  /// Whether a joystick pointer is currently held, including at centre.
+  bool _joystickActive = false;
+
   /// Wayline overlay renderer (draws translucent line to waymarker).
   WaylineRenderer? _waylineRenderer;
 
@@ -1396,10 +1402,18 @@ class FlitGame extends FlameGame
       _keyTurnDir = polledDir;
     }
 
-    // Combine keyboard and button input (button overrides keyboard).
+    // The joystick overrides discrete touch buttons and keyboard input while
+    // its pointer is held, including when the knob is centred.
+    final joystickActive = _joystickActive;
     final dir = _buttonTurnDir != 0 ? _buttonTurnDir : _keyTurnDir;
 
-    if (dir != 0) {
+    if (joystickActive || dir != 0) {
+      if (joystickActive) {
+        final invert = GameSettings.instance.invertControls ? -1.0 : 1.0;
+        _plane.setTurnDirection(_joystickTurn * invert);
+        _waymarker = null;
+        return;
+      }
       // Ramp up hold time and compute progressive strength.
       // In descent mode, scale ramp rate slightly faster (1.3×) so the plane
       // responds despite the lower movement speed, but without making turns
@@ -1815,6 +1829,18 @@ class FlitGame extends FlameGame
   void setButtonTurn(int direction) {
     _buttonTurnDir = direction.clamp(-1, 1);
     if (direction == 0) _buttonTurnHoldTime = 0.0;
+  }
+
+  /// Set continuous joystick turn strength in the range [-1, 1].
+  void setJoystickTurn(double strength) {
+    _joystickActive = true;
+    _joystickTurn = strength.clamp(-1.0, 1.0);
+  }
+
+  /// Release the central joystick and return control to other inputs.
+  void releaseJoystickTurn() {
+    _joystickActive = false;
+    _joystickTurn = 0.0;
   }
 
   /// Release on-screen button turn.

@@ -12,6 +12,7 @@ import '../../core/utils/haptics.dart';
 import '../../core/services/error_service.dart';
 import '../../core/services/game_settings.dart';
 import '../../core/theme/flit_colors.dart';
+import '../../core/widgets/joystick_widget.dart';
 import '../../core/utils/math_utils.dart';
 import '../../core/utils/report_capture.dart';
 import '../../core/widgets/mission_report_card.dart';
@@ -397,6 +398,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
     _timer?.cancel();
     _autoHintTimer?.cancel();
     _gameReadyTimeout?.cancel();
+    _game.releaseJoystickTurn();
     // Detach the Flame game to stop its loop and release resources.
     // Without this, the game loop can outlive the widget and crash when
     // the user navigates to a different game mode.
@@ -2094,33 +2096,49 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
             // Ink-burst success animation overlay
             InkBurstOverlay(key: _inkBurstKey),
 
-            // Mobile turn buttons (L/R) — positioned at bottom corners.
-            // Use GestureDetector for press/release to get progressive turning.
+            // Mobile steering control. Joystick mode replaces the corner
+            // buttons while keeping the clue card independently reachable.
             if (_gameReady && _session != null) ...[
-              Positioned(
-                left: 16,
-                bottom: MediaQuery.of(context).padding.bottom + 80,
-                child: _TurnButton(
-                  icon: Icons.turn_left,
-                  onPressStart: () {
-                    _game.setButtonTurn(-1);
-                    _tutorialKey.currentState?.onTurnPressed();
-                  },
-                  onPressEnd: () => _game.releaseButtonTurn(),
+              if (GameSettings.instance.enableJoystick)
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: MediaQuery.of(context).padding.bottom + 72,
+                  child: Center(
+                    child: JoystickWidget(
+                      onChanged: _game.setJoystickTurn,
+                      onReleased: _game.releaseJoystickTurn,
+                      onEngaged: () =>
+                          _tutorialKey.currentState?.onJoystickDragged(),
+                    ),
+                  ),
+                )
+              else ...[
+                Positioned(
+                  left: 16,
+                  bottom: MediaQuery.of(context).padding.bottom + 80,
+                  child: _TurnButton(
+                    icon: Icons.turn_left,
+                    onPressStart: () {
+                      _game.setButtonTurn(-1);
+                      _tutorialKey.currentState?.onTurnPressed();
+                    },
+                    onPressEnd: () => _game.releaseButtonTurn(),
+                  ),
                 ),
-              ),
-              Positioned(
-                right: 16,
-                bottom: MediaQuery.of(context).padding.bottom + 80,
-                child: _TurnButton(
-                  icon: Icons.turn_right,
-                  onPressStart: () {
-                    _game.setButtonTurn(1);
-                    _tutorialKey.currentState?.onTurnPressed();
-                  },
-                  onPressEnd: () => _game.releaseButtonTurn(),
+                Positioned(
+                  right: 16,
+                  bottom: MediaQuery.of(context).padding.bottom + 80,
+                  child: _TurnButton(
+                    icon: Icons.turn_right,
+                    onPressStart: () {
+                      _game.setButtonTurn(1);
+                      _tutorialKey.currentState?.onTurnPressed();
+                    },
+                    onPressEnd: () => _game.releaseButtonTurn(),
+                  ),
                 ),
-              ),
+              ],
             ],
 
             // Coach overlay for campaign missions

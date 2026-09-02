@@ -100,7 +100,7 @@ abstract final class FlitTheme {
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           ),
         ),
-        cardTheme: CardTheme(
+        cardTheme: CardThemeData(
           color: FlitColors.cardBackground,
           elevation: 0,
           shape: RoundedRectangleBorder(

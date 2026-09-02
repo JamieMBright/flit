@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 
+import '../../core/services/game_settings.dart';
 import '../../core/theme/flit_colors.dart';
 import '../../game/tutorial/campaign_mission.dart';
 import '../../game/tutorial/coach.dart';
@@ -28,6 +29,9 @@ enum TutorialPhase {
 
   /// Spotlight on turn buttons. Player must turn several times.
   tryTurning,
+
+  /// Spotlight on the central joystick when it is enabled.
+  tryJoystick,
 
   /// Spotlight on globe. Player must set multiple waypoints.
   tryWaypoint,
@@ -152,10 +156,21 @@ class TutorialOverlayState extends State<TutorialOverlay>
     if (_phase == TutorialPhase.tryTurning) {
       _turnCount++;
       if (_turnCount >= _turnThreshold) {
-        _advanceAfterDelay(TutorialPhase.tryWaypoint);
+        _advanceAfterDelay(
+          GameSettings.instance.enableJoystick
+              ? TutorialPhase.tryJoystick
+              : TutorialPhase.tryWaypoint,
+        );
       } else {
         setState(() {}); // Refresh message with updated count
       }
+    }
+  }
+
+  /// Called when the joystick produces a meaningful lateral movement.
+  void onJoystickDragged() {
+    if (_phase == TutorialPhase.tryJoystick) {
+      _advanceAfterDelay(TutorialPhase.tryWaypoint);
     }
   }
 
@@ -206,6 +221,7 @@ class TutorialOverlayState extends State<TutorialOverlay>
         _finishTutorial();
       // For action phases, tapping does nothing — player must use the control.
       case TutorialPhase.tryTurning:
+      case TutorialPhase.tryJoystick:
       case TutorialPhase.tryWaypoint:
       case TutorialPhase.trySpeed:
       case TutorialPhase.tryAltitude:
@@ -241,6 +257,11 @@ class TutorialOverlayState extends State<TutorialOverlay>
       case TutorialPhase.tryTurning:
         final remaining = _turnThreshold - _turnCount;
         if (_turnCount == 0) {
+          if (GameSettings.instance.enableJoystick) {
+            return 'When I flew the first airmail from Karachi to Bombay, '
+                'I had to bank and turn through mountain passes. Use the '
+                'turn controls at the bottom to practise banking. Try it!';
+          }
           return 'When I flew the first airmail from Karachi to Bombay, '
               'I had to bank and turn through mountain passes. See the '
               'arrows at the bottom corners? Hold one to turn. Try it!';
@@ -250,6 +271,10 @@ class TutorialOverlayState extends State<TutorialOverlay>
               '$remaining more turns — get comfortable!';
         }
         return 'One more turn and you\'ll fly like a natural!';
+      case TutorialPhase.tryJoystick:
+        return 'Now try the central joystick. Hold the circle and slide '
+            'left or right to bank gently or make a sharper turn. Let go '
+            'to fly straight again.';
       case TutorialPhase.tryWaypoint:
         final remaining = _waypointThreshold - _waypointCount;
         if (_waypointCount == 0) {
@@ -311,7 +336,11 @@ class TutorialOverlayState extends State<TutorialOverlay>
       case TutorialPhase.complete:
         return null;
       case TutorialPhase.tryTurning:
-        return TutorialTarget.turnButtons;
+        return GameSettings.instance.enableJoystick
+            ? TutorialTarget.joystick
+            : TutorialTarget.turnButtons;
+      case TutorialPhase.tryJoystick:
+        return TutorialTarget.joystick;
       case TutorialPhase.tryWaypoint:
         return TutorialTarget.globe;
       case TutorialPhase.trySpeed:
@@ -392,6 +421,7 @@ class TutorialOverlayState extends State<TutorialOverlay>
 
   bool get _isActionPhase =>
       _phase == TutorialPhase.tryTurning ||
+      _phase == TutorialPhase.tryJoystick ||
       _phase == TutorialPhase.tryWaypoint ||
       _phase == TutorialPhase.trySpeed ||
       _phase == TutorialPhase.tryAltitude ||
@@ -405,6 +435,7 @@ class TutorialOverlayState extends State<TutorialOverlay>
 /// HUD element regions for spotlight positioning.
 enum TutorialTarget {
   turnButtons,
+  joystick,
   globe,
   speedControls,
   altitudeToggle,
@@ -741,6 +772,15 @@ class _SpotlightPainter extends CustomPainter {
           btnBottom - 64 - pad,
           size.width,
           btnBottom + 8 + pad,
+        );
+
+      case TutorialTarget.joystick:
+        final joystickBottom = size.height - safePadding.bottom - 72;
+        const joystickSize = 112.0;
+        return Rect.fromCenter(
+          center: Offset(size.width / 2, joystickBottom - joystickSize / 2),
+          width: joystickSize + pad * 2,
+          height: joystickSize + pad * 2,
         );
 
       case TutorialTarget.globe:

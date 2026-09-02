@@ -182,6 +182,7 @@ CREATE TABLE IF NOT EXISTS public.user_settings (
   user_id           UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   turn_sensitivity   REAL NOT NULL DEFAULT 0.5,
   invert_controls    BOOLEAN NOT NULL DEFAULT FALSE,
+  enable_joystick    BOOLEAN NOT NULL DEFAULT FALSE,
   enable_night       BOOLEAN NOT NULL DEFAULT TRUE,
   map_style          TEXT NOT NULL DEFAULT 'topo',
   english_labels     BOOLEAN NOT NULL DEFAULT TRUE,

@@ -496,6 +496,7 @@ class UserPreferencesService {
   void saveSettings({
     required double turnSensitivity,
     required bool invertControls,
+    required bool enableJoystick,
     required bool enableNight,
     required bool enableClouds,
     double? cloudCoverage,
@@ -515,6 +516,7 @@ class UserPreferencesService {
       'user_id': _userId,
       'turn_sensitivity': turnSensitivity,
       'invert_controls': invertControls,
+      'enable_joystick': enableJoystick,
       'enable_night': enableNight,
       'enable_clouds': enableClouds,
       if (cloudCoverage != null) 'cloud_coverage': cloudCoverage,
@@ -1742,6 +1744,10 @@ class UserPreferencesSnapshot {
 
   bool get invertControls {
     return settings?['invert_controls'] as bool? ?? false;
+  }
+
+  bool get enableJoystick {
+    return settings?['enable_joystick'] as bool? ?? false;
   }
 
   bool get enableNight {

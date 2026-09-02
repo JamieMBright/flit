@@ -81,14 +81,15 @@ BEGIN
   IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='profiles' AND column_name='updated_at') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: profiles.updated_at'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: profiles.updated_at -- MISSING'); END IF;
 
   -- =========================================================================
-  -- USER_SETTINGS COLUMNS (13)
+  -- USER_SETTINGS COLUMNS (14)
   -- =========================================================================
   _results := array_append(_results, '');
-  _results := array_append(_results, '--- user_settings columns (13) ---');
+  _results := array_append(_results, '--- user_settings columns (14) ---');
 
   IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='user_settings' AND column_name='user_id') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: user_settings.user_id'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: user_settings.user_id -- MISSING'); END IF;
   IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='user_settings' AND column_name='turn_sensitivity') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: user_settings.turn_sensitivity'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: user_settings.turn_sensitivity -- MISSING'); END IF;
   IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='user_settings' AND column_name='invert_controls') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: user_settings.invert_controls'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: user_settings.invert_controls -- MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='user_settings' AND column_name='enable_joystick') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: user_settings.enable_joystick'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: user_settings.enable_joystick -- MISSING'); END IF;
   IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='user_settings' AND column_name='enable_night') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: user_settings.enable_night'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: user_settings.enable_night -- MISSING'); END IF;
   IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='user_settings' AND column_name='map_style') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: user_settings.map_style'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: user_settings.map_style -- MISSING'); END IF;
   IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='user_settings' AND column_name='english_labels') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: user_settings.english_labels'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: user_settings.english_labels -- MISSING'); END IF;
