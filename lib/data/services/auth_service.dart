@@ -419,7 +419,12 @@ class AuthService {
     }
 
     try {
-      await _client.auth.resetPasswordForEmail(email);
+      await _client.auth.resetPasswordForEmail(
+        email,
+        redirectTo: SupabaseConfig.siteUrl.isNotEmpty
+            ? SupabaseConfig.siteUrl
+            : null,
+      );
       _state = _state.copyWith(isLoading: false);
     } on AuthException catch (e) {
       _state = _state.copyWith(isLoading: false, error: e.message);
