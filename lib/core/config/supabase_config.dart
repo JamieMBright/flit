@@ -17,8 +17,15 @@ abstract final class SupabaseConfig {
 
   /// The URL users are redirected to after clicking the email confirmation
   /// link. Override via `--dart-define=SITE_URL=https://your-app.com`.
-  static const String siteUrl = String.fromEnvironment(
+  static const String emailConfirmationUrl = String.fromEnvironment(
     'SITE_URL',
     defaultValue: 'https://flit-olive.vercel.app/confirmed.html',
+  );
+
+  /// The URL users are redirected to after opening a password reset email.
+  /// Override via `--dart-define=PASSWORD_RESET_URL=https://your-app.com/reset`.
+  static const String passwordResetUrl = String.fromEnvironment(
+    'PASSWORD_RESET_URL',
+    defaultValue: 'https://flit-olive.vercel.app/reset-password.html',
   );
 }
