@@ -91,6 +91,21 @@
     <p class="hint">You can close this tab.</p>
   </div>
   <script>
+    // Let the Flutter app consume Supabase auth callbacks. Vercel serves files
+    // in public/ from the site root, so this page is only a brief bridge.
+    if (window.location.search || window.location.hash) {
+      const callbackParams = new URLSearchParams(window.location.search);
+      const hasAuthCallback =
+        callbackParams.has('code') ||
+        callbackParams.has('error') ||
+        window.location.hash.includes('access_token=') ||
+        window.location.hash.includes('type=recovery');
+
+      if (hasAuthCallback) {
+        window.location.replace('/' + window.location.search + window.location.hash);
+      }
+    }
+
     // Sprinkle some stars in the background
     const container = document.getElementById('stars');
     for (let i = 0; i < 60; i++) {
