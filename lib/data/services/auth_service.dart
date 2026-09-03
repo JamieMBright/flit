@@ -240,8 +240,9 @@ class AuthService {
               'display_name': displayName ?? username,
             },
           ),
-          emailRedirectTo:
-              SupabaseConfig.siteUrl.isNotEmpty ? SupabaseConfig.siteUrl : null,
+          emailRedirectTo: SupabaseConfig.emailConfirmationUrl.isNotEmpty
+              ? SupabaseConfig.emailConfirmationUrl
+              : null,
         );
         final user = response.user;
         if (user == null) {
@@ -283,8 +284,8 @@ class AuthService {
           email: email,
           password: password,
           data: {'username': username, 'display_name': displayName ?? username},
-          emailRedirectTo: SupabaseConfig.siteUrl.isNotEmpty
-              ? SupabaseConfig.siteUrl
+          emailRedirectTo: SupabaseConfig.emailConfirmationUrl.isNotEmpty
+              ? SupabaseConfig.emailConfirmationUrl
               : null);
 
       if (response.user != null) {
@@ -421,8 +422,8 @@ class AuthService {
     try {
       await _client.auth.resetPasswordForEmail(
         email,
-        redirectTo: SupabaseConfig.siteUrl.isNotEmpty
-            ? SupabaseConfig.siteUrl
+        redirectTo: SupabaseConfig.passwordResetUrl.isNotEmpty
+            ? SupabaseConfig.passwordResetUrl
             : null,
       );
       _state = _state.copyWith(isLoading: false);

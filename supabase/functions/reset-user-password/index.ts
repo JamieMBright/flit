@@ -16,6 +16,9 @@ serve(async (req) => {
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!
   const anonKey = Deno.env.get('SUPABASE_ANON_KEY')!
   const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+  const passwordResetUrl =
+    Deno.env.get('PASSWORD_RESET_URL') ??
+    'https://flit-olive.vercel.app/reset-password.html'
 
   // Verify caller is at least a moderator
   const userClient = createClient(supabaseUrl, anonKey, {
@@ -54,6 +57,9 @@ serve(async (req) => {
   const { error: resetError } = await adminClient.auth.admin.generateLink({
     type: 'recovery',
     email: targetUser.user.email,
+    options: {
+      redirectTo: passwordResetUrl,
+    },
   })
 
   if (resetError) {
