@@ -19,6 +19,15 @@ void main() {
       expect(joystickTurnStrength(-50, 50), -1);
     });
 
+    test('tapers sensitivity toward full deflection', () {
+      final midA = joystickTurnStrength(28, 50);
+      final midB = joystickTurnStrength(34, 50);
+      final edgeA = joystickTurnStrength(40, 50);
+      final edgeB = joystickTurnStrength(46, 50);
+
+      expect(midB - midA, greaterThan(edgeB - edgeA));
+    });
+
     test('clamps displacement beyond the outer radius', () {
       expect(joystickTurnStrength(100, 50), 1);
       expect(joystickTurnStrength(-100, 50), -1);

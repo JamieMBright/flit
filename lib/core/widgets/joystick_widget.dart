@@ -4,16 +4,20 @@ import '../theme/flit_colors.dart';
 
 /// Converts a horizontal joystick displacement into a signed turn strength.
 ///
-/// A generous deadzone prevents accidental drift. The cubic curve keeps
-/// corrections gentle near the centre and reaches full lock at the edge.
+/// A generous deadzone prevents accidental drift. The eased response keeps
+/// corrections gentle near the centre, tapers sensitivity toward the edge,
+/// and still reaches full lock at the limit.
 double joystickTurnStrength(double displacement, double radius) {
   if (radius <= 0) return 0;
   final normalized = (displacement / radius).clamp(-1.0, 1.0);
   final magnitude = normalized.abs();
   const deadzone = 0.16;
   if (magnitude <= deadzone) return 0;
-  final curvedMagnitude = (magnitude - deadzone) / (1 - deadzone);
-  return normalized.sign * curvedMagnitude * curvedMagnitude * curvedMagnitude;
+  final responseMagnitude = (magnitude - deadzone) / (1 - deadzone);
+  final shapedInput = responseMagnitude * responseMagnitude;
+  final easedMagnitude =
+      shapedInput * shapedInput * (3 - 2 * shapedInput);
+  return normalized.sign * easedMagnitude;
 }
 
 /// Central thumb control for continuous left/right steering.
