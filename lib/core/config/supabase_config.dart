@@ -15,10 +15,10 @@ abstract final class SupabaseConfig {
     defaultValue: 'sb_publishable_AnlV4Gngx7a5z3KwqV7F9w_-4rQYEJs',
   );
 
-  /// The URL users are redirected to after clicking the email confirmation
-  /// link. Override via `--dart-define=SITE_URL=https://your-app.com`.
+  /// The GitHub Pages URL users return to after an auth email callback.
+  /// Override via `--dart-define=SITE_URL=https://your-app.com`.
   static const String siteUrl = String.fromEnvironment(
     'SITE_URL',
-    defaultValue: 'https://flit-olive.vercel.app/confirmed.html',
+    defaultValue: 'https://jamiembright.github.io/flit/',
   );
 }
