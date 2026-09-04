@@ -15,10 +15,17 @@ abstract final class SupabaseConfig {
     defaultValue: 'sb_publishable_AnlV4Gngx7a5z3KwqV7F9w_-4rQYEJs',
   );
 
-  /// The GitHub Pages URL users return to after an auth email callback.
-  /// Override via `--dart-define=SITE_URL=https://your-app.com`.
-  static const String siteUrl = String.fromEnvironment(
+  /// The URL users are redirected to after clicking the email confirmation
+  /// link. Override via `--dart-define=SITE_URL=https://your-app.com`.
+  static const String emailConfirmationUrl = String.fromEnvironment(
     'SITE_URL',
+    defaultValue: 'https://jamiembright.github.io/flit/',
+  );
+
+  /// The URL users are redirected to after opening a password reset email.
+  /// Override via `--dart-define=PASSWORD_RESET_URL=https://your-app.com/reset`.
+  static const String passwordResetUrl = String.fromEnvironment(
+    'PASSWORD_RESET_URL',
     defaultValue: 'https://jamiembright.github.io/flit/',
   );
 }

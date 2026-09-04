@@ -2078,21 +2078,6 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
                 onSkipClue: widget.isFreeFlight ? _skipClue : null,
               ),
 
-            // Active boost chips (Gold Surge / XP Surge / Polish) — shown
-            // where earnings happen so a running timer is never invisible.
-            if (_gameReady && _isFreeFlightEarning)
-              Positioned(
-                top: MediaQuery.of(context).padding.top + 108,
-                left: 0,
-                right: 0,
-                child: Center(
-                  child: ActiveEffectsRow(
-                    effects: ref.watch(accountProvider).activeEffects,
-                    compact: true,
-                  ),
-                ),
-              ),
-
             // Ink-burst success animation overlay
             InkBurstOverlay(key: _inkBurstKey),
 
@@ -2114,6 +2099,20 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
                       onDirectionChanged: (direction) => _tutorialKey
                           .currentState
                           ?.onJoystickDragged(direction),
+                    ),
+                  ),
+                ),
+              // Active boost chips (Gold Surge / XP Surge / Polish) — shown
+              // above the control overlay so stored boosts remain visible.
+              if (_gameReady && _isFreeFlightEarning)
+                Positioned(
+                  top: MediaQuery.of(context).padding.top + 108,
+                  left: 0,
+                  right: 0,
+                  child: Center(
+                    child: ActiveEffectsRow(
+                      effects: ref.watch(accountProvider).activeEffects,
+                      compact: true,
                     ),
                   ),
                 ),
