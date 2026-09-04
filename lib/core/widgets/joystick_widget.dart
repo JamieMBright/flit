@@ -11,12 +11,14 @@ double joystickTurnStrength(double displacement, double radius) {
   if (radius <= 0) return 0;
   final normalized = (displacement / radius).clamp(-1.0, 1.0);
   final magnitude = normalized.abs();
-  const deadzone = 0.16;
+  const deadzone = 0.20;
   if (magnitude <= deadzone) return 0;
   final responseMagnitude = (magnitude - deadzone) / (1 - deadzone);
-  final shapedInput = responseMagnitude * responseMagnitude;
   final easedMagnitude =
-      shapedInput * shapedInput * (3 - 2 * shapedInput);
+      responseMagnitude *
+      responseMagnitude *
+      responseMagnitude *
+      (4 - 3 * responseMagnitude);
   return normalized.sign * easedMagnitude;
 }
 

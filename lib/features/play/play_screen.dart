@@ -2104,7 +2104,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
                 ),
               // Active boost chips (Gold Surge / XP Surge / Polish) — shown
               // above the control overlay so stored boosts remain visible.
-              if (_isFreeFlightEarning)
+              if (_gameReady && _isFreeFlightEarning)
                 Positioned(
                   top: MediaQuery.of(context).padding.top + 108,
                   left: 0,
