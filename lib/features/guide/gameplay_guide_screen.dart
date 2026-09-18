@@ -1845,27 +1845,37 @@ class _ControlsSection extends StatelessWidget {
           _ControlsDiagram(),
           SizedBox(height: 16),
           _ControlRow(
-            gesture: 'L/R turn buttons',
+            gesture: 'Classic controls',
             icon: Icons.swap_horiz_rounded,
-            effect: 'Steer the plane left or right',
+            effect:
+                'Hold the left or right button to steer; use the throttle slider for continuous speed',
           ),
           SizedBox(height: 8),
           _ControlRow(
-            gesture: 'Altitude toggle',
-            icon: Icons.height_rounded,
-            effect: 'Switch between high and low altitude',
+            gesture: 'D-pad',
+            icon: Icons.dialpad_rounded,
+            effect:
+                'Left/right steer; tap or hold up/down to adjust throttle; tap the centre for altitude',
           ),
           SizedBox(height: 8),
           _ControlRow(
-            gesture: 'Single tap',
+            gesture: 'Joystick',
+            icon: Icons.gamepad_outlined,
+            effect:
+                'Small movement makes fine turns; larger travel makes stronger turns; vertical travel adjusts throttle',
+          ),
+          SizedBox(height: 8),
+          _ControlRow(
+            gesture: 'Control double-tap',
+            icon: Icons.touch_app_rounded,
+            effect:
+                'Request a clue without touching the globe; single taps toggle altitude after the double-tap window',
+          ),
+          SizedBox(height: 8),
+          _ControlRow(
+            gesture: 'Globe tap',
             icon: Icons.ads_click_rounded,
             effect: 'Set a navigation waypoint on the globe',
-          ),
-          SizedBox(height: 8),
-          _ControlRow(
-            gesture: 'Speed selector',
-            icon: Icons.speed_rounded,
-            effect: 'Choose slow, medium, or fast flight',
           ),
           SizedBox(height: 20),
           _BodyText('Keyboard shortcuts (desktop & web):'),
@@ -1879,7 +1889,7 @@ class _ControlsSection extends StatelessWidget {
           _ControlRow(
             gesture: '\u2191 / \u2193  Arrow keys',
             icon: Icons.keyboard_rounded,
-            effect: 'Switch between high and low altitude',
+            effect: 'Adjust throttle continuously while held',
           ),
           SizedBox(height: 8),
           _ControlRow(
@@ -1891,7 +1901,8 @@ class _ControlsSection extends StatelessWidget {
           _ControlRow(
             gesture: '1 / 2 / 3  keys',
             icon: Icons.looks_3_rounded,
-            effect: 'Set flight speed: slow, medium, or fast',
+            effect:
+                'Optional throttle presets: minimum, medium anchor, maximum',
           ),
         ],
       ),
