@@ -20,13 +20,11 @@ void main() {
         1.0,
         planeLatDeg: 0.0,
         planeLngDeg: 0.0,
-        isHighAltitude: true,
       );
       camera.update(
         10.0,
         planeLatDeg: 0.0,
         planeLngDeg: 0.0,
-        isHighAltitude: true,
       );
 
       final center = Offset(screenSize.width / 2, screenSize.height / 2);
@@ -51,13 +49,11 @@ void main() {
         10.0,
         planeLatDeg: 30.0,
         planeLngDeg: 45.0,
-        isHighAltitude: true,
       );
       camera.update(
         10.0,
         planeLatDeg: 30.0,
         planeLngDeg: 45.0,
-        isHighAltitude: true,
       );
 
       final center = Offset(screenSize.width / 2, screenSize.height / 2);
@@ -81,7 +77,6 @@ void main() {
         10.0,
         planeLatDeg: 0.0,
         planeLngDeg: 0.0,
-        isHighAltitude: true,
       );
 
       final farCorner = Offset(screenSize.width * 10, screenSize.height * 10);
@@ -95,7 +90,6 @@ void main() {
         10.0,
         planeLatDeg: 0.0,
         planeLngDeg: 0.0,
-        isHighAltitude: true,
       );
 
       final result = hitTest.screenToLatLng(
@@ -114,13 +108,11 @@ void main() {
           10.0,
           planeLatDeg: 0.0,
           planeLngDeg: 0.0,
-          isHighAltitude: true,
         );
         camera.update(
           10.0,
           planeLatDeg: 0.0,
           planeLngDeg: 0.0,
-          isHighAltitude: true,
         );
 
         final center = Offset(screenSize.width / 2, screenSize.height / 2);
@@ -138,13 +130,11 @@ void main() {
         10.0,
         planeLatDeg: 45.0,
         planeLngDeg: -90.0,
-        isHighAltitude: false,
       );
       camera.update(
         10.0,
         planeLatDeg: 45.0,
         planeLngDeg: -90.0,
-        isHighAltitude: false,
       );
 
       final center = Offset(screenSize.width / 2, screenSize.height / 2);
@@ -161,13 +151,11 @@ void main() {
         10.0,
         planeLatDeg: 0.0,
         planeLngDeg: 170.0,
-        isHighAltitude: true,
       );
       camera.update(
         10.0,
         planeLatDeg: 0.0,
         planeLngDeg: 170.0,
-        isHighAltitude: true,
       );
 
       final center = Offset(screenSize.width / 2, screenSize.height / 2);

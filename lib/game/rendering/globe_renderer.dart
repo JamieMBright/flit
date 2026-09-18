@@ -95,16 +95,14 @@ class GlobeRenderer extends Component with HasGameRef<FlitGame> {
     // speedFraction: ratio of current speed to max speed.
     // Use continuous speed for smooth FOV transitions
     final speedFraction =
-        plane.currentSpeedContinuous / PlaneComponent.highAltitudeSpeed;
+        plane.currentSpeedContinuous / PlaneComponent.normalFlightSpeed;
 
     _camera.update(
       dt,
       planeLatDeg: camPos.y,
       planeLngDeg: camPos.x,
-      isHighAltitude: plane.isHighAltitude,
       speedFraction: speedFraction.clamp(0.0, 1.0),
       headingRad: gameRef.cameraHeadingBearing,
-      altitudeFraction: plane.continuousAltitude,
     );
   }
 
@@ -139,12 +137,6 @@ class GlobeRenderer extends Component with HasGameRef<FlitGame> {
   void render(Canvas canvas) {
     super.render(canvas);
 
-    // Below altitude 0.3 the OSM tile map provides all visuals — skip shader
-    // entirely. Between 0.3 and 0.6 we fade the shader out so the transition
-    // from globe to flat map is smooth (no abrupt pop).
-    final alt = gameRef.plane.continuousAltitude;
-    if (alt < 0.3) return;
-
     try {
       final screenSize = gameRef.size;
       if (screenSize.x != _lastSize.width || screenSize.y != _lastSize.height) {
@@ -174,24 +166,11 @@ class GlobeRenderer extends Component with HasGameRef<FlitGame> {
         return;
       }
 
-      // Draw full-screen rect with the shader paint.
-      // Fade out as altitude drops below 0.6 for smooth globe→map transition.
-      final shaderOpacity =
-          alt >= 0.6 ? 1.0 : ((alt - 0.3) / 0.3).clamp(0.0, 1.0);
       final paint = Paint()..shader = shader;
-      if (shaderOpacity < 1.0) {
-        canvas.saveLayer(
-          Rect.fromLTWH(0, 0, _lastSize.width, _lastSize.height),
-          Paint()..color = Color.fromRGBO(0, 0, 0, shaderOpacity),
-        );
-      }
       canvas.drawRect(
         Rect.fromLTWH(0, 0, _lastSize.width, _lastSize.height),
         paint,
       );
-      if (shaderOpacity < 1.0) {
-        canvas.restore();
-      }
     } catch (e, st) {
       // Catch any shader rendering errors — critical for iOS Safari where
       // shader compilation or uniform setting can fail and crash the app.

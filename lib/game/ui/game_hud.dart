@@ -11,15 +11,13 @@ import '../../core/widgets/flight_control_widgets.dart';
 import '../clues/clue_types.dart';
 import '../session/game_session.dart';
 
-/// Game HUD overlay showing clues, timer, altitude indicator, speed controls,
+/// Game HUD overlay showing clues, timer, throttle controls,
 /// and exit button. Styled with a vintage atlas / lo-fi pop art aesthetic.
 class GameHud extends StatelessWidget {
   const GameHud({
     super.key,
-    required this.isHighAltitude,
     required this.elapsedTime,
     this.currentClue,
-    this.onAltitudeToggle,
     this.onExit,
     this.onSettings,
     this.controlMode = ControlMode.classic,
@@ -42,10 +40,8 @@ class GameHud extends StatelessWidget {
     this.onSkipClue,
   });
 
-  final bool isHighAltitude;
   final Duration elapsedTime;
   final Clue? currentClue;
-  final VoidCallback? onAltitudeToggle;
   final VoidCallback? onExit;
   final VoidCallback? onSettings;
   final ControlMode controlMode;
@@ -189,12 +185,6 @@ class GameHud extends StatelessWidget {
                         onChanged: onThrottleChanged ?? (_) {},
                         onIncrement: onThrottleIncrement,
                         onDecrement: onThrottleDecrement,
-                      ),
-                    ),
-                    Flexible(
-                      child: _AltitudeIndicator(
-                        isHigh: isHighAltitude,
-                        onToggle: onAltitudeToggle,
                       ),
                     ),
                   ],
@@ -568,49 +558,6 @@ class _CountryNameBar extends StatelessWidget {
       ),
     );
   }
-}
-
-class _AltitudeIndicator extends StatelessWidget {
-  const _AltitudeIndicator({required this.isHigh, this.onToggle});
-
-  final bool isHigh;
-  final VoidCallback? onToggle;
-
-  @override
-  Widget build(BuildContext context) => GestureDetector(
-        onTap: onToggle,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          decoration: BoxDecoration(
-            color: FlitColors.cardBackground.withOpacity(0.85),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: isHigh ? FlitColors.accent : FlitColors.success,
-              width: 1.5,
-            ),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                isHigh ? Icons.flight_takeoff : Icons.flight_land,
-                color: isHigh ? FlitColors.accent : FlitColors.success,
-                size: 16,
-              ),
-              const SizedBox(width: 6),
-              Text(
-                isHigh ? 'DESCEND' : 'ASCEND',
-                style: TextStyle(
-                  color: isHigh ? FlitColors.accent : FlitColors.success,
-                  fontSize: 10,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 1.0,
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
 }
 
 class _HintButton extends StatefulWidget {

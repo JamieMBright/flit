@@ -209,10 +209,9 @@ class _DailyScrambleTab extends StatelessWidget {
               SizedBox(height: 12),
               _BodyText(
                 'You fly a plane over a 3D satellite globe. Swipe left/right to '
-                'steer and up/down to change altitude. Read the clue at the top, '
-                'then fly to the target country and tap it to guess. Lower '
-                'altitude gives you a closer look but costs fuel. Use hints if '
-                'you are stuck — each hint tier costs points.',
+                'steer and use up/down to adjust throttle. Read the clue at the '
+                'top, then fly to the target country and tap it to guess. Use '
+                'hints if you are stuck — each hint tier costs points.',
               ),
             ],
           ),
@@ -283,7 +282,7 @@ class _FreeFlightTab extends StatelessWidget {
               SizedBox(height: 12),
               _BodyText(
                 'Same flying controls as Daily Scramble — swipe to steer, '
-                'change altitude, and tap countries. The difference is there is '
+                'adjust throttle, and tap countries. The difference is there is '
                 'no timer, no scoring, and no limit on hints. Fly around, '
                 'explore the globe, and learn where countries are at your own '
                 'pace.',
@@ -1050,14 +1049,6 @@ class _GlobeSection extends StatelessWidget {
             iconColor: FlitColors.oceanHighlight,
             label: 'Steer your plane',
             description: 'Use the L/R turn buttons to fly in any direction.',
-          ),
-          const SizedBox(height: 8),
-          const _InteractionRow(
-            icon: Icons.height_rounded,
-            iconColor: FlitColors.gold,
-            label: 'Change altitude',
-            description:
-                'Toggle altitude to switch between globe view and ground level.',
           ),
           const SizedBox(height: 8),
           const _InteractionRow(
@@ -1854,8 +1845,7 @@ class _ControlsSection extends StatelessWidget {
           _ControlRow(
             gesture: 'D-pad',
             icon: Icons.dialpad_rounded,
-            effect:
-                'Left/right steer; tap or hold up/down to adjust throttle; tap the centre for altitude',
+            effect: 'Left/right steer; tap or hold up/down to adjust throttle',
           ),
           SizedBox(height: 8),
           _ControlRow(
@@ -1868,8 +1858,7 @@ class _ControlsSection extends StatelessWidget {
           _ControlRow(
             gesture: 'Control double-tap',
             icon: Icons.touch_app_rounded,
-            effect:
-                'Request a clue without touching the globe; single taps toggle altitude after the double-tap window',
+            effect: 'Request a clue without touching the globe',
           ),
           SizedBox(height: 8),
           _ControlRow(
@@ -1890,12 +1879,6 @@ class _ControlsSection extends StatelessWidget {
             gesture: '\u2191 / \u2193  Arrow keys',
             icon: Icons.keyboard_rounded,
             effect: 'Adjust throttle continuously while held',
-          ),
-          SizedBox(height: 8),
-          _ControlRow(
-            gesture: 'Space bar',
-            icon: Icons.space_bar_rounded,
-            effect: 'Toggle altitude (same as \u2191/\u2193)',
           ),
           SizedBox(height: 8),
           _ControlRow(
@@ -1937,12 +1920,12 @@ class _ControlsDiagram extends StatelessWidget {
               width: 0.5,
               color: FlitColors.cardBorder.withOpacity(0.5),
             ),
-            // Zone 2: Altitude
+            // Zone 2: Throttle
             const Expanded(
               child: _GestureZone(
                 color: FlitColors.gold,
-                icon: Icons.height_rounded,
-                label: 'ALT',
+                icon: Icons.speed_rounded,
+                label: 'THROTTLE',
               ),
             ),
             Container(

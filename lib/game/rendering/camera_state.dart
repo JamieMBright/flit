@@ -9,8 +9,8 @@ import 'region_camera_presets.dart';
 /// Position is derived from the plane's latitude/longitude on the sphere
 /// surface, offset outward along the surface normal by an altitude distance.
 ///
-/// Provides smooth transitions between high and low altitude, and a
-/// speed-dependent FOV shift for a sense of acceleration.
+/// Provides a stable region-framed globe camera and a speed-dependent FOV
+/// shift for a sense of acceleration.
 ///
 /// Call [setRegion] when starting a regional game to snap the camera to the
 /// correct starting position and record the active region for bounds clamping.
@@ -18,15 +18,10 @@ class CameraState {
   /// Globe radius in world units (normalized to 1.0).
   static const double globeRadius = 1.0;
 
-  /// Camera distance from globe center at high altitude (~1.8 radii).
+  /// Normal camera distance from globe center (~1.8 radii).
   /// Close enough to show terrain context and fill more of the screen.
   /// Reduced from 2.0 to make the globe appear even larger, with edges off-screen.
-  static const double highAltitudeDistance = 1.8;
-
-  /// Camera distance from globe center at low altitude (~1.35 radii).
-  /// Close enough to see terrain detail but zoomed out enough to show
-  /// surrounding geography for orientation.
-  static const double lowAltitudeDistance = 1.35;
+  static const double normalCameraDistance = 1.8;
 
   /// Narrow FOV at rest (radians). Approximately 55 degrees.
   /// Increased from 0.87 (50°) to 0.96 (55°) for wider default view.
@@ -36,10 +31,8 @@ class CameraState {
   /// Increased from 1.30 (75°) to 1.40 (80°) for wider speed-up view.
   static const double fovWide = 1.40;
 
-  /// Rate of easing for altitude transitions (higher = faster).
-  /// 1.5 gives a gradual ~2s transition where the map slowly zooms in/out.
-  /// Low enough to feel smooth, not jarring.
-  static const double _altitudeEaseRate = 1.5;
+  /// Rate of easing for camera distance changes between region presets.
+  static const double _distanceEaseRate = 1.5;
 
   /// Rate of easing for FOV transitions (higher = faster).
   static const double _fovEaseRate = 4.0;
@@ -57,7 +50,7 @@ class CameraState {
   // -- Internal state --
 
   /// Current interpolated camera distance from globe center.
-  double _currentDistance = highAltitudeDistance;
+  double _currentDistance = normalCameraDistance;
 
   /// Current interpolated camera latitude (radians).
   double _currentLatRad = 0.0;
@@ -75,7 +68,7 @@ class CameraState {
 
   double _camX = 0.0;
   double _camY = 0.0;
-  double _camZ = highAltitudeDistance;
+  double _camZ = normalCameraDistance;
 
   // -- Heading-aligned up vector (prevents rolling at non-equatorial latitudes) --
 
@@ -113,26 +106,21 @@ class CameraState {
   /// Current interpolated distance from globe center.
   double get currentDistance => _currentDistance;
 
-  /// Update the camera state based on the plane's position and flight mode.
+  /// Update the camera state based on the plane's position and region frame.
   ///
   /// [dt] - delta time in seconds since last frame.
   /// [planeLatDeg] - plane latitude in degrees.
   /// [planeLngDeg] - plane longitude in degrees.
-  /// [isHighAltitude] - true for high altitude (zoomed out), false for low.
   /// [speedFraction] - normalized speed 0.0 (stopped) to 1.0 (max speed),
   ///   used to shift the FOV for a sense of acceleration.
   /// [headingRad] - navigation bearing in radians (0 = north, clockwise).
   ///   Used to compute the heading-aligned up vector that prevents rolling.
-  /// [altitudeFraction] - optional continuous altitude 0.0 (low) to 1.0 (high),
-  ///   overrides isHighAltitude for smooth altitude transitions.
   void update(
     double dt, {
     required double planeLatDeg,
     required double planeLngDeg,
-    required bool isHighAltitude,
     double speedFraction = 0.0,
     double headingRad = 0.0,
-    double? altitudeFraction,
   }) {
     // Clamp the camera target to region bounds when a region is active.
     // For GameRegion.world the bounds span ±90/±180 so clamping is a no-op.
@@ -151,18 +139,10 @@ class CameraState {
     final targetLatRad = effectiveLat * pi / 180.0;
     final targetLngRad = effectiveLng * pi / 180.0;
 
-    // Use continuous altitude if provided, otherwise binary high/low.
-    // When a region preset overrides the altitude distance, use that instead
-    // of the standard high/low pair.
-    final double targetDistance;
-    if (altitudeFraction != null) {
-      // Interpolate between low and high altitude distances
-      targetDistance = lowAltitudeDistance +
-          altitudeFraction * (highAltitudeDistance - lowAltitudeDistance);
-    } else {
-      targetDistance =
-          isHighAltitude ? highAltitudeDistance : lowAltitudeDistance;
-    }
+    // Region presets control framing; there is no gameplay altitude state.
+    final targetDistance = _activeRegion == null
+        ? normalCameraDistance
+        : RegionCameraPresets.getPreset(_activeRegion!).altitudeDistance;
 
     // FOV: use preset override when set, otherwise compute speed-based value.
     final double targetFov;
@@ -199,26 +179,27 @@ class CameraState {
     } else {
       // Smooth ease-out interpolation using dt-based lerp factor.
       // factor = 1 - e^(-rate * dt) gives frame-rate-independent easing.
-      final altFactor = 1.0 - exp(-_altitudeEaseRate * dt);
+      final distanceFactor = 1.0 - exp(-_distanceEaseRate * dt);
       final fovFactor = 1.0 - exp(-_fovEaseRate * dt);
 
       _currentDistance = _lerpDouble(
         _currentDistance,
         targetDistance,
-        altFactor,
+        distanceFactor,
       );
       _currentFov = _lerpDouble(_currentFov, targetFov, fovFactor);
 
       // For lat/lng, use the same ease-out interpolation.
       // Handle longitude wrapping: find shortest angular path.
-      _currentLatRad = _lerpDouble(_currentLatRad, targetLatRad, altFactor);
-      _currentLngRad = _lerpAngle(_currentLngRad, targetLngRad, altFactor);
+      _currentLatRad =
+          _lerpDouble(_currentLatRad, targetLatRad, distanceFactor);
+      _currentLngRad = _lerpAngle(_currentLngRad, targetLngRad, distanceFactor);
 
       // Smooth heading interpolation (shortest path).
       _currentHeadingRad = _lerpAngle(
         _currentHeadingRad,
         headingRad,
-        altFactor,
+        distanceFactor,
       );
     }
 
@@ -363,14 +344,14 @@ class CameraState {
     _firstUpdate = true;
     _activeRegion = null;
     _fovOverrideRad = null;
-    _currentDistance = highAltitudeDistance;
+    _currentDistance = normalCameraDistance;
     _currentLatRad = 0.0;
     _currentLngRad = 0.0;
     _currentFov = fovNarrow;
     _currentHeadingRad = 0.0;
     _camX = 0.0;
     _camY = 0.0;
-    _camZ = highAltitudeDistance;
+    _camZ = normalCameraDistance;
     _upX = 0.0;
     _upY = 1.0;
     _upZ = 0.0;

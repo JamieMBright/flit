@@ -269,8 +269,8 @@ const CampaignMission trainingFlightMission = CampaignMission(
   subtitle: 'Learn to fly and find',
   description:
       'Welcome to Basic Training, cadet. Two targets, no fuel pressure. '
-      'Read the clue, bank towards the answer, and descend when the country '
-      'is below you. That is the whole job — fly and find.',
+      'Read the clue, bank towards the answer, and adjust throttle for '
+      'precision. That is the whole job — fly and find.',
   coach: trainingCoachTata,
   allowedClues: {ClueType.flag, ClueType.capital},
   rounds: 2,
@@ -289,18 +289,13 @@ const CampaignMission trainingFlightMission = CampaignMission(
       trigger: 'firstClue',
       message: 'Here is your first clue: the tricolour — blue, white, red — '
           'capital Paris. The country is dead ahead of you. Fly east and '
-          'descend over it.',
+          'reduce throttle as you line up the target.',
     ),
     CoachTip(
       trigger: 'correctAnswer',
       message: 'France — well found! One more: red and gold flag, capital '
           'Madrid. It shares a border with the country you just found. '
           'Bank south-west, cadet.',
-    ),
-    CoachTip(
-      trigger: 'wrongRegion',
-      message: 'You\'ve drifted off course. Both targets are in western '
-          'Europe, side by side. Check the clue and turn back.',
     ),
     CoachTip(
       trigger: 'lost',
@@ -320,8 +315,8 @@ const List<TrainingMission> basicTrainingMissions = [
     subtitle: 'Learn to fly and find',
     description:
         'Welcome to Basic Training, cadet. Two targets, no fuel pressure. '
-        'Read the clue, bank towards the answer, and descend when the '
-        'country is below you. That is the whole job — fly and find.',
+        'Read the clue, bank towards the answer, and adjust throttle for '
+        'precision. That is the whole job — fly and find.',
     objective: 'Fly to 2 easy targets',
     coach: trainingCoachTata,
     kind: TrainingMissionKind.flight,

@@ -19,7 +19,7 @@ class CountryShape {
   List<Vector2> get allPoints => polygons.expand((polygon) => polygon).toList();
 }
 
-/// City data for low-altitude view.
+/// City data shared by geography and quiz features.
 class CityData {
   const CityData({
     required this.name,

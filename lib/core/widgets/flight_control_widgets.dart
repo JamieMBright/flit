@@ -39,7 +39,6 @@ class FlightControlSurface extends StatefulWidget {
     required this.onThrottleChanged,
     required this.onReleased,
     this.onThrottleStep,
-    this.onAltitudeToggle,
     this.onDoubleTap,
     this.onDirectionChanged,
     this.visualSize = 96,
@@ -51,7 +50,6 @@ class FlightControlSurface extends StatefulWidget {
   final ValueChanged<double> onThrottleChanged;
   final VoidCallback onReleased;
   final ValueChanged<double>? onThrottleStep;
-  final VoidCallback? onAltitudeToggle;
   final VoidCallback? onDoubleTap;
   final ValueChanged<int>? onDirectionChanged;
   final double visualSize;
@@ -72,13 +70,11 @@ class FlightControlSurfaceState extends State<FlightControlSurface> {
   _DPadDirection _dPadDirection = _DPadDirection.center;
   bool _dragged = false;
   bool _held = false;
-  Timer? _singleTapTimer;
+  DateTime? _lastTapAt;
   Timer? _holdTimer;
 
-  /// Releases all input and cancels delayed tap actions.
+  /// Releases all input and clears pending gesture state.
   void neutralize() {
-    _singleTapTimer?.cancel();
-    _singleTapTimer = null;
     _holdTimer?.cancel();
     _holdTimer = null;
     _activePointer = null;
@@ -88,6 +84,7 @@ class FlightControlSurfaceState extends State<FlightControlSurface> {
     _dPadDirection = _DPadDirection.center;
     _dragged = false;
     _held = false;
+    _lastTapAt = null;
     widget.onSteeringChanged(0);
     widget.onThrottleChanged(0);
     widget.onReleased();
@@ -105,7 +102,6 @@ class FlightControlSurfaceState extends State<FlightControlSurface> {
 
   @override
   void dispose() {
-    _singleTapTimer?.cancel();
     _holdTimer?.cancel();
     super.dispose();
   }
@@ -113,14 +109,14 @@ class FlightControlSurfaceState extends State<FlightControlSurface> {
   void _onPointerDown(PointerDownEvent event) {
     if (_activePointer != null || _ignoredPointer != null) return;
 
-    // A second tap within the scoped control surface wins over the delayed
-    // single-tap altitude action. The globe is outside this Listener, so it
-    // cannot accidentally consume the clue gesture.
-    if (_singleTapTimer != null && widget.onDoubleTap != null) {
-      _singleTapTimer!.cancel();
-      _singleTapTimer = null;
+    // A second tap within the scoped control surface requests a clue. The
+    // globe is outside this Listener, so it cannot consume the clue gesture.
+    if (widget.onDoubleTap != null &&
+        _lastTapAt != null &&
+        DateTime.now().difference(_lastTapAt!) <= _doubleTapWindow) {
       _ignoredPointer = event.pointer;
       widget.onDoubleTap!();
+      _lastTapAt = null;
       return;
     }
 
@@ -209,10 +205,10 @@ class FlightControlSurfaceState extends State<FlightControlSurface> {
       widget.onThrottleStep?.call(
         direction == _DPadDirection.up ? _tapThrottleStep : -_tapThrottleStep,
       );
-    } else if (!wasDragged && direction == _DPadDirection.center) {
-      _scheduleSingleTap();
-    } else if (widget.mode == ControlMode.joystick && !wasDragged) {
-      _scheduleSingleTap();
+    } else if (!wasDragged &&
+        (direction == _DPadDirection.center ||
+            widget.mode == ControlMode.joystick)) {
+      _lastTapAt = DateTime.now();
     }
   }
 
@@ -237,14 +233,6 @@ class FlightControlSurfaceState extends State<FlightControlSurface> {
     widget.onThrottleChanged(0);
     widget.onReleased();
     if (mounted) setState(() {});
-  }
-
-  void _scheduleSingleTap() {
-    _singleTapTimer?.cancel();
-    _singleTapTimer = Timer(_doubleTapWindow, () {
-      _singleTapTimer = null;
-      widget.onAltitudeToggle?.call();
-    });
   }
 
   void _startHoldTimer() {

@@ -16,13 +16,10 @@ import '../rendering/plane_renderer.dart';
 /// Renders a more realistic, lo-fi top-down aircraft with shadow and detail.
 class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
   PlaneComponent({
-    required this.onAltitudeChanged,
     this.colorScheme,
     this.wingSpan = 26.0,
     this.equippedPlaneId = 'plane_default',
   }) : super(size: Vector2(60, 60), anchor: Anchor.center);
-
-  final void Function(bool isHigh) onAltitudeChanged;
 
   /// Optional color scheme from equipped plane cosmetic.
   /// Keys: 'primary', 'secondary', 'detail' (ARGB ints).
@@ -39,16 +36,6 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
   /// Current turning direction: -1 (left), 0 (straight), 1 (right)
   double _turnDirection = 0;
 
-  /// Current altitude: true = high (fast), false = low (slow, detailed)
-  bool _isHighAltitude = true;
-
-  /// Continuous altitude value (0.0 = low, 1.0 = high).
-  /// Lerps smoothly toward [_targetAltitude] for fluid descent transitions.
-  double _continuousAltitude = 1.0;
-
-  /// Target altitude for smooth lerping (0.0 = low, 1.0 = high).
-  double _targetAltitude = 1.0;
-
   /// Visual heading set by the game (radians)
   double visualHeading = 0;
 
@@ -56,17 +43,12 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
   /// Prevents the plane from appearing to fly sideways during the camera snap.
   double _spawnOpacity = 1.0;
 
-  /// Base speed at high altitude (world units per second).
+  /// Base normal-flight speed (world units per second).
   /// 36 units ≈ 3.6°/sec → crossing Europe (~36°) takes ~10 seconds.
-  static const double highAltitudeSpeed = 36;
+  static const double normalFlightSpeed = 36;
 
-  /// Speed multiplier at low altitude. 0.2 = 20% of high altitude speed.
-  /// At medium flight speed: 36 × 0.2 × 0.6 = 4.3 units/s (~0.4°/s).
-  static const double lowAltitudeSpeedMultiplier = 0.2;
-
-  /// Turn rate in radians per second at high altitude.
+  /// Turn rate in radians per second at normal flight speed.
   /// 2.2 gives sweeping arcs (~2.9s per full circle).
-  /// At low altitude (half speed), turn rate doubles for tighter turns.
   static const double turnRate = 2.2;
 
   /// Get current turn rate based on speed.
@@ -83,7 +65,7 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
     double speed, {
     double sensitivity = 0.5,
   }) {
-    final speedRatio = (speed / highAltitudeSpeed).clamp(0.2, 3.0);
+    final speedRatio = (speed / normalFlightSpeed).clamp(0.2, 3.0);
     // Apply turn sensitivity setting (default 0.5 → 1.0x multiplier).
     final sensitivityScale = sensitivity / 0.5;
     // Inverse relationship: slower speed = higher turn rate
@@ -104,8 +86,7 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
   /// Time accumulator for contrail spawning
   double _contrailTimer = 0;
 
-  /// Base contrail spawn interval at high altitude.
-  /// At low altitude, interval is scaled down so particles stay dense.
+  /// Base contrail spawn interval during normal flight.
   static const double _contrailIntervalBase = 0.02;
 
   /// World position set by FlitGame each frame (lng, lat degrees).
@@ -114,40 +95,29 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
   /// World heading set by FlitGame each frame (radians, math convention).
   double worldHeading = 0;
 
-  /// Altitude transition progress (0 = low, 1 = high)
-  double _altitudeTransition = 1.0;
-
   /// Propeller spin angle
   double _propAngle = 0;
 
   /// Effective speed factor for scaling bank animation rate.
-  /// Set by FlitGame each frame. 1.0 = default (medium speed, high altitude).
+  /// Set by FlitGame each frame. 1.0 = default normal-flight speed.
   /// Lower values (slow flight) → slower tilt animation.
   /// Higher values (fast flight) → snappier tilt animation.
   double effectiveSpeedFactor = 1.0;
 
   /// Actual movement speed supplied by [FlitGame] for continuous turn-radius
-  /// response. This includes throttle, altitude, and plane modifiers.
-  double _flightSpeedForTurning = highAltitudeSpeed;
+  /// response. This includes throttle and plane modifiers.
+  double _flightSpeedForTurning = normalFlightSpeed;
 
-  bool get isHighAltitude => _isHighAltitude;
   double get turnDirection => _turnDirection;
-  double get continuousAltitude => _continuousAltitude;
 
-  double get currentSpeed =>
-      highAltitudeSpeed * (_isHighAltitude ? 1.0 : lowAltitudeSpeedMultiplier);
+  double get currentSpeed => normalFlightSpeed;
 
-  /// Get current speed based on continuous altitude (0.0 = slowest, 1.0 = fastest).
-  /// Interpolates between low altitude speed and high altitude speed.
-  double get currentSpeedContinuous =>
-      highAltitudeSpeed *
-      (lowAltitudeSpeedMultiplier +
-          _continuousAltitude * (1.0 - lowAltitudeSpeedMultiplier));
+  double get currentSpeedContinuous => normalFlightSpeed;
 
   double get flightSpeedForTurning => _flightSpeedForTurning;
 
   void setFlightSpeedForTurning(double speed) {
-    _flightSpeedForTurning = speed.clamp(0.01, highAltitudeSpeed * 3.0);
+    _flightSpeedForTurning = speed.clamp(0.01, normalFlightSpeed * 3.0);
   }
 
   @override
@@ -171,20 +141,6 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
     final baseBankRate = targetBank.abs() > _currentBank.abs() ? 10.0 : 2.5;
     final bankRate = baseBankRate * bankSpeedScale;
     _currentBank += (targetBank - _currentBank) * min(1.0, dt * bankRate);
-
-    // Smooth altitude: lerp continuous altitude toward target for fluid descent.
-    // dt * 2.5 gives a smooth ~1s transition that feels responsive but not jerky.
-    _continuousAltitude +=
-        (_targetAltitude - _continuousAltitude) * min(1.0, dt * 2.5);
-
-    // Snap when very close to avoid asymptotic crawl.
-    if ((_continuousAltitude - _targetAltitude).abs() < 0.005) {
-      _continuousAltitude = _targetAltitude;
-    }
-
-    // Plane visual altitude tracks continuous altitude.
-    _altitudeTransition +=
-        (_continuousAltitude - _altitudeTransition) * min(1.0, dt * 4);
 
     // Spin propeller
     _propAngle += dt * 20;
@@ -250,8 +206,8 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
     final bankCos = cos(_currentBank); // 1.0 = level, ~0.76 at max bank
     final bankSin = sin(_currentBank); // signed, shows roll direction
 
-    // Draw shadow (offset based on altitude, shifted by bank)
-    final shadowOffset = 3.0 + _altitudeTransition * 5.0;
+    // Draw a stable shadow offset for the normal globe flight view.
+    const shadowOffset = 8.0;
     _renderPlaneShadow(canvas, shadowOffset, bankCos);
 
     // Draw the aircraft with 3D perspective
@@ -304,10 +260,9 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
     // Don't spawn contrails during launch animation.
     if (gameRef.isInLaunchIntro) return;
 
-    // Scale spawn rate with zoom: at low altitude (zoomed in), spawn
-    // particles more frequently so the trail stays dense on screen.
+    // Scale spawn rate with camera zoom so the trail stays dense on screen.
     final zoomRatio =
-        (gameRef.cameraDistance / CameraState.highAltitudeDistance).clamp(
+        (gameRef.cameraDistance / CameraState.normalCameraDistance).clamp(
       0.4,
       1.0,
     );
@@ -341,18 +296,14 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
     // Compute wing-tip world positions using great-circle offset from
     // the plane's current world position.
     // The wing span (in pixels) needs to be converted to degrees.
-    // At closer camera (low altitude), each degree covers MORE pixels.
-    const referenceDistance = CameraState.highAltitudeDistance;
+    // At closer camera distances, each degree covers MORE pixels.
+    const referenceDistance = CameraState.normalCameraDistance;
     const pixelsPerDegreeAtReference = 12.0;
     final currentDistance = gameRef.cameraDistance;
     final pixelsPerDegree =
         pixelsPerDegreeAtReference * (referenceDistance / currentDistance);
     final pixelsToDegrees = 1.0 / pixelsPerDegree;
-    // Altitude-dependent scale: at low altitude (zoomed in) the plane's pixel
-    // size doesn't change but covers more world degrees, so contrails need a
-    // tighter scale. At high altitude (zoomed out), slightly wider.
-    final altScale =
-        0.42 + _altitudeTransition * 0.35; // 0.42 low → 0.77 high (smooth)
+    const altScale = 0.77;
     final wingSpanDegrees = (dynamicWingSpan * altScale) * pixelsToDegrees;
 
     final lat0 = worldPos.y * _deg2rad;
@@ -448,33 +399,6 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
   /// Make the plane immediately visible (used after launch positioning phase).
   void setVisible() {
     _spawnOpacity = 1.0;
-  }
-
-  void toggleAltitude() {
-    _isHighAltitude = !_isHighAltitude;
-    _targetAltitude = _isHighAltitude ? 1.0 : 0.0;
-    onAltitudeChanged(_isHighAltitude);
-  }
-
-  void setAltitude({required bool high}) {
-    if (_isHighAltitude != high) {
-      _isHighAltitude = high;
-      _targetAltitude = high ? 1.0 : 0.0;
-      onAltitudeChanged(_isHighAltitude);
-    }
-  }
-
-  /// Set continuous altitude value (0.0 = low, 1.0 = high).
-  /// Updates both continuous value and binary high/low state.
-  /// Threshold at 0.5: < 0.5 = low altitude, >= 0.5 = high altitude.
-  void setContinuousAltitude(double value) {
-    _targetAltitude = value.clamp(0.0, 1.0);
-    _continuousAltitude = _targetAltitude;
-    final newIsHigh = _continuousAltitude >= 0.5;
-    if (_isHighAltitude != newIsHigh) {
-      _isHighAltitude = newIsHigh;
-      onAltitudeChanged(_isHighAltitude);
-    }
   }
 }
 

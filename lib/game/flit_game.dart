@@ -5,7 +5,6 @@ import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../core/services/audio_manager.dart';
 import '../core/services/error_service.dart';
 import '../core/services/game_settings.dart';
 import '../core/theme/flit_colors.dart';
@@ -56,13 +55,8 @@ class FlightThrottle {
   static const double flatMediumMultiplier = 0.8;
   static const double flatFastMultiplier = 1.5;
 
-  static const double lowSlowMultiplier = 0.3;
-  static const double lowMediumMultiplier = 0.6;
-  static const double lowFastMultiplier = 1.0;
-
   static double multiplier(
     double throttle, {
-    required bool lowAltitude,
     required bool flatMap,
   }) {
     final t = throttle.clamp(min, max);
@@ -73,10 +67,6 @@ class FlightThrottle {
       slow = flatSlowMultiplier;
       medium = flatMediumMultiplier;
       fast = flatFastMultiplier;
-    } else if (lowAltitude) {
-      slow = lowSlowMultiplier;
-      medium = lowMediumMultiplier;
-      fast = lowFastMultiplier;
     } else {
       slow = slowMultiplier;
       medium = mediumMultiplier;
@@ -112,11 +102,9 @@ class FlitGame extends FlameGame
     with HasKeyboardHandlerComponents, TapDetector {
   FlitGame({
     this.onGameReady,
-    this.onAltitudeChanged,
     this.onError,
     this.onWaypointSet,
     this.onKeyboardTurn,
-    this.onKeyboardAltitudeToggle,
     this.fuelBoostMultiplier = 1.0,
     this.isChallenge = false,
     this.planeColorScheme,
@@ -143,17 +131,15 @@ class FlitGame extends FlameGame
   FlatMapRenderer? _flatMapRenderer;
 
   final VoidCallback? onGameReady;
-  final void Function(bool isHigh)? onAltitudeChanged;
 
   /// Called when the player taps the globe to set a waypoint.
   final VoidCallback? onWaypointSet;
 
   /// Keyboard-input notifications for the tutorial. On-screen buttons notify
   /// the tutorial overlay directly from `play_screen`; keyboard input is
-  /// handled inside the game loop, so these callbacks let a keyboard steer /
-  /// altitude toggle count as a valid tutorial attempt too.
+  /// handled inside the game loop, so this callback lets keyboard steering
+  /// count as a valid tutorial attempt too.
   final VoidCallback? onKeyboardTurn;
-  final VoidCallback? onKeyboardAltitudeToggle;
 
   /// Called when the game loop hits an unrecoverable error.
   final void Function(Object error, StackTrace? stack)? onError;
@@ -321,7 +307,7 @@ class FlitGame extends FlameGame
 
   /// How often to check country (seconds).
   /// Must be short enough that at max speed the plane doesn't skip over
-  /// small countries between checks. At high altitude + fast speed the
+  /// small countries between checks. At maximum speed the
   /// plane covers ~5.8°/s, so 0.1 s → 0.58° per check — safe for most
   /// countries.
   static const double _countryCheckInterval = 0.1;
@@ -360,7 +346,7 @@ class FlitGame extends FlameGame
 
   /// Base fuel burn rate per second at normal speed.
   /// At 1/90 per second, a full base tank lasts 90 seconds.
-  static const double _baseFuelBurnRate = 1.0 / 90.0;
+  static const double _baseFuelBurnRate = 1.0 / 70.0;
 
   /// Fuel cost for using a hint (each tier costs 5% of base tank).
   static const double _hintFuelCost = 0.05;
@@ -394,7 +380,6 @@ class FlitGame extends FlameGame
   }
 
   bool get isPlaying => _isPlaying;
-  bool get isHighAltitude => _plane.isHighAltitude;
   PlaneComponent get plane => _plane;
   String? get currentClue => _currentClue;
   bool get isShaderActive => _shaderReady;
@@ -452,7 +437,6 @@ class FlitGame extends FlameGame
   double get _speedMultiplier {
     return FlightThrottle.multiplier(
       _throttle,
-      lowAltitude: _planeReady && !_plane.isHighAltitude,
       flatMap: isFlatMapMode,
     );
   }
@@ -487,14 +471,14 @@ class FlitGame extends FlameGame
   double get cameraHeadingBearing => _cameraHeading + pi / 2;
 
   /// Get current camera distance from globe center (in globe radii).
-  /// Returns the distance based on current altitude for zoom-aware calculations.
+  /// Returns the current camera distance for zoom-aware calculations.
   /// Used for contrail positioning that adjusts with camera zoom.
   double get cameraDistance {
     if (_globeRenderer != null) {
       return _globeRenderer!.camera.currentDistance;
     }
-    // Fallback for Canvas renderer - use high altitude distance
-    return CameraState.highAltitudeDistance;
+    // Fallback for Canvas renderer - use the normal globe camera distance.
+    return CameraState.normalCameraDistance;
   }
 
   /// Project a world position (lng, lat) to screen coordinates.
@@ -662,15 +646,6 @@ class FlitGame extends FlameGame
 
   @override
   Color backgroundColor() {
-    if (_planeReady) {
-      final alt = _plane.continuousAltitude;
-      if (alt < 0.6) {
-        // Fade background to transparent as altitude drops below 0.6,
-        // allowing the DescentMapView behind to show through smoothly.
-        final alpha = (alt / 0.6).clamp(0.0, 1.0);
-        return FlitColors.oceanDeep.withOpacity(alpha);
-      }
-    }
     return FlitColors.oceanDeep;
   }
 
@@ -758,19 +733,6 @@ class FlitGame extends FlameGame
       await add(CountryBorderOverlay());
 
       _plane = PlaneComponent(
-        onAltitudeChanged: (isHigh) {
-          _log.info('game', 'Altitude changed', data: {'isHigh': isHigh});
-          try {
-            onAltitudeChanged?.call(isHigh);
-          } catch (e, st) {
-            _log.error(
-              'game',
-              'onAltitudeChanged callback failed',
-              error: e,
-              stackTrace: st,
-            );
-          }
-        },
         colorScheme: planeColorScheme,
         wingSpan: planeWingSpan ?? 26.0,
         equippedPlaneId: equippedPlaneId,
@@ -1032,20 +994,14 @@ class FlitGame extends FlameGame
     // Fuel depletion no longer ends the round. Running out of fuel simply
     // means no fuel bonus at the end. License fuelBoost reduces burn rate.
     if (fuelEnabled && _fuel > 0) {
-      // Burn rate scales continuously with throttle AND altitude:
+      // Burn rate scales continuously with throttle:
       //   - Faster throttle burns more fuel (2.5x at fast vs 0.5x at slow)
-      //   - Descent mode burns much less (25% of ascend rate) to encourage
-      //     exploration without fuel anxiety
-      final isLow = _planeReady && !_plane.isHighAltitude;
-      final altitudeFactor = isLow ? 0.25 : 1.0;
       // Effective efficiency = plane attribute × license boost.
       // fuelBoostMultiplier is (1.0 + licenseBoost/100), so a 15% license
       // boost gives 1.15× efficiency → 15% slower burn.
       final effectiveEfficiency = planeFuelEfficiency * fuelBoostMultiplier;
-      final burnRate = _baseFuelBurnRate *
-          _speedMultiplier *
-          altitudeFactor /
-          effectiveEfficiency;
+      final burnRate =
+          _baseFuelBurnRate * _speedMultiplier * 1.0 / effectiveEfficiency;
       _fuel = (_fuel - burnRate * dt).clamp(0.0, maxFuel);
     }
 
@@ -1064,7 +1020,6 @@ class FlitGame extends FlameGame
     if (!_shaderReady && _worldMap != null) {
       _worldMap!.setCameraCenter(_cameraOffsetPosition);
       _worldMap!.setCameraHeading(cameraHeadingBearing);
-      _worldMap!.setAltitude(high: _plane.isHighAltitude);
     }
 
     // Update plane visual heading.
@@ -1130,7 +1085,7 @@ class FlitGame extends FlameGame
     // the same frame as a throttle change.
     final speed = _plane.currentSpeedContinuous * _speedMultiplier * planeSpeed;
     _plane.setFlightSpeedForTurning(speed);
-    _plane.effectiveSpeedFactor = speed / PlaneComponent.highAltitudeSpeed;
+    _plane.effectiveSpeedFactor = speed / PlaneComponent.normalFlightSpeed;
 
     // --- Apply turn to heading ---
     // planeHandling multiplier makes nimble planes turn tighter.
@@ -1309,15 +1264,8 @@ class FlitGame extends FlameGame
       // Smooth ease-out: camera heading chases plane heading.
       // During turns, reduce the tracking speed so the camera lags behind,
       // creating a gradual "catch-up" effect.
-      //
-      // In descent mode the plane moves slowly so we need much tighter
-      // camera tracking — otherwise the camera drifts far behind during
-      // turns, making controls feel broken and unresponsive.
       final turnMag = _plane.turnDirection.abs();
-      final isLow = _planeReady && !_plane.isHighAltitude;
-      // High altitude: lag up to 80% during turns (cinematic).
-      // Low altitude: lag up to 50% during turns (smooth but responsive).
-      final lagFactor = isLow ? 0.5 : 0.8;
+      final lagFactor = 0.8;
       final easeRate = _cameraHeadingEaseRate * (1.0 - turnMag * lagFactor);
       final factor = 1.0 - exp(-easeRate * dt);
       _cameraHeading = _lerpAngle(_cameraHeading, _heading, factor);
@@ -1503,11 +1451,7 @@ class FlitGame extends FlameGame
         return;
       }
       // Ramp up hold time and compute progressive strength.
-      // In descent mode, scale ramp rate slightly faster (1.3×) so the plane
-      // responds despite the lower movement speed, but without making turns
-      // feel too severe or jerky.
-      final isLow = _planeReady && !_plane.isHighAltitude;
-      final rampDt = isLow ? dt * 1.3 : dt;
+      final rampDt = dt;
       if (_buttonTurnDir != 0) {
         _buttonTurnHoldTime += rampDt;
       }
@@ -1519,8 +1463,6 @@ class FlitGame extends FlameGame
 
       // Progressive curve: starts at 0.08, reaches 1.0 after ~0.6s.
       // Scale ramp speed with turn sensitivity setting (default 0.5 → 1.0x).
-      // In descent mode the faster ramp-up + higher base turn rate gives
-      // immediate, snappy steering that matches the slower movement.
       final sensitivityScale = GameSettings.instance.turnSensitivity / 0.5;
       final strength =
           (0.08 + holdTime * holdTime * 4.5 * sensitivityScale).clamp(0.0, 1.0);
@@ -1579,10 +1521,7 @@ class FlitGame extends FlameGame
     final baseTurnStrength = (diff / (pi * 0.25)).clamp(-1.0, 1.0);
 
     // Smooth ramp-up: ease into the turn so the plane doesn't snap instantly.
-    // In descent mode, ramp up faster (0.25s vs 0.6s) since the plane is slow
-    // and delayed response feels broken.
-    final isLow = _planeReady && !_plane.isHighAltitude;
-    final rampDuration = isLow ? 0.25 : 0.6;
+    const rampDuration = 0.6;
     final rampUp = (_waymarkerAge / rampDuration).clamp(0.0, 1.0);
     final turnStrength = baseTurnStrength * distanceFactor * rampUp;
     if (turnStrength.abs() < 0.02) {
@@ -1782,22 +1721,7 @@ class FlitGame extends FlameGame
       onKeyboardTurn?.call();
     }
 
-    // Altitude toggle on key-down only (not hold).
-    // Disabled in flat map mode — regional modes have no altitude concept.
     if (event is KeyDownEvent) {
-      // Altitude: Space / ArrowUp / ArrowDown, plus Ctrl (the classic descend
-      // key). Any of these toggles altitude and counts as a tutorial attempt.
-      if (!isFlatMapMode &&
-          (event.logicalKey == LogicalKeyboardKey.space ||
-              event.logicalKey == LogicalKeyboardKey.arrowUp ||
-              event.logicalKey == LogicalKeyboardKey.arrowDown ||
-              event.logicalKey == LogicalKeyboardKey.controlLeft ||
-              event.logicalKey == LogicalKeyboardKey.controlRight)) {
-        _plane.toggleAltitude();
-        AudioManager.instance.playSfx(SfxType.altitudeChange);
-        onKeyboardAltitudeToggle?.call();
-      }
-
       // Optional throttle presets. These are shortcuts, not runtime speed
       // states, and are intentionally omitted from the tutorial.
       if (event.logicalKey == LogicalKeyboardKey.digit1 ||

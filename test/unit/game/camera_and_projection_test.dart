@@ -6,7 +6,7 @@ import 'package:flit/game/rendering/camera_state.dart';
 import 'package:flit/game/components/plane_component.dart';
 
 /// Step 1 rebuild tests: static plane, camera POV, map projection,
-/// forward-only flight, altitude transitions, and pole crossing.
+/// forward-only flight, and pole crossing.
 void main() {
   // ---------------------------------------------------------------------------
   // Constants that must stay in sync between globe.frag and flit_game.dart
@@ -29,20 +29,19 @@ void main() {
       camera = CameraState();
     });
 
-    test('camera starts at high altitude distance', () {
+    test('camera starts at normal flight distance', () {
       // First update snaps to position (no interpolation).
       camera.update(
         0.016,
         planeLatDeg: 0,
         planeLngDeg: 0,
-        isHighAltitude: true,
         headingRad: 0,
       );
 
       expect(
         camera.currentDistance,
-        closeTo(CameraState.highAltitudeDistance, 1e-6),
-        reason: 'Camera should snap to high altitude on first update',
+        closeTo(CameraState.normalCameraDistance, 1e-6),
+        reason: 'Camera should snap to normal flight distance on first update',
       );
     });
 
@@ -51,7 +50,6 @@ void main() {
         0.016,
         planeLatDeg: 0,
         planeLngDeg: 0,
-        isHighAltitude: true,
         speedFraction: 0.0,
         headingRad: 0,
       );
@@ -68,13 +66,12 @@ void main() {
         0.016,
         planeLatDeg: 0,
         planeLngDeg: 0,
-        isHighAltitude: true,
         headingRad: 0,
       );
 
       // At (lat=0, lng=0) on the unit sphere, the surface normal points
       // along +x. Camera should be at (distance, 0, 0).
-      const d = CameraState.highAltitudeDistance;
+      const d = CameraState.normalCameraDistance;
       expect(camera.cameraX, closeTo(d, 1e-6));
       expect(camera.cameraY, closeTo(0, 1e-6));
       expect(camera.cameraZ, closeTo(0, 1e-6));
@@ -86,11 +83,10 @@ void main() {
         0.016,
         planeLatDeg: 45,
         planeLngDeg: 90,
-        isHighAltitude: true,
         headingRad: 0,
       );
 
-      const d = CameraState.highAltitudeDistance;
+      const d = CameraState.normalCameraDistance;
       const latRad = 45 * pi / 180;
       const lngRad = 90 * pi / 180;
       final expectedX = cos(latRad) * cos(lngRad) * d;
@@ -107,7 +103,6 @@ void main() {
         0.016,
         planeLatDeg: 30,
         planeLngDeg: 45,
-        isHighAltitude: true,
         headingRad: pi / 4,
       );
 
@@ -124,7 +119,6 @@ void main() {
         0.016,
         planeLatDeg: 30,
         planeLngDeg: 45,
-        isHighAltitude: true,
         headingRad: pi / 4,
       );
 
@@ -153,7 +147,6 @@ void main() {
         0.016,
         planeLatDeg: 10,
         planeLngDeg: 20,
-        isHighAltitude: true,
         headingRad: 0,
       );
 
@@ -167,7 +160,6 @@ void main() {
           0.016,
           planeLatDeg: 10,
           planeLngDeg: 20,
-          isHighAltitude: true,
           headingRad: 0,
         );
       }
@@ -195,11 +187,11 @@ void main() {
   // ---------------------------------------------------------------------------
 
   group('Horizon geometry - Step 1 POV', () {
-    test('horizon angle from forward at high altitude', () {
+    test('horizon angle from forward at normal flight distance', () {
       // The horizon (globe limb) is at angle arcsin(R/d) from the
       // camera-to-center direction, where R=1.0 (globe radius) and
       // d=camera distance from center.
-      const d = CameraState.highAltitudeDistance;
+      const d = CameraState.normalCameraDistance;
       final horizonAngleRad = asin(CameraState.globeRadius / d);
       final horizonAngleDeg = horizonAngleRad * 180 / pi;
 
@@ -207,7 +199,7 @@ void main() {
       expect(
         horizonAngleDeg,
         closeTo(33.75, 0.5),
-        reason: 'Horizon angle at high altitude should be ~33.75°',
+        reason: 'Horizon angle at normal flight distance should be ~33.75°',
       );
     });
 
@@ -222,8 +214,8 @@ void main() {
       final rayAngleRad = atan(uvTopY * halfFovTan);
       final rayAngleDeg = rayAngleRad * 180 / pi;
 
-      // Horizon angle at high altitude
-      const d = CameraState.highAltitudeDistance;
+      // Horizon angle at normal flight distance
+      const d = CameraState.normalCameraDistance;
       final horizonAngleDeg = asin(CameraState.globeRadius / d) * 180 / pi;
 
       // The top-of-screen ray must exceed the horizon angle for curvature
@@ -260,7 +252,7 @@ void main() {
       final rayAngleRad = atan(uvTopY * halfFovTan);
       final rayAngleDeg = rayAngleRad * 180 / pi;
 
-      const d = CameraState.highAltitudeDistance;
+      const d = CameraState.normalCameraDistance;
       final horizonAngleDeg = asin(CameraState.globeRadius / d) * 180 / pi;
 
       expect(
@@ -282,7 +274,7 @@ void main() {
       final rayAngleRad = atan(uvBottomY * halfFovTan);
       final rayAngleDeg = rayAngleRad * 180 / pi;
 
-      const d = CameraState.highAltitudeDistance;
+      const d = CameraState.normalCameraDistance;
       final horizonAngleDeg = asin(CameraState.globeRadius / d) * 180 / pi;
 
       expect(
@@ -301,7 +293,7 @@ void main() {
       final rayAngleRad = atan(uvCenterY * halfFovTan);
       final rayAngleDeg = rayAngleRad * 180 / pi;
 
-      const d = CameraState.highAltitudeDistance;
+      const d = CameraState.normalCameraDistance;
       final horizonAngleDeg = asin(CameraState.globeRadius / d) * 180 / pi;
 
       expect(
@@ -335,7 +327,7 @@ void main() {
       );
       final combinedAngleDeg = combinedAngleRad * 180 / pi;
 
-      const d = CameraState.highAltitudeDistance;
+      const d = CameraState.normalCameraDistance;
       final horizonAngleDeg = asin(CameraState.globeRadius / d) * 180 / pi;
 
       expect(
@@ -408,27 +400,11 @@ void main() {
       );
     });
 
-    test('high altitude camera is outside the globe', () {
+    test('normal flight camera is outside the globe', () {
       expect(
-        CameraState.highAltitudeDistance,
+        CameraState.normalCameraDistance,
         greaterThan(CameraState.globeRadius),
         reason: 'Camera must be outside the globe',
-      );
-    });
-
-    test('low altitude camera is outside the globe', () {
-      expect(
-        CameraState.lowAltitudeDistance,
-        greaterThan(CameraState.globeRadius),
-        reason: 'Camera must be outside the globe at low altitude too',
-      );
-    });
-
-    test('high altitude is further than low altitude', () {
-      expect(
-        CameraState.highAltitudeDistance,
-        greaterThan(CameraState.lowAltitudeDistance),
-        reason: 'High altitude should be further from the globe surface',
       );
     });
   });
@@ -446,7 +422,6 @@ void main() {
         0.016,
         planeLatDeg: 45,
         planeLngDeg: 90,
-        isHighAltitude: true,
         headingRad: pi / 4,
       );
 
@@ -458,11 +433,10 @@ void main() {
         0.016,
         planeLatDeg: -30,
         planeLngDeg: -60,
-        isHighAltitude: true,
         headingRad: 0,
       );
 
-      const d = CameraState.highAltitudeDistance;
+      const d = CameraState.normalCameraDistance;
       const latRad = -30 * pi / 180;
       const lngRad = -60 * pi / 180;
       final expectedX = cos(latRad) * cos(lngRad) * d;
@@ -503,127 +477,6 @@ void main() {
         expectedPlaneScreenY,
         equals(0.80),
         reason: 'Plane must be 20% from the bottom of the screen',
-      );
-    });
-  });
-
-  // ===========================================================================
-  // ALTITUDE TRANSITION TESTS (gradual descend mode)
-  // ===========================================================================
-
-  group('Altitude transition - gradual descend', () {
-    test('altitude does not snap instantly', () {
-      final camera = CameraState();
-
-      // Start at high altitude
-      camera.update(
-        0.016,
-        planeLatDeg: 0,
-        planeLngDeg: 0,
-        isHighAltitude: true,
-        altitudeFraction: 1.0,
-        headingRad: 0,
-      );
-
-      expect(
-        camera.currentDistance,
-        closeTo(CameraState.highAltitudeDistance, 1e-6),
-      );
-
-      // Switch to low altitude — distance should NOT snap immediately
-      camera.update(
-        0.016,
-        planeLatDeg: 0,
-        planeLngDeg: 0,
-        isHighAltitude: false,
-        altitudeFraction: 0.0,
-        headingRad: 0,
-      );
-
-      // After one frame at dt=0.016 with easeRate=1.5:
-      // factor = 1 - exp(-1.5 * 0.016) = 1 - exp(-0.024) ≈ 0.0237
-      // distance moved = (1.8 - 1.35) * 0.0237 ≈ 0.0107
-      // So distance ≈ 1.8 - 0.0107 = 1.789 (barely moved)
-      expect(
-        camera.currentDistance,
-        greaterThan(CameraState.lowAltitudeDistance + 0.4),
-        reason: 'Distance should barely change after one frame — '
-            'transition must be gradual',
-      );
-    });
-
-    test('altitude transition converges within 3 seconds', () {
-      final camera = CameraState();
-
-      camera.update(
-        0.016,
-        planeLatDeg: 0,
-        planeLngDeg: 0,
-        isHighAltitude: true,
-        altitudeFraction: 1.0,
-        headingRad: 0,
-      );
-
-      // Switch to low altitude and simulate 3 seconds (~180 frames)
-      for (var i = 0; i < 180; i++) {
-        camera.update(
-          0.016,
-          planeLatDeg: 0,
-          planeLngDeg: 0,
-          isHighAltitude: false,
-          altitudeFraction: 0.0,
-          headingRad: 0,
-        );
-      }
-
-      // After 3 seconds, should be very close to the low altitude distance
-      expect(
-        camera.currentDistance,
-        closeTo(CameraState.lowAltitudeDistance, 0.02),
-        reason: 'After 3 seconds, altitude should have converged',
-      );
-    });
-
-    test('altitude transition is at least 50% done after 1 second', () {
-      final camera = CameraState();
-
-      camera.update(
-        0.016,
-        planeLatDeg: 0,
-        planeLngDeg: 0,
-        isHighAltitude: true,
-        altitudeFraction: 1.0,
-        headingRad: 0,
-      );
-
-      final startDist = camera.currentDistance;
-
-      // Simulate 1 second (~60 frames) of transitioning to low altitude
-      for (var i = 0; i < 60; i++) {
-        camera.update(
-          0.016,
-          planeLatDeg: 0,
-          planeLngDeg: 0,
-          isHighAltitude: false,
-          altitudeFraction: 0.0,
-          headingRad: 0,
-        );
-      }
-
-      final afterDist = camera.currentDistance;
-      final totalChange = startDist - CameraState.lowAltitudeDistance;
-      final actualChange = startDist - afterDist;
-      final percentDone = actualChange / totalChange;
-
-      expect(
-        percentDone,
-        greaterThan(0.50),
-        reason: 'At least 50% of altitude transition should complete in 1s',
-      );
-      expect(
-        percentDone,
-        lessThan(0.95),
-        reason: 'Transition should not be nearly done after just 1s',
       );
     });
   });

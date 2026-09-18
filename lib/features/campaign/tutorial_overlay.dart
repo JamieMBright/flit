@@ -23,7 +23,6 @@ enum TutorialPhase {
   dPadSteering,
   dPadThrottleTap,
   dPadThrottleHold,
-  dPadAltitude,
   joystickFine,
   joystickStrong,
   joystickVertical,
@@ -122,7 +121,6 @@ class TutorialOverlayState extends State<TutorialOverlay>
       case TutorialPhase.dPadSteering:
       case TutorialPhase.dPadThrottleTap:
       case TutorialPhase.dPadThrottleHold:
-      case TutorialPhase.dPadAltitude:
         return ControlMode.dPad;
       case TutorialPhase.joystickFine:
       case TutorialPhase.joystickStrong:
@@ -148,8 +146,6 @@ class TutorialOverlayState extends State<TutorialOverlay>
       case TutorialPhase.dPadThrottleTap:
         _setPhase(TutorialPhase.dPadThrottleHold);
       case TutorialPhase.dPadThrottleHold:
-        _setPhase(TutorialPhase.dPadAltitude);
-      case TutorialPhase.dPadAltitude:
         _setPhase(TutorialPhase.joystickFine);
       case TutorialPhase.joystickFine:
         _setPhase(TutorialPhase.joystickStrong);
@@ -210,11 +206,6 @@ class TutorialOverlayState extends State<TutorialOverlay>
 
   void onThrottleTapped() {
     if (_phase != TutorialPhase.dPadThrottleTap) return;
-    _advanceAction();
-  }
-
-  void onAltitudeToggled() {
-    if (_phase != TutorialPhase.dPadAltitude) return;
     _advanceAction();
   }
 
@@ -295,8 +286,6 @@ class TutorialOverlayState extends State<TutorialOverlay>
         return 'Tap the D-pad up or down for a small throttle change.';
       case TutorialPhase.dPadThrottleHold:
         return 'Hold up or down to accelerate or decelerate continuously.';
-      case TutorialPhase.dPadAltitude:
-        return 'Tap the D-pad centre to toggle altitude.';
       case TutorialPhase.joystickFine:
         return 'Try a small joystick movement for a fine steering correction.';
       case TutorialPhase.joystickStrong:
@@ -330,7 +319,6 @@ class TutorialOverlayState extends State<TutorialOverlay>
       case TutorialPhase.dPadSteering:
       case TutorialPhase.dPadThrottleTap:
       case TutorialPhase.dPadThrottleHold:
-      case TutorialPhase.dPadAltitude:
         return TutorialTarget.dPad;
       case TutorialPhase.joystickFine:
       case TutorialPhase.joystickStrong:
@@ -458,7 +446,6 @@ class TutorialOverlayState extends State<TutorialOverlay>
       TutorialPhase.dPadSteering,
       TutorialPhase.dPadThrottleTap,
       TutorialPhase.dPadThrottleHold,
-      TutorialPhase.dPadAltitude,
       TutorialPhase.joystickFine,
       TutorialPhase.joystickStrong,
       TutorialPhase.joystickVertical,

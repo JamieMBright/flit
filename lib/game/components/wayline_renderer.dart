@@ -13,13 +13,6 @@ class WaylineRenderer extends Component with HasGameRef<FlitGame> {
     super.render(canvas);
     if (gameRef.isInLaunchIntro) return;
 
-    // In globe descent mode the visual display is an OSM tile map whose
-    // Mercator projection doesn't match the globe shader projection used here.
-    // Skip wayline rendering to avoid the dot drifting to a wrong position.
-    // In flat map mode, always render waylines (the equirectangular projection
-    // is consistent between the game canvas and the tile map underneath).
-    if (!gameRef.isFlatMapMode && !gameRef.isHighAltitude) return;
-
     final screenSize = gameRef.size;
     if (screenSize.x < 1 || screenSize.y < 1) return;
 

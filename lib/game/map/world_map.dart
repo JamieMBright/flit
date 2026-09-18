@@ -29,9 +29,6 @@ class WorldMap extends Component with HasGameRef<FlitGame> {
   /// Used to rotate the map so the heading direction points up on screen.
   double _cameraHeading = 0.0;
 
-  /// Current altitude mode.
-  bool _isHighAltitude = true;
-
   /// Kept for speed-conversion compatibility.
   static const double mapWidth = 3600;
   static const double mapHeight = 1800;
@@ -39,18 +36,10 @@ class WorldMap extends Component with HasGameRef<FlitGame> {
   // -- Cached Paint objects (avoid per-frame allocation) --
   static final Paint _skyPaint = Paint()..color = FlitColors.space;
   final Paint _landFillPaint = Paint()..color = FlitColors.landMass;
-  final Paint _landHighlightPaint = Paint()
-    ..color = FlitColors.landMassHighlight.withOpacity(0.3)
-    ..style = PaintingStyle.stroke
-    ..strokeWidth = 1.5;
   final Paint _borderHighPaint = Paint()
     ..color = FlitColors.border.withOpacity(0.6)
     ..style = PaintingStyle.stroke
     ..strokeWidth = 0.8;
-  final Paint _borderLowPaint = Paint()
-    ..color = FlitColors.border
-    ..style = PaintingStyle.stroke
-    ..strokeWidth = 1.5;
   final Paint _oceanPaint = Paint();
   final Paint _atmoPaint = Paint();
 
@@ -59,30 +48,15 @@ class WorldMap extends Component with HasGameRef<FlitGame> {
   double _lastOceanRadius = 0.0;
   Offset _lastAtmoCenter = Offset.zero;
   double _lastAtmoRadius = 0.0;
-  double _lastAtmoAltFrac = -1.0;
 
   // -- Cached country paths (built once per frame, reused for coastlines) --
   final List<Path> _countryPathCache = [];
 
-  // -- Cached city TextPainters (built once, reused across frames) --
-  final Map<String, TextPainter> _cityLabelCache = {};
-
-  /// Angular radius of the visible globe in radians.
-  /// Higher = more of the globe visible. Lower = more zoomed in.
-  /// High altitude shows continents; low altitude shows city-level detail.
-  static const double _highAltitudeRadius =
+  /// Angular radius of the normal globe view.
+  static const double _normalGlobeRadius =
       0.30; // ~17° — closer view with curvature
-  static const double _lowAltitudeRadius = 0.10; // ~5.7° — city-level detail
-
-  /// Current interpolated angular radius.
-  double _angularRadius = _highAltitudeRadius;
-
-  bool get isHighAltitude => _isHighAltitude;
+  static const double _angularRadius = _normalGlobeRadius;
   Vector2 get cameraCenter => _cameraCenter;
-
-  void setAltitude({required bool high}) {
-    _isHighAltitude = high;
-  }
 
   void setCameraCenter(Vector2 center) {
     _cameraCenter = center;
@@ -96,11 +70,6 @@ class WorldMap extends Component with HasGameRef<FlitGame> {
   @override
   void update(double dt) {
     super.update(dt);
-    final target = _isHighAltitude ? _highAltitudeRadius : _lowAltitudeRadius;
-    _angularRadius += (target - _angularRadius) * min(1.0, dt * 3);
-    // Smooth altitude fraction for globe radius interpolation.
-    final targetFrac = _isHighAltitude ? 1.0 : 0.0;
-    _altitudeFraction += (targetFrac - _altitudeFraction) * min(1.0, dt * 3);
   }
 
   // ─── Rendering ──────────────────────────────────────────────────────
@@ -116,54 +85,19 @@ class WorldMap extends Component with HasGameRef<FlitGame> {
     );
     final globeRadius = _globeScreenRadius(screenSize);
 
-    final isHigh = gameRef.plane.isHighAltitude;
-
-    if (isHigh) {
-      // 1. Dark sky/space background
-      _renderSkyBackground(canvas, screenSize);
-
-      // 2. Ocean globe disc
-      _renderOceanBackground(canvas, screenSize, center, globeRadius);
-
-      // 3. Atmospheric glow
-      _renderAtmosphereRing(canvas, center, globeRadius);
-
-      // 4. Grid lines
-      _renderGrid(canvas, screenSize, globeRadius);
-
-      // 5. Countries
-      _renderCountries(canvas, screenSize, globeRadius);
-
-      // 6. Coastline glow
-      _renderCoastlines(canvas, screenSize, globeRadius);
-    }
-
-    // 7. Cities (low altitude only)
-    if (!isHigh) {
-      _renderCities(canvas, screenSize, globeRadius);
-    }
+    _renderSkyBackground(canvas, screenSize);
+    _renderOceanBackground(canvas, screenSize, center, globeRadius);
+    _renderAtmosphereRing(canvas, center, globeRadius);
+    _renderGrid(canvas, screenSize, globeRadius);
+    _renderCountries(canvas, screenSize, globeRadius);
+    _renderCoastlines(canvas, screenSize, globeRadius);
   }
-
-  /// Smoothly interpolated globe radius fraction (0 = low alt, 1 = high alt).
-  double _altitudeFraction = 1.0;
 
   double _globeScreenRadius(Vector2 screenSize) {
     final cx = screenSize.x * FlitGame.projectionCenterX;
     final cy = screenSize.y * FlitGame.projectionCenterY;
 
-    // Distance to each corner — pick the farthest one.
-    final d1 = sqrt(cx * cx + cy * cy);
-    final d2 = sqrt((screenSize.x - cx) * (screenSize.x - cx) + cy * cy);
-    final d3 = sqrt(cx * cx + (screenSize.y - cy) * (screenSize.y - cy));
-    final d4 = sqrt(
-      (screenSize.x - cx) * (screenSize.x - cx) +
-          (screenSize.y - cy) * (screenSize.y - cy),
-    );
-
-    // Low altitude: fills the entire screen (no visible horizon).
-    final maxRadius = max(max(d1, d2), max(d3, d4)) * 1.1;
-
-    // High altitude: globe disc is smaller, revealing sky/space at edges.
+    // Normal flight view: globe disc is smaller, revealing sky/space at edges.
     // Use ~85% of the distance to the nearest edge so horizon is visible.
     final nearTop = cy;
     final nearBottom = screenSize.y - cy;
@@ -174,11 +108,10 @@ class WorldMap extends Component with HasGameRef<FlitGame> {
       min(screenSize.x, screenSize.y) * 0.6,
     );
 
-    // Interpolate between high-alt (horizon visible) and low-alt (fills screen).
-    return highRadius + (maxRadius - highRadius) * (1.0 - _altitudeFraction);
+    return highRadius;
   }
 
-  /// Dark sky gradient — visible around the globe at high altitude.
+  /// Dark sky gradient visible around the normal globe view.
   void _renderSkyBackground(Canvas canvas, Vector2 screenSize) {
     final screenRect = Rect.fromLTWH(0, 0, screenSize.x, screenSize.y);
     canvas.drawRect(screenRect, _skyPaint);
@@ -186,21 +119,17 @@ class WorldMap extends Component with HasGameRef<FlitGame> {
 
   /// Atmospheric glow ring around the globe edge.
   void _renderAtmosphereRing(Canvas canvas, Offset center, double radius) {
-    if (_altitudeFraction < 0.05) return; // Not visible at low altitude.
     final glowWidth = radius * 0.08;
     final totalRadius = radius + glowWidth;
     // Only recreate shader when inputs change
-    if (center != _lastAtmoCenter ||
-        totalRadius != _lastAtmoRadius ||
-        _altitudeFraction != _lastAtmoAltFrac) {
+    if (center != _lastAtmoCenter || totalRadius != _lastAtmoRadius) {
       _lastAtmoCenter = center;
       _lastAtmoRadius = totalRadius;
-      _lastAtmoAltFrac = _altitudeFraction;
       _atmoPaint.shader = RadialGradient(
         colors: [
           const Color(0x00668FCC),
-          Color.fromRGBO(100, 160, 230, 0.25 * _altitudeFraction),
-          Color.fromRGBO(140, 190, 255, 0.15 * _altitudeFraction),
+          const Color.fromRGBO(100, 160, 230, 0.25),
+          const Color.fromRGBO(140, 190, 255, 0.15),
           const Color(0x00000000),
         ],
         stops: const [0.88, 0.94, 0.98, 1.0],
@@ -308,13 +237,12 @@ class WorldMap extends Component with HasGameRef<FlitGame> {
   void _renderCountries(Canvas canvas, Vector2 screenSize, double globeRadius) {
     // Build country paths once and cache for reuse in coastlines.
     _countryPathCache.clear();
-    final borderPaint = _isHighAltitude ? _borderHighPaint : _borderLowPaint;
+    final borderPaint = _borderHighPaint;
 
     // Composite semi-transparent strokes into single paths so that shared
     // borders between adjacent countries are not double-blended (which
     // produces visible bright seams at every shared edge).
     final compositeBorderPath = Path();
-    final compositeHighlightPath = Path();
 
     for (final country in CountryData.countries) {
       final path = _createCountryPath(country, screenSize, globeRadius);
@@ -324,14 +252,8 @@ class WorldMap extends Component with HasGameRef<FlitGame> {
       // Land fill is fully opaque — safe to draw per-country.
       canvas.drawPath(path, _landFillPaint);
       compositeBorderPath.addPath(path, Offset.zero);
-      if (!_isHighAltitude) {
-        compositeHighlightPath.addPath(path, Offset.zero);
-      }
     }
 
-    if (!_isHighAltitude) {
-      canvas.drawPath(compositeHighlightPath, _landHighlightPaint);
-    }
     canvas.drawPath(compositeBorderPath, borderPaint);
   }
 
@@ -343,7 +265,7 @@ class WorldMap extends Component with HasGameRef<FlitGame> {
     final coastPaint = Paint()
       ..color = FlitColors.oceanShallow.withOpacity(0.2)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = _isHighAltitude ? 2.0 : 4.0
+      ..strokeWidth = 2.0
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2);
 
     // Composite all coastline paths into a single path before drawing so
@@ -383,56 +305,6 @@ class WorldMap extends Component with HasGameRef<FlitGame> {
     }
 
     return anyVisible ? path : null;
-  }
-
-  void _renderCities(Canvas canvas, Vector2 screenSize, double globeRadius) {
-    final cityDotPaint = Paint()..color = FlitColors.city;
-    final capitalDotPaint = Paint()..color = FlitColors.cityCapital;
-    final cityOutlinePaint = Paint()
-      ..color = FlitColors.shadow
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 0.5;
-
-    for (final city in CountryData.majorCities) {
-      final projected = _project(
-        city.location.x,
-        city.location.y,
-        screenSize,
-        globeRadius,
-      );
-      if (projected == null) continue;
-
-      final dotSize = city.isCapital ? 4.0 : 2.5;
-      final paint = city.isCapital ? capitalDotPaint : cityDotPaint;
-
-      canvas.drawCircle(projected, dotSize, paint);
-      canvas.drawCircle(projected, dotSize, cityOutlinePaint);
-
-      // Cache TextPainters — text and style are constant per city.
-      final textPainter = _cityLabelCache.putIfAbsent(city.name, () {
-        return TextPainter(
-          text: TextSpan(
-            text: city.name,
-            style: TextStyle(
-              color: city.isCapital
-                  ? FlitColors.textPrimary
-                  : FlitColors.textSecondary,
-              fontSize: city.isCapital ? 10 : 8,
-              fontWeight: city.isCapital ? FontWeight.w600 : FontWeight.w400,
-            ),
-          ),
-          textDirection: TextDirection.ltr,
-        )..layout();
-      });
-
-      textPainter.paint(
-        canvas,
-        Offset(
-          projected.dx + dotSize + 3,
-          projected.dy - textPainter.height / 2,
-        ),
-      );
-    }
   }
 
   // ─── Projection ─────────────────────────────────────────────────────

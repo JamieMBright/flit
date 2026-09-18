@@ -10,7 +10,7 @@ import '../flit_game.dart';
 import '../map/country_data.dart';
 
 /// Renders country border overlays on the shader globe:
-/// - White country outlines (all countries, visible at altitude)
+/// - White country outlines (all countries)
 /// - Red flash highlight for the country the plane is currently in
 class CountryBorderOverlay extends Component with HasGameRef<FlitGame> {
   @override
@@ -20,22 +20,17 @@ class CountryBorderOverlay extends Component with HasGameRef<FlitGame> {
     try {
       if (!gameRef.isShaderActive || gameRef.isFlatMapMode) return;
 
-      // In descent mode, OSM tiles provide borders — skip our overlay
-      // to avoid parallax mismatch with the flat map projection.
-      if (!gameRef.plane.isHighAltitude) return;
-
-      final continuousAlt = gameRef.plane.continuousAltitude;
       final screenW = gameRef.size.x;
       final screenH = gameRef.size.y;
 
       // --- Country outlines (all countries, faint white) ---
-      _renderAllCountryOutlines(canvas, continuousAlt, screenW, screenH);
+      _renderAllCountryOutlines(canvas, screenW, screenH);
 
       // --- Active country highlight (red flash) ---
-      _renderActiveCountryHighlight(canvas, continuousAlt, screenW, screenH);
+      _renderActiveCountryHighlight(canvas, screenW, screenH);
 
       // Sea labels and airport markers removed — caused visual artifacts
-      // on the globe at high altitude.
+      // on the globe.
     } catch (e, st) {
       final log = GameLog.instance;
       log.error(
@@ -44,7 +39,6 @@ class CountryBorderOverlay extends Component with HasGameRef<FlitGame> {
         error: e,
         stackTrace: st,
         data: {
-          'altitude': gameRef.plane.continuousAltitude.toStringAsFixed(2),
           'platform': kIsWeb ? 'web' : 'native',
         },
       );
@@ -53,7 +47,6 @@ class CountryBorderOverlay extends Component with HasGameRef<FlitGame> {
         st,
         context: {
           'source': 'CountryBorderOverlay.render',
-          'altitude': gameRef.plane.continuousAltitude.toString(),
           'isWeb': kIsWeb.toString(),
         },
       );
@@ -69,14 +62,10 @@ class CountryBorderOverlay extends Component with HasGameRef<FlitGame> {
 
   void _renderAllCountryOutlines(
     Canvas canvas,
-    double continuousAlt,
     double screenW,
     double screenH,
   ) {
-    // Fade in with altitude — visible at high alt, invisible at ground level.
-    // Ramps up from 0 at ground to 0.35 at cruise altitude and stays there.
-    final opacity = (0.35 * (continuousAlt / 0.6)).clamp(0.0, 0.35);
-    if (opacity < 0.02) return;
+    const opacity = 0.35;
 
     final outlinePaint = Paint()
       ..color = Colors.white.withOpacity(opacity)
@@ -93,7 +82,7 @@ class CountryBorderOverlay extends Component with HasGameRef<FlitGame> {
 
     // Visibility radius in degrees — only render countries near the player
     // to avoid projecting the entire globe every frame.
-    final visRadius = continuousAlt < 0.5 ? 50.0 : 100.0;
+    const visRadius = 100.0;
 
     final activeCountryName = gameRef.currentCountryName;
 
@@ -188,7 +177,6 @@ class CountryBorderOverlay extends Component with HasGameRef<FlitGame> {
 
   void _renderActiveCountryHighlight(
     Canvas canvas,
-    double continuousAlt,
     double screenW,
     double screenH,
   ) {
@@ -208,9 +196,7 @@ class CountryBorderOverlay extends Component with HasGameRef<FlitGame> {
     // Skip Antarctica — its 360° polygon wraps visually near the south pole.
     if (activeCountry.code == 'AQ') return;
 
-    final borderOpacity = (0.6 * (continuousAlt / 0.6)).clamp(0.0, 0.6);
-
-    if (borderOpacity < 0.01) return;
+    const borderOpacity = 0.6;
 
     // Red highlight for the active country border.
     final highlightPaint = Paint()
@@ -218,7 +204,7 @@ class CountryBorderOverlay extends Component with HasGameRef<FlitGame> {
         0xFFFF3333,
       ).withOpacity((borderOpacity * 1.0).clamp(0.4, 1.0))
       ..style = PaintingStyle.stroke
-      ..strokeWidth = continuousAlt >= 0.6 ? 2.0 : 2.5
+      ..strokeWidth = 2.0
       ..strokeJoin = StrokeJoin.round;
 
     for (final polygon in activeCountry.polygons) {

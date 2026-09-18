@@ -12,7 +12,6 @@ void main() {
         // Should not throw when creating a PlaneComponent with any plane ID
         expect(
           () => PlaneComponent(
-            onAltitudeChanged: (_) {},
             colorScheme: plane.colorScheme,
             wingSpan: plane.wingSpan ?? 26.0,
             equippedPlaneId: plane.id,
@@ -74,7 +73,6 @@ void main() {
 
     test('PlaneComponent stores equippedPlaneId correctly', () {
       final plane = PlaneComponent(
-        onAltitudeChanged: (_) {},
         equippedPlaneId: 'plane_paper',
       );
 
@@ -82,7 +80,7 @@ void main() {
     });
 
     test('PlaneComponent defaults to plane_default when not specified', () {
-      final plane = PlaneComponent(onAltitudeChanged: (_) {});
+      final plane = PlaneComponent();
 
       expect(plane.equippedPlaneId, equals('plane_default'));
     });
@@ -90,7 +88,6 @@ void main() {
     test('PlaneComponent uses colorScheme from cosmetic', () {
       final paperPlane = CosmeticCatalog.getById('plane_paper');
       final plane = PlaneComponent(
-        onAltitudeChanged: (_) {},
         colorScheme: paperPlane!.colorScheme,
         equippedPlaneId: paperPlane.id,
       );
@@ -102,7 +99,6 @@ void main() {
     test('PlaneComponent uses wingSpan from cosmetic', () {
       final rocket = CosmeticCatalog.getById('plane_rocket');
       final plane = PlaneComponent(
-        onAltitudeChanged: (_) {},
         wingSpan: rocket!.wingSpan!,
         equippedPlaneId: rocket.id,
       );

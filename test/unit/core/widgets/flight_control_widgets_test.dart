@@ -23,9 +23,8 @@ void main() {
   });
 
   group('FlightControlSurface', () {
-    testWidgets('center tap toggles altitude after double-tap window',
+    testWidgets('center tap is inert when no clue double-tap follows',
         (tester) async {
-      var altitudeToggles = 0;
       var clues = 0;
 
       await tester.pumpWidget(
@@ -36,7 +35,6 @@ void main() {
               onSteeringChanged: (_) {},
               onThrottleChanged: (_) {},
               onReleased: () {},
-              onAltitudeToggle: () => altitudeToggles++,
               onDoubleTap: () => clues++,
             ),
           ),
@@ -46,16 +44,13 @@ void main() {
       final centre = tester.getCenter(find.byType(FlightControlSurface));
       final gesture = await tester.startGesture(centre);
       await gesture.up();
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 281));
+      await tester.pump(const Duration(milliseconds: 300));
 
-      expect(altitudeToggles, 1);
       expect(clues, 0);
     });
 
-    testWidgets('double tap invokes clue without toggling altitude',
+    testWidgets('double tap invokes clue without altitude side effects',
         (tester) async {
-      var altitudeToggles = 0;
       var clues = 0;
 
       await tester.pumpWidget(
@@ -66,7 +61,6 @@ void main() {
               onSteeringChanged: (_) {},
               onThrottleChanged: (_) {},
               onReleased: () {},
-              onAltitudeToggle: () => altitudeToggles++,
               onDoubleTap: () => clues++,
             ),
           ),
@@ -84,7 +78,6 @@ void main() {
       await tester.pump(const Duration(milliseconds: 300));
 
       expect(clues, 1);
-      expect(altitudeToggles, 0);
     });
 
     testWidgets('D-pad tap steps throttle and hold uses continuous input',

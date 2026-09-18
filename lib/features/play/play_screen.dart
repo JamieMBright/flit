@@ -207,7 +207,6 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   Timer? _timer;
   Duration _elapsed = Duration.zero;
   Duration _cumulativeTime = Duration.zero;
-  bool _isHighAltitude = true;
   bool _gameReady = false;
   String? _error;
 
@@ -335,14 +334,11 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       );
       _game = FlitGame(
         onGameReady: _onGameReady,
-        onAltitudeChanged: _onAltitudeChanged,
         onError: _onGameError,
         onWaypointSet: () => _tutorialKey.currentState?.onWaypointSet(),
         // Keyboard input must advance the tutorial exactly like the on-screen
-        // buttons do — steer, speed (1/2/3) and altitude (Space/arrows/Ctrl).
+        // buttons do — steer and throttle presets count as attempts.
         onKeyboardTurn: () => _tutorialKey.currentState?.onTurnPressed(),
-        onKeyboardAltitudeToggle: () =>
-            _tutorialKey.currentState?.onAltitudeToggled(),
         isChallenge: widget.challengeFriendName != null,
         fuelBoostMultiplier: widget.fuelBoostMultiplier,
         planeColorScheme: widget.planeColorScheme,
@@ -521,27 +517,6 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
         _error = msg;
       });
     }
-  }
-
-  void _onAltitudeChanged(bool isHigh) {
-    _log.debug('screen', 'Altitude callback', data: {'isHigh': isHigh});
-    if (mounted) {
-      setState(() {
-        _isHighAltitude = isHigh;
-      });
-      // Descending far from the target is the "wrong region" moment —
-      // fire the mission-authored coach tip (campaign only; one-shot).
-      if (!isHigh && !_game.isNearTarget()) {
-        _coachOverlayKey.currentState?.showTip('wrongRegion');
-      }
-    }
-  }
-
-  void _toggleAltitude() {
-    if (_game.isFlatMapMode || !_gameReady) return;
-    _game.plane.toggleAltitude();
-    AudioManager.instance.playSfx(SfxType.altitudeChange);
-    _tutorialKey.currentState?.onAltitudeToggled();
   }
 
   /// Use a hint — tiered system with 4 levels.
@@ -962,8 +937,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
 
     try {
       // Two ways to complete: proximity to target point OR entering the
-      // target country's borders. The border check allows high-altitude
-      // fly-over to register — the player shouldn't need to descend.
+      // target country's borders.
       final nearTarget = _game.isNearTarget(threshold: 25);
       final inTargetCountry = _game.currentCountryName != null &&
           _game.currentCountryName == _session!.targetName;
@@ -2043,16 +2017,12 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                   ),
                 ),
               ),
-            // NOTE: The globe-descent OSM tile overlay was removed — animating
-            // flutter_map network tiles with per-frame rotation/zoom could not
-            // hold 60fps and made descent feel jerky. Descending now simply
-            // zooms the globe shader (smooth), and the altitude toggle + its
-            // tutorial steps are unaffected. The flat-map DescentMapView above
-            // (Uncharted / Flight School) is static and stays.
+            // The regional flat-map renderer above is static and remains
+            // separate from the normal globe flight view.
 
             // Game canvas – use builders to avoid white flash during init.
-            // In descent mode the background is transparent so the OSM map
-            // shows through, with the plane sprite rendered on top.
+            // The globe remains opaque in normal flight, with the plane sprite
+            // rendered on top.
             GameWidget(
               game: _game,
               loadingBuilder: (_) =>
@@ -2121,14 +2091,12 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
             // HUD overlay
             if (_gameReady && _session != null)
               GameHud(
-                isHighAltitude: _isHighAltitude,
                 elapsedTime: _elapsed,
                 // Suppress the clue card entirely while the interactive
                 // tutorial runs — clues are introduced only after it completes
                 // (via the 'firstClue' coach tip), so nothing unrelated shows
                 // in the top corner mid-lesson.
                 currentClue: _tutorialActive ? null : _currentClue,
-                onAltitudeToggle: _game.isFlatMapMode ? null : _toggleAltitude,
                 onExit: _requestExit,
                 onSettings: () => showSettingsSheet(context),
                 controlMode: _activeControlMode,
@@ -2276,7 +2244,6 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
         _game.releaseButtonTurn();
         _tutorialKey.currentState?.onControlReleased();
       },
-      onAltitudeToggle: _game.isFlatMapMode ? null : _toggleAltitude,
       onDoubleTap: _activeClueTrigger == ClueTrigger.controlDoubleTap
           ? (_tutorialActive
               ? () => _tutorialKey.currentState?.onDoubleTapClue()

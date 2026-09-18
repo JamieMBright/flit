@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter/services.dart';
 
 import 'package:flit/game/flit_game.dart';
 import 'package:flit/game/components/plane_component.dart';
@@ -7,15 +8,15 @@ void main() {
   group('FlightThrottle', () {
     test('preserves legacy slow, medium, and fast calibration anchors', () {
       expect(
-        FlightThrottle.multiplier(0, lowAltitude: false, flatMap: false),
+        FlightThrottle.multiplier(0, flatMap: false),
         FlightThrottle.slowMultiplier,
       );
       expect(
-        FlightThrottle.multiplier(0.5, lowAltitude: false, flatMap: false),
+        FlightThrottle.multiplier(0.5, flatMap: false),
         FlightThrottle.mediumMultiplier,
       );
       expect(
-        FlightThrottle.multiplier(1, lowAltitude: false, flatMap: false),
+        FlightThrottle.multiplier(1, flatMap: false),
         FlightThrottle.fastMultiplier,
       );
     });
@@ -26,7 +27,6 @@ void main() {
         final throttle = i / 100;
         final current = FlightThrottle.multiplier(
           throttle,
-          lowAltitude: false,
           flatMap: false,
         );
         expect(current, greaterThanOrEqualTo(previous));
@@ -35,12 +35,10 @@ void main() {
 
       final below = FlightThrottle.multiplier(
         0.5 - 1e-6,
-        lowAltitude: false,
         flatMap: false,
       );
       final above = FlightThrottle.multiplier(
         0.5 + 1e-6,
-        lowAltitude: false,
         flatMap: false,
       );
       expect((above - below).abs(), lessThan(0.00002));
@@ -70,21 +68,9 @@ void main() {
       expect(FlightThrottle.applyInput(0.5, 1, 0), 0.5);
     });
 
-    test('low altitude and flat map curves retain their own endpoints', () {
+    test('flat map curves retain their medium calibration anchor', () {
       expect(
-        FlightThrottle.multiplier(0, lowAltitude: true, flatMap: false),
-        FlightThrottle.lowSlowMultiplier,
-      );
-      expect(
-        FlightThrottle.multiplier(0.5, lowAltitude: true, flatMap: false),
-        FlightThrottle.lowMediumMultiplier,
-      );
-      expect(
-        FlightThrottle.multiplier(1, lowAltitude: true, flatMap: false),
-        FlightThrottle.lowFastMultiplier,
-      );
-      expect(
-        FlightThrottle.multiplier(0.5, lowAltitude: false, flatMap: true),
+        FlightThrottle.multiplier(0.5, flatMap: true),
         FlightThrottle.flatMediumMultiplier,
       );
     });
@@ -97,6 +83,32 @@ void main() {
       expect(slow, greaterThan(medium));
       expect(medium, greaterThan(fast));
       expect(medium, closeTo(PlaneComponent.turnRate, 0.000001));
+    });
+
+    test('arrow key events are handled without an altitude action', () {
+      final game = FlitGame();
+      expect(
+        () => game.onKeyEvent(
+          const KeyDownEvent(
+            physicalKey: PhysicalKeyboardKey.arrowUp,
+            logicalKey: LogicalKeyboardKey.arrowUp,
+            timeStamp: Duration.zero,
+          ),
+          {LogicalKeyboardKey.arrowUp},
+        ),
+        returnsNormally,
+      );
+      expect(
+        () => game.onKeyEvent(
+          const KeyDownEvent(
+            physicalKey: PhysicalKeyboardKey.arrowDown,
+            logicalKey: LogicalKeyboardKey.arrowDown,
+            timeStamp: Duration.zero,
+          ),
+          {LogicalKeyboardKey.arrowDown},
+        ),
+        returnsNormally,
+      );
     });
   });
 }

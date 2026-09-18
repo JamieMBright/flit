@@ -60,13 +60,6 @@ const List<CampaignMission> campaignMissions = [
             'an airline was born. Welcome to the land that taught me to dream.',
       ),
       CoachTip(
-        trigger: 'wrongRegion',
-        message:
-            'Not quite, cadet. Look at those neighbours — Pakistan, China, '
-            'Nepal. They surround one of the world\'s greatest nations. '
-            'Head south-east towards Asia.',
-      ),
-      CoachTip(
         trigger: 'lost',
         message:
             'When I planned my first airmail route, I studied every border '
@@ -131,13 +124,6 @@ const List<CampaignMission> campaignMissions = [
             'eagle\'s gaze.',
       ),
       CoachTip(
-        trigger: 'wrongRegion',
-        message:
-            'Study the colours and symbols carefully, cadet. Every element '
-            'on a flag tells a story — stripes, stars, crosses, eagles. '
-            'Read the story and you\'ll find the nation.',
-      ),
-      CoachTip(
         trigger: 'lost',
         message: 'Flags are a nation\'s identity stitched into cloth. Look at '
             'the arrangement — horizontal or vertical stripes? Stars or '
@@ -200,13 +186,6 @@ const List<CampaignMission> campaignMissions = [
             'my flying machines. Remember: Brasília, not Rio!',
       ),
       CoachTip(
-        trigger: 'wrongRegion',
-        message:
-            'The biggest city tricks you every time, cadet. The capital is '
-            'often a compromise — built fresh or chosen precisely because '
-            'it wasn\'t the obvious city. Think carefully.',
-      ),
-      CoachTip(
         trigger: 'lost',
         message: 'Capitals fool even seasoned travellers. Australia\'s capital '
             'is Canberra (not Sydney), South Africa\'s is Pretoria (not '
@@ -267,12 +246,6 @@ const List<CampaignMission> campaignMissions = [
             'the west, Georgia and Armenia to the northeast, Iran, Iraq, '
             'and Syria to the south. Turkey — the nation I defended as '
             'the world\'s first female combat pilot.',
-      ),
-      CoachTip(
-        trigger: 'wrongRegion',
-        message: 'Cross-reference both signals, cadet. The flag tells you the '
-            'identity, the borders tell you the neighbourhood. When both '
-            'agree, you have your answer. Don\'t guess — deduce.',
       ),
       CoachTip(
         trigger: 'lost',
@@ -403,9 +376,8 @@ const List<CampaignMission> campaignMissions = [
             'Alaouite dynasty and the descendants of the Prophet, while '
             'the green star — the Seal of Solomon — stands for life, '
             'health, and wisdom. Head to the capital: Rabat, not '
-            'Casablanca or Marrakech! And remember — slower speeds give '
-            'you much finer control, and descending makes steering even '
-            'easier. Use both when you need precision.',
+            'Casablanca or Marrakech! Slower throttle gives you much finer '
+            'control when you need precision.',
       ),
       CoachTip(
         trigger: 'halfwayDone',
@@ -437,13 +409,6 @@ const List<CampaignMission> campaignMissions = [
         message: 'Running on fumes — just as I was when I crash-landed in the '
             'Libyan desert! Head north to France. Paris is waiting. The '
             'mail must arrive!',
-      ),
-      CoachTip(
-        trigger: 'wrongRegion',
-        message: 'You\'ve drifted off the route, cadet. My mail runs crossed '
-            'North and West Africa — Morocco, Algeria, Senegal, Libya, '
-            'Chad, and Egypt are all in that belt. Check your flag and '
-            'capital clues to get your bearings.',
       ),
       CoachTip(
         trigger: 'lost',
@@ -494,12 +459,6 @@ const List<CampaignMission> campaignMissions = [
             'nearly double a well-known one. Risk and reward, cadet.',
       ),
       CoachTip(
-        trigger: 'wrongRegion',
-        message: 'The numbers point to South America — mid-sized population, '
-            'large Andean nation, currency the Sol. Lima airport bears my '
-            'name. Think about that.',
-      ),
-      CoachTip(
         trigger: 'lost',
         message: 'I calculated every variable before Simplon Pass and still '
             'nearly paid with my life. Use the stats: South America, '
@@ -545,12 +504,6 @@ const List<CampaignMission> campaignMissions = [
         message: 'Kenya! I learned to read this landscape before I could read '
             'a map — the Nandi taught me to see the savannah from above. '
             'You have the same instinct. Well flown.',
-      ),
-      CoachTip(
-        trigger: 'wrongRegion',
-        message: 'Wrong region — and every wrong approach burns fuel. Flying '
-            'accurately matters: less fuel wasted means a bigger fuel bonus. '
-            'Look to East Africa — this silhouette is unmistakable.',
       ),
       CoachTip(
         trigger: 'lost',
