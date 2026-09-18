@@ -1,4 +1,5 @@
 import '../../data/models/daily_result.dart';
+import '../data/country_difficulty.dart';
 import 'triangulation_scoring.dart';
 import 'triangulation_session.dart';
 
@@ -15,6 +16,7 @@ import 'triangulation_session.dart';
 /// 🟥🟨🟩✅
 /// 🟥🟥🟧🟨🟥❌
 /// Score: 21,480 pts
+/// Proficiency: 82%
 /// Time: 1m42s
 /// ```
 String buildTriangulationShareText(
@@ -23,13 +25,33 @@ String buildTriangulationShareText(
 }) {
   final rows = session.rounds.map(_roundRow).join('\n');
   final score = DailyResult.formatScore(session.totalScore);
+  final proficiency = triangulationProficiencyPercent(session);
   final time = DailyResult.formatTime(session.totalTimeMs);
   return '     \u{1F6EB} \u{1F9ED} \u{1F6EC}\n'
       'Flit Recon #$dayNumber  '
       '${session.solvedRounds}/${session.rounds.length}\n'
       '$rows\n'
       'Score: $score pts\n'
+      'Proficiency: $proficiency%\n'
       'Time: $time';
+}
+
+/// Score-normalized proficiency used by Recon's leaderboard and share text.
+///
+/// The denominator is the maximum difficulty-weighted score for every round,
+/// including rounds that were not solved. This keeps the shared percentage in
+/// lockstep with leaderboard proficiency and makes time, wrong guesses, hints,
+/// and country-name fallback answers visible in one compact metric.
+int triangulationProficiencyPercent(TriangulationSession session) {
+  final maxPossible = session.rounds.fold<int>(
+    0,
+    (sum, state) =>
+        sum +
+        (triBaseScore * difficultyMultiplier(state.round.targetCountryCode))
+            .round(),
+  );
+  if (maxPossible == 0) return 0;
+  return ((session.totalScore / maxPossible) * 100).round().clamp(0, 100);
 }
 
 /// Just the emoji grid rows (no header/score) — used by the downloadable

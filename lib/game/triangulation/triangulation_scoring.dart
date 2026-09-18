@@ -2,7 +2,7 @@
 ///
 /// Deliberately gentler than the Daily Scramble curve (daily_result.dart):
 /// Scramble is fast recall, but Triangulation asks the player to reason
-/// over five bearings, so full marks last 30s and the decay runs out to
+/// over five bearings, so full marks last 45s and the decay runs out to
 /// 3 minutes. Scaled by the country difficulty multiplier, plus a
 /// per-wrong-guess proximity penalty unique to this mode (a near-miss
 /// costs little, a wild guess costs more — but never so much that a
@@ -29,13 +29,13 @@ const int triWrongGuessFloor = 100;
 const int triWrongGuessDistanceMax = 1400;
 
 /// Full-marks window: no time penalty while reading and reasoning.
-const int triTimeGraceSeconds = 30;
+const int triTimeGraceSeconds = 45;
 
 /// Time at which the time penalty saturates.
 const int triTimeMaxSeconds = 180;
 
 /// Largest possible time penalty (at >= [triTimeMaxSeconds]).
-const int triTimePenaltyMax = 4000;
+const int triTimePenaltyMax = 2500;
 
 /// Multiplier applied when the round is solved via the country name
 /// instead of the capital.

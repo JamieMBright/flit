@@ -26,9 +26,9 @@ class TriangulationConfig {
   final int guessesPerRound;
   final int markerCount;
 
-  /// What the player is hunting. Capital days: capital = full points,
-  /// country = ×0.7. Country days: only country names are answer
-  /// candidates (the UI offers no capital entries).
+  /// Primary target focus for presentation and clue flavour. Both country
+  /// and capital names are answer candidates in every Recon session; capital
+  /// answers score full value and country answers use the fallback multiplier.
   final TriTargetType targetType;
 
   /// Visual clue types shown in each marker's info box
@@ -209,10 +209,7 @@ class TriangulationSession {
     if (state.isOver) {
       state.score = computeTriangulationScore(
         solved: state.solved,
-        // The ×0.7 country-name discount only exists on capital days;
-        // on country days the country name IS the asked-for answer.
-        solvedAsCountry:
-            state.solvedAsCountry && config.targetType == TriTargetType.capital,
+        solvedAsCountry: state.solvedAsCountry,
         timeMs: state.elapsedMs,
         wrongGuessPenalties: state.wrongGuesses.map((g) => g.penalty).toList(),
         targetCountryCode: round.targetCountryCode,

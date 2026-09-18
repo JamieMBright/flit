@@ -131,6 +131,44 @@ class _SettingsSheetContentState extends State<_SettingsSheetContent> {
 
           // ── Controls ───────────────────────────────────────
           const _SectionHeader(title: 'Controls'),
+          _ControlModeSelector(
+            value: GameSettings.instance.controlMode,
+            onChanged: (value) {
+              GameSettings.instance.updateControlSettings(
+                mode: value,
+                placement: GameSettings.instance.controlPlacement,
+                clueTrigger: GameSettings.instance.clueTrigger,
+              );
+              setState(() {});
+            },
+          ),
+          if (GameSettings.instance.controlMode != ControlMode.classic) ...[
+            const Divider(color: FlitColors.cardBorder, height: 1),
+            _ControlPlacementSelector(
+              value: GameSettings.instance.controlPlacement,
+              onChanged: (value) {
+                GameSettings.instance.updateControlSettings(
+                  mode: GameSettings.instance.controlMode,
+                  placement: value,
+                  clueTrigger: GameSettings.instance.clueTrigger,
+                );
+                setState(() {});
+              },
+            ),
+            const Divider(color: FlitColors.cardBorder, height: 1),
+            _ClueTriggerSelector(
+              value: GameSettings.instance.clueTrigger,
+              onChanged: (value) {
+                GameSettings.instance.updateControlSettings(
+                  mode: GameSettings.instance.controlMode,
+                  placement: GameSettings.instance.controlPlacement,
+                  clueTrigger: value,
+                );
+                setState(() {});
+              },
+            ),
+          ],
+          const Divider(color: FlitColors.cardBorder, height: 1),
           _SettingsToggle(
             label: 'Invert Controls',
             icon: Icons.swap_horiz,
@@ -140,17 +178,6 @@ class _SettingsSheetContentState extends State<_SettingsSheetContent> {
               setState(() {});
             },
           ),
-          const Divider(color: FlitColors.cardBorder, height: 1),
-          _SettingsToggle(
-            label: 'Joystick Steering',
-            icon: Icons.gamepad_outlined,
-            value: GameSettings.instance.enableJoystick,
-            onChanged: (value) {
-              GameSettings.instance.enableJoystick = value;
-              setState(() {});
-            },
-          ),
-          const Divider(color: FlitColors.cardBorder, height: 1),
           _SettingsSlider(
             label: 'Turn Sensitivity',
             icon: Icons.speed,
@@ -410,6 +437,144 @@ class _SettingsSlider extends StatelessWidget {
       ),
     );
   }
+}
+
+class _ControlModeSelector extends StatelessWidget {
+  const _ControlModeSelector({required this.value, required this.onChanged});
+
+  final ControlMode value;
+  final ValueChanged<ControlMode> onChanged;
+
+  @override
+  Widget build(BuildContext context) => _ControlChoiceSelector<ControlMode>(
+        title: 'Flight controls',
+        icon: Icons.gamepad_outlined,
+        value: value,
+        options: ControlMode.values,
+        label: (mode) => mode.displayName,
+        onChanged: onChanged,
+      );
+}
+
+class _ControlPlacementSelector extends StatelessWidget {
+  const _ControlPlacementSelector({
+    required this.value,
+    required this.onChanged,
+  });
+
+  final ControlPlacement value;
+  final ValueChanged<ControlPlacement> onChanged;
+
+  @override
+  Widget build(BuildContext context) =>
+      _ControlChoiceSelector<ControlPlacement>(
+        title: 'Compact control placement',
+        icon: Icons.open_with_rounded,
+        value: value,
+        options: ControlPlacement.values,
+        label: (placement) => placement.displayName,
+        onChanged: onChanged,
+      );
+}
+
+class _ClueTriggerSelector extends StatelessWidget {
+  const _ClueTriggerSelector({required this.value, required this.onChanged});
+
+  final ClueTrigger value;
+  final ValueChanged<ClueTrigger> onChanged;
+
+  @override
+  Widget build(BuildContext context) => _ControlChoiceSelector<ClueTrigger>(
+        title: 'Clue action',
+        icon: Icons.lightbulb_outline,
+        value: value,
+        options: ClueTrigger.values,
+        label: (trigger) => trigger.displayName,
+        onChanged: onChanged,
+      );
+}
+
+class _ControlChoiceSelector<T> extends StatelessWidget {
+  const _ControlChoiceSelector({
+    required this.title,
+    required this.icon,
+    required this.value,
+    required this.options,
+    required this.label,
+    required this.onChanged,
+  });
+
+  final String title;
+  final IconData icon;
+  final T value;
+  final List<T> options;
+  final String Function(T) label;
+  final ValueChanged<T> onChanged;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(icon, color: FlitColors.textSecondary, size: 22),
+                const SizedBox(width: 12),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    color: FlitColors.textPrimary,
+                    fontSize: 16,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: options.map((option) {
+                final selected = option == value;
+                return Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 3),
+                    child: GestureDetector(
+                      onTap: () => onChanged(option),
+                      child: Container(
+                        constraints: const BoxConstraints(minHeight: 44),
+                        alignment: Alignment.center,
+                        padding: const EdgeInsets.symmetric(horizontal: 6),
+                        decoration: BoxDecoration(
+                          color: selected
+                              ? FlitColors.accent.withOpacity(0.2)
+                              : FlitColors.backgroundMid,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: selected
+                                ? FlitColors.accent
+                                : FlitColors.cardBorder,
+                            width: selected ? 1.5 : 1,
+                          ),
+                        ),
+                        child: Text(
+                          label(option),
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: selected
+                                ? FlitColors.accent
+                                : FlitColors.textMuted,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ],
+        ),
+      );
 }
 
 // ---------------------------------------------------------------------------

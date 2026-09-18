@@ -3,11 +3,12 @@ import 'dart:math' as math;
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
 
+import '../../core/services/game_settings.dart';
 import '../../core/theme/flit_colors.dart';
 import '../../core/widgets/country_flag.dart';
 import '../../core/widgets/country_outline_painter.dart';
+import '../../core/widgets/flight_control_widgets.dart';
 import '../clues/clue_types.dart';
-import '../flit_game.dart';
 import '../session/game_session.dart';
 
 /// Game HUD overlay showing clues, timer, altitude indicator, speed controls,
@@ -21,8 +22,13 @@ class GameHud extends StatelessWidget {
     this.onAltitudeToggle,
     this.onExit,
     this.onSettings,
-    this.currentSpeed = FlightSpeed.medium,
-    this.onSpeedChanged,
+    this.controlMode = ControlMode.classic,
+    this.controlPlacement = ControlPlacement.lowerCenter,
+    this.clueTrigger = ClueTrigger.button,
+    this.throttle = 0.0,
+    this.onThrottleChanged,
+    this.onThrottleIncrement,
+    this.onThrottleDecrement,
     this.onHint,
     this.hintTier = 0,
     this.revealedCountry,
@@ -42,8 +48,13 @@ class GameHud extends StatelessWidget {
   final VoidCallback? onAltitudeToggle;
   final VoidCallback? onExit;
   final VoidCallback? onSettings;
-  final FlightSpeed currentSpeed;
-  final ValueChanged<FlightSpeed>? onSpeedChanged;
+  final ControlMode controlMode;
+  final ControlPlacement controlPlacement;
+  final ClueTrigger clueTrigger;
+  final double throttle;
+  final ValueChanged<double>? onThrottleChanged;
+  final VoidCallback? onThrottleIncrement;
+  final VoidCallback? onThrottleDecrement;
   final VoidCallback? onHint;
   final int hintTier;
   final String? revealedCountry;
@@ -166,33 +177,71 @@ class GameHud extends StatelessWidget {
                   padding: const EdgeInsets.only(bottom: 8),
                   child: _FuelGauge(level: fuelLevel!, maxFuel: maxFuel),
                 ),
-              // Bottom row: Speed controls, Altitude indicator, Hint button
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  // Hint button
-                  if (hintTier < 4 && onHint != null)
-                    _HintButton(tier: hintTier, onTap: onHint),
-                  // Speed controls
-                  Flexible(
-                    child: _SpeedControls(
-                      current: currentSpeed,
-                      onChanged: onSpeedChanged,
+              if (controlMode == ControlMode.classic)
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    if (hintTier < 4 && onHint != null)
+                      _HintButton(tier: hintTier, onTap: onHint),
+                    Flexible(
+                      child: ClassicThrottleControl(
+                        value: throttle,
+                        onChanged: onThrottleChanged ?? (_) {},
+                        onIncrement: onThrottleIncrement,
+                        onDecrement: onThrottleDecrement,
+                      ),
+                    ),
+                    Flexible(
+                      child: _AltitudeIndicator(
+                        isHigh: isHighAltitude,
+                        onToggle: onAltitudeToggle,
+                      ),
+                    ),
+                  ],
+                )
+              else
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 112),
+                  child: Align(
+                    alignment: _compactAlignment,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (controlPlacement == ControlPlacement.left &&
+                            clueTrigger == ClueTrigger.button &&
+                            hintTier < 4 &&
+                            onHint != null) ...[
+                          _HintButton(tier: hintTier, onTap: onHint),
+                          const SizedBox(width: 10),
+                        ],
+                        const SizedBox(width: 2),
+                        ThrottleGauge(value: throttle),
+                        if (controlPlacement != ControlPlacement.left &&
+                            clueTrigger == ClueTrigger.button &&
+                            hintTier < 4 &&
+                            onHint != null) ...[
+                          const SizedBox(width: 10),
+                          _HintButton(tier: hintTier, onTap: onHint),
+                        ],
+                      ],
                     ),
                   ),
-                  // Altitude indicator
-                  Flexible(
-                    child: _AltitudeIndicator(
-                      isHigh: isHighAltitude,
-                      onToggle: onAltitudeToggle,
-                    ),
-                  ),
-                ],
-              ),
+                ),
             ],
           ),
         ),
       );
+
+  Alignment get _compactAlignment {
+    switch (controlPlacement) {
+      case ControlPlacement.left:
+        return Alignment.centerLeft;
+      case ControlPlacement.right:
+        return Alignment.centerRight;
+      case ControlPlacement.lowerCenter:
+        return Alignment.center;
+    }
+  }
 }
 
 class _ExitButton extends StatelessWidget {
@@ -562,64 +611,6 @@ class _AltitudeIndicator extends StatelessWidget {
           ),
         ),
       );
-}
-
-class _SpeedControls extends StatelessWidget {
-  const _SpeedControls({required this.current, this.onChanged});
-
-  final FlightSpeed current;
-  final ValueChanged<FlightSpeed>? onChanged;
-
-  @override
-  Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-        decoration: BoxDecoration(
-          color: FlitColors.cardBackground.withOpacity(0.85),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: FlitColors.cardBorder.withOpacity(0.6)),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: FlightSpeed.values.map((speed) {
-            final isActive = speed == current;
-            return GestureDetector(
-              onTap: () => onChanged?.call(speed),
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: isActive
-                      ? FlitColors.accent.withOpacity(0.3)
-                      : Colors.transparent,
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Text(
-                  _speedLabel(speed),
-                  style: TextStyle(
-                    color: isActive ? FlitColors.accent : FlitColors.textMuted,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0.8,
-                  ),
-                ),
-              ),
-            );
-          }).toList(),
-        ),
-      );
-
-  String _speedLabel(FlightSpeed speed) {
-    switch (speed) {
-      case FlightSpeed.slow:
-        return 'SLOW';
-      case FlightSpeed.medium:
-        return 'MED';
-      case FlightSpeed.fast:
-        return 'FAST';
-    }
-  }
 }
 
 class _HintButton extends StatefulWidget {

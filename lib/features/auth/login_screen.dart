@@ -757,8 +757,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     });
 
     try {
-      final result =
-          await _authService.changePassword(newPassword: password);
+      final result = await _authService.changePassword(newPassword: password);
 
       if (mounted) {
         setState(() => _isLoading = false);

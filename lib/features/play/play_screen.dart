@@ -12,7 +12,7 @@ import '../../core/utils/haptics.dart';
 import '../../core/services/error_service.dart';
 import '../../core/services/game_settings.dart';
 import '../../core/theme/flit_colors.dart';
-import '../../core/widgets/joystick_widget.dart';
+import '../../core/widgets/flight_control_widgets.dart';
 import '../../core/utils/math_utils.dart';
 import '../../core/utils/report_capture.dart';
 import '../../core/widgets/mission_report_card.dart';
@@ -200,7 +200,8 @@ class PlayScreen extends ConsumerStatefulWidget {
   ConsumerState<PlayScreen> createState() => _PlayScreenState();
 }
 
-class _PlayScreenState extends ConsumerState<PlayScreen> {
+class _PlayScreenState extends ConsumerState<PlayScreen>
+    with WidgetsBindingObserver {
   late final FlitGame _game;
   GameSession? _session;
   Timer? _timer;
@@ -277,6 +278,19 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
   final GlobalKey<InkBurstOverlayState> _inkBurstKey =
       GlobalKey<InkBurstOverlayState>();
 
+  /// Key used to neutralize a compact control surface during route, lifecycle,
+  /// orientation, and settings transitions.
+  final GlobalKey<FlightControlSurfaceState> _controlSurfaceKey =
+      GlobalKey<FlightControlSurfaceState>();
+
+  ControlMode _observedControlMode = GameSettings.instance.controlMode;
+  ControlPlacement _observedControlPlacement =
+      GameSettings.instance.controlPlacement;
+  ClueTrigger _observedClueTrigger = GameSettings.instance.clueTrigger;
+  bool _observedInvertControls = GameSettings.instance.invertControls;
+  double _observedTurnSensitivity = GameSettings.instance.turnSensitivity;
+  ControlMode _tutorialControlMode = ControlMode.classic;
+
   /// Whether the interactive tutorial is active (clue hidden, controls
   /// being introduced one by one). Only true for the first campaign mission.
   bool _tutorialActive = false;
@@ -306,6 +320,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    GameSettings.instance.addListener(_onGameSettingsChanged);
     try {
       _sessionSeedRandom = Random(widget.dailySeed);
       _log.info(
@@ -325,8 +341,6 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
         // Keyboard input must advance the tutorial exactly like the on-screen
         // buttons do — steer, speed (1/2/3) and altitude (Space/arrows/Ctrl).
         onKeyboardTurn: () => _tutorialKey.currentState?.onTurnPressed(),
-        onKeyboardSpeedChanged: () =>
-            _tutorialKey.currentState?.onSpeedChanged(),
         onKeyboardAltitudeToggle: () =>
             _tutorialKey.currentState?.onAltitudeToggled(),
         isChallenge: widget.challengeFriendName != null,
@@ -398,7 +412,9 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
     _timer?.cancel();
     _autoHintTimer?.cancel();
     _gameReadyTimeout?.cancel();
-    _game.releaseJoystickTurn();
+    WidgetsBinding.instance.removeObserver(this);
+    GameSettings.instance.removeListener(_onGameSettingsChanged);
+    _neutralizeFlightInput();
     // Detach the Flame game to stop its loop and release resources.
     // Without this, the game loop can outlive the widget and crash when
     // the user navigates to a different game mode.
@@ -414,6 +430,68 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
       );
     }
     super.dispose();
+  }
+
+  @override
+  void didChangeMetrics() {
+    _neutralizeFlightInput();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.paused ||
+        state == AppLifecycleState.detached) {
+      _neutralizeFlightInput();
+    }
+  }
+
+  void _onGameSettingsChanged() {
+    final modeChanged =
+        _observedControlMode != GameSettings.instance.controlMode;
+    final placementChanged =
+        _observedControlPlacement != GameSettings.instance.controlPlacement;
+    final clueTriggerChanged =
+        _observedClueTrigger != GameSettings.instance.clueTrigger;
+    final steeringSettingChanged =
+        _observedInvertControls != GameSettings.instance.invertControls ||
+            _observedTurnSensitivity != GameSettings.instance.turnSensitivity;
+    _observedControlMode = GameSettings.instance.controlMode;
+    _observedControlPlacement = GameSettings.instance.controlPlacement;
+    _observedClueTrigger = GameSettings.instance.clueTrigger;
+    _observedInvertControls = GameSettings.instance.invertControls;
+    _observedTurnSensitivity = GameSettings.instance.turnSensitivity;
+    if (!modeChanged &&
+        !placementChanged &&
+        !clueTriggerChanged &&
+        !steeringSettingChanged) {
+      return;
+    }
+    _neutralizeFlightInput();
+    if (mounted) setState(() {});
+  }
+
+  void _neutralizeFlightInput() {
+    _controlSurfaceKey.currentState?.neutralize();
+    if (_gameReady) _game.neutralizeInput();
+  }
+
+  ControlMode get _activeControlMode => _tutorialActive
+      ? _tutorialControlMode
+      : GameSettings.instance.controlMode;
+
+  ControlPlacement get _activeControlPlacement => _tutorialActive
+      ? ControlPlacement.lowerCenter
+      : GameSettings.instance.controlPlacement;
+
+  ClueTrigger get _activeClueTrigger => _tutorialActive
+      ? ClueTrigger.controlDoubleTap
+      : GameSettings.instance.clueTrigger;
+
+  void _onTutorialDemoModeChanged(ControlMode mode) {
+    if (_tutorialControlMode == mode) return;
+    _neutralizeFlightInput();
+    if (mounted) setState(() => _tutorialControlMode = mode);
   }
 
   void _onGameReady() {
@@ -457,6 +535,13 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
         _coachOverlayKey.currentState?.showTip('wrongRegion');
       }
     }
+  }
+
+  void _toggleAltitude() {
+    if (_game.isFlatMapMode || !_gameReady) return;
+    _game.plane.toggleAltitude();
+    AudioManager.instance.playSfx(SfxType.altitudeChange);
+    _tutorialKey.currentState?.onAltitudeToggled();
   }
 
   /// Use a hint — tiered system with 4 levels.
@@ -716,6 +801,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
     _clueGracePeriod = true;
     setState(() {
       _tutorialActive = false;
+      _tutorialControlMode = GameSettings.instance.controlMode;
       _currentClue = _session!.clue;
     });
     // Fire the firstClue coach tip now that the clue is visible.
@@ -779,11 +865,6 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
       // Configure fuel system.
       _game.fuelEnabled = widget.enableFuel;
       _game.onFuelEmpty = _onFuelEmpty;
-
-      // Daily scramble starts in slow speed for a relaxed experience.
-      if (widget.isDailyChallenge) {
-        _game.setFlightSpeed(FlightSpeed.slow);
-      }
 
       // Play clue popup sound.
       AudioManager.instance.playSfx(SfxType.cluePop);
@@ -1502,6 +1583,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
               }
             : null,
         onExit: () {
+          _neutralizeFlightInput();
           try {
             _game.pauseEngine();
           } catch (_) {}
@@ -1522,6 +1604,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
 
   void _requestExit() {
     _log.info('screen', 'Exit requested by user');
+    _neutralizeFlightInput();
     final isChallenge = widget.challengeFriendName != null;
     final isDailyChallenge = widget.isDailyChallenge;
 
@@ -2045,21 +2128,25 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
                 // (via the 'firstClue' coach tip), so nothing unrelated shows
                 // in the top corner mid-lesson.
                 currentClue: _tutorialActive ? null : _currentClue,
-                onAltitudeToggle: _game.isFlatMapMode
-                    ? null
-                    : () {
-                        _game.plane.toggleAltitude();
-                        AudioManager.instance.playSfx(SfxType.altitudeChange);
-                        _tutorialKey.currentState?.onAltitudeToggled();
-                      },
+                onAltitudeToggle: _game.isFlatMapMode ? null : _toggleAltitude,
                 onExit: _requestExit,
                 onSettings: () => showSettingsSheet(context),
-                currentSpeed: _game.flightSpeed,
-                onSpeedChanged: (speed) {
-                  setState(() {
-                    _game.setFlightSpeed(speed);
-                  });
-                  _tutorialKey.currentState?.onSpeedChanged();
+                controlMode: _activeControlMode,
+                controlPlacement: _activeControlPlacement,
+                clueTrigger: _activeClueTrigger,
+                throttle: _game.throttle,
+                onThrottleChanged: (value) {
+                  _game.setThrottle(value);
+                  _tutorialKey.currentState?.onThrottleChanged(value);
+                  if (mounted) setState(() {});
+                },
+                onThrottleIncrement: () {
+                  _game.adjustThrottle(0.08);
+                  if (mounted) setState(() {});
+                },
+                onThrottleDecrement: () {
+                  _game.adjustThrottle(-0.08);
+                  if (mounted) setState(() {});
                 },
                 onHint: _hintTier < 4 ? _useHint : null,
                 hintTier: _hintTier,
@@ -2078,71 +2165,26 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
                 onSkipClue: widget.isFreeFlight ? _skipClue : null,
               ),
 
+            // Active boost chips (Gold Surge / XP Surge / Polish) — shown
+            // where earnings happen so a running timer is never invisible.
+            if (_gameReady && _isFreeFlightEarning)
+              Positioned(
+                top: MediaQuery.of(context).padding.top + 108,
+                left: 0,
+                right: 0,
+                child: Center(
+                  child: ActiveEffectsRow(
+                    effects: ref.watch(accountProvider).activeEffects,
+                    compact: true,
+                  ),
+                ),
+              ),
+
             // Ink-burst success animation overlay
             InkBurstOverlay(key: _inkBurstKey),
 
-            // Mobile steering control. Joystick mode replaces the corner
-            // buttons while keeping the clue card independently reachable.
-            if (_gameReady && _session != null) ...[
-              if (GameSettings.instance.enableJoystick || _tutorialActive)
-                Positioned(
-                  left: 0,
-                  right: 0,
-                  bottom: MediaQuery.of(context).padding.bottom + 8,
-                  child: Center(
-                    child: JoystickWidget(
-                      size: (MediaQuery.of(context).size.width * 0.2)
-                          .clamp(64.0, 80.0)
-                          .toDouble(),
-                      onChanged: _game.setJoystickTurn,
-                      onReleased: _game.releaseJoystickTurn,
-                      onDirectionChanged: (direction) => _tutorialKey
-                          .currentState
-                          ?.onJoystickDragged(direction),
-                    ),
-                  ),
-                ),
-              // Active boost chips (Gold Surge / XP Surge / Polish) — shown
-              // above the control overlay so stored boosts remain visible.
-              if (_gameReady && _isFreeFlightEarning)
-                Positioned(
-                  top: MediaQuery.of(context).padding.top + 108,
-                  left: 0,
-                  right: 0,
-                  child: Center(
-                    child: ActiveEffectsRow(
-                      effects: ref.watch(accountProvider).activeEffects,
-                      compact: true,
-                    ),
-                  ),
-                ),
-              if (!GameSettings.instance.enableJoystick || _tutorialActive) ...[
-                Positioned(
-                  left: 16,
-                  bottom: MediaQuery.of(context).padding.bottom + 80,
-                  child: _TurnButton(
-                    icon: Icons.turn_left,
-                    onPressStart: () {
-                      _game.setButtonTurn(-1);
-                      _tutorialKey.currentState?.onTurnPressed();
-                    },
-                    onPressEnd: () => _game.releaseButtonTurn(),
-                  ),
-                ),
-                Positioned(
-                  right: 16,
-                  bottom: MediaQuery.of(context).padding.bottom + 80,
-                  child: _TurnButton(
-                    icon: Icons.turn_right,
-                    onPressStart: () {
-                      _game.setButtonTurn(1);
-                      _tutorialKey.currentState?.onTurnPressed();
-                    },
-                    onPressEnd: () => _game.releaseButtonTurn(),
-                  ),
-                ),
-              ],
-            ],
+            if (_gameReady && _session != null)
+              ..._buildFlightControls(context),
 
             // Coach overlay for campaign missions
             if (widget.campaignMission != null && _gameReady)
@@ -2159,6 +2201,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
                 key: _tutorialKey,
                 mission: widget.campaignMission!,
                 onComplete: _onTutorialComplete,
+                onDemoControlModeChanged: _onTutorialDemoModeChanged,
               ),
 
             // Loading overlay
@@ -2174,13 +2217,105 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
       ),
     );
   }
+
+  List<Widget> _buildFlightControls(BuildContext context) {
+    final mode = _activeControlMode;
+    final media = MediaQuery.of(context);
+    final safe = media.padding;
+    if (mode == ControlMode.classic) {
+      return [
+        Positioned(
+          left: safe.left + 12,
+          bottom: safe.bottom + 80,
+          child: _TurnButton(
+            icon: Icons.turn_left,
+            onPressStart: () {
+              _game.setButtonTurn(-1);
+              _tutorialKey.currentState?.onTurnPressed();
+            },
+            onPressEnd: () => _game.releaseButtonTurn(),
+          ),
+        ),
+        Positioned(
+          right: safe.right + 12,
+          bottom: safe.bottom + 80,
+          child: _TurnButton(
+            icon: Icons.turn_right,
+            onPressStart: () {
+              _game.setButtonTurn(1);
+              _tutorialKey.currentState?.onTurnPressed();
+            },
+            onPressEnd: () => _game.releaseButtonTurn(),
+          ),
+        ),
+      ];
+    }
+
+    final visualSize = (media.size.width * 0.22).clamp(88.0, 112.0);
+    final safeWidth = media.size.width - safe.left - safe.right;
+    final travelDistance = (safeWidth * 0.42).clamp(120.0, 520.0);
+    final surface = FlightControlSurface(
+      key: _controlSurfaceKey,
+      mode: mode,
+      visualSize: visualSize,
+      travelDistance: travelDistance,
+      onSteeringChanged: (value) {
+        _game.setControlSteering(value);
+        _tutorialKey.currentState?.onControlSteering(value);
+      },
+      onThrottleChanged: (value) {
+        _game.setThrottleInput(value);
+        _tutorialKey.currentState?.onThrottleChanged(value);
+      },
+      onThrottleStep: (delta) {
+        _game.adjustThrottle(delta);
+        _tutorialKey.currentState?.onThrottleTapped();
+      },
+      onReleased: () {
+        _game.releaseJoystickTurn();
+        _game.releaseButtonTurn();
+        _tutorialKey.currentState?.onControlReleased();
+      },
+      onAltitudeToggle: _game.isFlatMapMode ? null : _toggleAltitude,
+      onDoubleTap: _activeClueTrigger == ClueTrigger.controlDoubleTap
+          ? (_tutorialActive
+              ? () => _tutorialKey.currentState?.onDoubleTapClue()
+              : _useHint)
+          : null,
+      onDirectionChanged: (direction) =>
+          _tutorialKey.currentState?.onJoystickDragged(direction),
+    );
+
+    switch (_activeControlPlacement) {
+      case ControlPlacement.left:
+        return [
+          Positioned(
+            left: safe.left + 12,
+            bottom: safe.bottom + 12,
+            child: surface,
+          ),
+        ];
+      case ControlPlacement.right:
+        return [
+          Positioned(
+            right: safe.right + 12,
+            bottom: safe.bottom + 12,
+            child: surface,
+          ),
+        ];
+      case ControlPlacement.lowerCenter:
+        return [
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: safe.bottom + 12,
+            child: Center(child: surface),
+          ),
+        ];
+    }
+  }
 }
 
-/// Translucent on-screen turn button for mobile/touch users.
-///
-/// Triggers on press-and-hold: [onPressStart] fires when the finger goes
-/// down, [onPressEnd] fires when it lifts. The progressive turning ramp-up
-/// is handled by FlitGame._updateTurnInput.
 class _TurnButton extends StatefulWidget {
   const _TurnButton({
     required this.icon,

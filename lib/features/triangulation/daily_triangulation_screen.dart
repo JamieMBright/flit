@@ -299,9 +299,7 @@ class _DailyTriangulationScreenState extends State<DailyTriangulationScreen> {
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  isCapital
-                      ? 'Capital = full pts, country = ×0.7'
-                      : 'Answer with the country name',
+                  'Capital = full pts, country = ×0.7 (both accepted)',
                   style: const TextStyle(
                     color: FlitColors.textMuted,
                     fontSize: 11.5,
@@ -420,16 +418,13 @@ class _DailyTriangulationScreenState extends State<DailyTriangulationScreen> {
           ),
           const _RuleRow(
             icon: Icons.timer_outlined,
-            text: 'Full marks inside 30 seconds, slowly decaying to 3 '
+            text: 'Full marks inside 45 seconds, slowly decaying to 3 '
                 'minutes. Wild guesses cost more than near misses.',
           ),
-          _RuleRow(
+          const _RuleRow(
             icon: Icons.star_outline,
-            text: isCapital
-                ? 'Name the capital for full points — the country alone '
-                    'scores ×0.7.'
-                : 'Only country names count today — capitals are not '
-                    'accepted.',
+            text: 'Both country and capital names are accepted. The capital '
+                'earns full points; the country scores ×0.7.',
           ),
         ],
       ),

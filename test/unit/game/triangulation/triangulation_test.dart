@@ -272,10 +272,10 @@ void main() {
       expect(score, lessThanOrEqualTo(triBaseScore));
     });
 
-    test('time decay is gentler than scramble: 30s grace, 3min saturation', () {
+    test('time decay is gentler than scramble: 45s grace, 3min saturation', () {
       expect(triTimePenalty(5000), 0);
-      expect(triTimePenalty(30000), 0);
-      expect(triTimePenalty(105000), 2000); // midpoint of the decay
+      expect(triTimePenalty(45000), 0);
+      expect(triTimePenalty(112500), 1250); // midpoint of the decay
       expect(triTimePenalty(180000), triTimePenaltyMax);
       expect(triTimePenalty(240000), triTimePenaltyMax);
     });
@@ -385,14 +385,21 @@ void main() {
       expect(session.isFinished, isTrue);
     });
 
-    test('country-target days score full marks for the country name', () {
-      // Same seed, same timing: solving a capital-target game via the
-      // capital must equal solving a country-target game via the country
-      // (no ×0.7 discount on country days).
+    test('country answers use the fallback multiplier in either target focus',
+        () {
+      // Same seed, same timing: target focus changes presentation, not the
+      // answer-value rules.
       final capitalGame = TriangulationSession(
         const TriangulationConfig(seed: 99, rounds: 1),
       );
-      final countryGame = TriangulationSession(
+      final countryAnswerGame = TriangulationSession(
+        const TriangulationConfig(
+          seed: 99,
+          rounds: 1,
+          targetType: TriTargetType.country,
+        ),
+      );
+      final countryCapitalGame = TriangulationSession(
         const TriangulationConfig(
           seed: 99,
           rounds: 1,
@@ -404,13 +411,25 @@ void main() {
         viaCapital: true,
         elapsedMs: 4000,
       );
-      countryGame.submitGuess(
-        countryGame.currentRound.round.targetCountryCode,
+      countryAnswerGame.submitGuess(
+        countryAnswerGame.currentRound.round.targetCountryCode,
         viaCapital: false,
         elapsedMs: 4000,
       );
-      expect(countryGame.currentRound.score, capitalGame.currentRound.score);
-      expect(countryGame.currentRound.score, greaterThan(0));
+      countryCapitalGame.submitGuess(
+        countryCapitalGame.currentRound.round.targetCountryCode,
+        viaCapital: true,
+        elapsedMs: 4000,
+      );
+      expect(
+        countryAnswerGame.currentRound.score,
+        (capitalGame.currentRound.score * triCountryAnswerMultiplier).round(),
+      );
+      expect(
+        countryCapitalGame.currentRound.score,
+        capitalGame.currentRound.score,
+      );
+      expect(countryAnswerGame.currentRound.score, greaterThan(0));
     });
 
     test('distance hint is per-round state and charged in scoring', () {
@@ -482,6 +501,13 @@ void main() {
       expect(text, contains('Flit Recon #12'));
       expect(text, contains('1/1'));
       expect(text, contains('✅'));
+      expect(text, contains('Proficiency:'));
+      expect(
+        text,
+        contains(
+          'Proficiency: ${triangulationProficiencyPercent(session)}%',
+        ),
+      );
       expect(text, isNot(contains(round.targetCapitalName)));
       expect(text, isNot(contains(round.targetCountryName)));
     });

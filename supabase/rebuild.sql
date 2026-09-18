@@ -183,6 +183,12 @@ CREATE TABLE IF NOT EXISTS public.user_settings (
   turn_sensitivity   REAL NOT NULL DEFAULT 0.5,
   invert_controls    BOOLEAN NOT NULL DEFAULT FALSE,
   enable_joystick    BOOLEAN NOT NULL DEFAULT FALSE,
+  control_mode       TEXT NOT NULL DEFAULT 'classic'
+    CHECK (control_mode IN ('classic', 'dPad', 'joystick')),
+  control_placement  TEXT NOT NULL DEFAULT 'lowerCenter'
+    CHECK (control_placement IN ('left', 'right', 'lowerCenter')),
+  clue_trigger       TEXT NOT NULL DEFAULT 'button'
+    CHECK (clue_trigger IN ('button', 'controlDoubleTap')),
   enable_night       BOOLEAN NOT NULL DEFAULT TRUE,
   map_style          TEXT NOT NULL DEFAULT 'topo',
   english_labels     BOOLEAN NOT NULL DEFAULT TRUE,

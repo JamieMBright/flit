@@ -73,7 +73,7 @@ class _TriangulationGameScreenState
     extends ConsumerState<TriangulationGameScreen> {
   late final TriangulationSession _session;
   late final FuzzyMatcher _countryMatcher;
-  FuzzyMatcher? _capitalMatcher;
+  late final FuzzyMatcher _capitalMatcher;
   late final List<_GuessCandidate> _candidates;
 
   bool get _isCapitalTarget =>
@@ -114,22 +114,17 @@ class _TriangulationGameScreenState
         .where((c) => CountryData.getCapital(c.code) != null)
         .toList();
     _countryMatcher = FuzzyMatcher({for (final c in eligible) c.code: c.name});
-    // On country-target days capitals are not answer candidates at all —
-    // only country names count.
-    if (_isCapitalTarget) {
-      _capitalMatcher = FuzzyMatcher({
-        for (final c in eligible) c.code: CountryData.getCapital(c.code)!.name,
-      });
-    }
+    _capitalMatcher = FuzzyMatcher({
+      for (final c in eligible) c.code: CountryData.getCapital(c.code)!.name,
+    });
     _candidates = [
       for (final c in eligible) ...[
         _GuessCandidate(code: c.code, display: c.name, viaCapital: false),
-        if (_isCapitalTarget)
-          _GuessCandidate(
-            code: c.code,
-            display: CountryData.getCapital(c.code)!.name,
-            viaCapital: true,
-          ),
+        _GuessCandidate(
+          code: c.code,
+          display: CountryData.getCapital(c.code)!.name,
+          viaCapital: true,
+        ),
       ],
     ];
 
@@ -172,10 +167,9 @@ class _TriangulationGameScreenState
   void _submitTyped(String input) {
     if (input.trim().isEmpty) return;
     // Prefer capital matches (full points), then country names; both
-    // matchers are typo-tolerant with alias support. On country-target
-    // days there is no capital matcher — only country names resolve.
+    // matchers are typo-tolerant with alias support.
     final capitalMatch =
-        _capitalMatcher?.bestMatch(input, excludeCodes: _guessedCodes);
+        _capitalMatcher.bestMatch(input, excludeCodes: _guessedCodes);
     final countryMatch =
         _countryMatcher.bestMatch(input, excludeCodes: _guessedCodes);
     _GuessCandidate? chosen;
@@ -196,9 +190,7 @@ class _TriangulationGameScreenState
     }
     if (chosen == null) {
       setState(
-        () => _feedback = _isCapitalTarget
-            ? 'No country or capital matches "$input"'
-            : 'No country matches "$input"',
+        () => _feedback = 'No country or capital matches "$input"',
       );
       return;
     }
@@ -520,9 +512,7 @@ class _TriangulationGameScreenState
                   textInputAction: TextInputAction.send,
                   style: const TextStyle(color: FlitColors.textPrimary),
                   decoration: InputDecoration(
-                    hintText: _isCapitalTarget
-                        ? 'Capital (full pts) or country (×0.7)…'
-                        : 'Name the country…',
+                    hintText: 'Capital (full pts) or country (×0.7)…',
                     hintStyle: const TextStyle(
                       color: FlitColors.textMuted,
                       fontSize: 13,

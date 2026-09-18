@@ -35,8 +35,71 @@ final _log = GameLog.instance;
 /// The world is rendered via a GPU fragment shader (globe.frag) with
 /// fallback to the Canvas 2D renderer (default world: blue ocean, green
 /// land, country outlines) if the shader fails to load.
-/// Speed levels for flight control.
-enum FlightSpeed { slow, medium, fast }
+/// Continuous throttle math shared by the game loop and focused tests.
+///
+/// The midpoint is deliberately an anchor rather than a simple average: it
+/// preserves the old medium pace while making every value between the old
+/// slow and fast endpoints reachable.
+class FlightThrottle {
+  const FlightThrottle._();
+
+  static const double min = 0.0;
+  static const double mediumAnchor = 0.5;
+  static const double max = 1.0;
+  static const double adjustmentRate = 0.75;
+
+  static const double slowMultiplier = 0.5;
+  static const double mediumMultiplier = 1.0;
+  static const double fastMultiplier = 2.5;
+
+  static const double flatSlowMultiplier = 0.4;
+  static const double flatMediumMultiplier = 0.8;
+  static const double flatFastMultiplier = 1.5;
+
+  static const double lowSlowMultiplier = 0.3;
+  static const double lowMediumMultiplier = 0.6;
+  static const double lowFastMultiplier = 1.0;
+
+  static double multiplier(
+    double throttle, {
+    required bool lowAltitude,
+    required bool flatMap,
+  }) {
+    final t = throttle.clamp(min, max);
+    final double slow;
+    final double medium;
+    final double fast;
+    if (flatMap) {
+      slow = flatSlowMultiplier;
+      medium = flatMediumMultiplier;
+      fast = flatFastMultiplier;
+    } else if (lowAltitude) {
+      slow = lowSlowMultiplier;
+      medium = lowMediumMultiplier;
+      fast = lowFastMultiplier;
+    } else {
+      slow = slowMultiplier;
+      medium = mediumMultiplier;
+      fast = fastMultiplier;
+    }
+
+    if (t <= mediumAnchor) {
+      return slow + (medium - slow) * (t / mediumAnchor);
+    }
+    return medium +
+        (fast - medium) * ((t - mediumAnchor) / (max - mediumAnchor));
+  }
+
+  static double applyInput(
+    double throttle,
+    double input,
+    double dt, {
+    double rate = adjustmentRate,
+  }) {
+    if (dt <= 0 || input == 0) return throttle.clamp(min, max);
+    return (throttle + input.clamp(-1.0, 1.0) * rate * dt).clamp(min, max);
+  }
+}
 
 /// Phases of the game launch animation.
 ///
@@ -53,7 +116,6 @@ class FlitGame extends FlameGame
     this.onError,
     this.onWaypointSet,
     this.onKeyboardTurn,
-    this.onKeyboardSpeedChanged,
     this.onKeyboardAltitudeToggle,
     this.fuelBoostMultiplier = 1.0,
     this.isChallenge = false,
@@ -89,9 +151,8 @@ class FlitGame extends FlameGame
   /// Keyboard-input notifications for the tutorial. On-screen buttons notify
   /// the tutorial overlay directly from `play_screen`; keyboard input is
   /// handled inside the game loop, so these callbacks let a keyboard steer /
-  /// speed change / altitude toggle count as a valid tutorial attempt too.
+  /// altitude toggle count as a valid tutorial attempt too.
   final VoidCallback? onKeyboardTurn;
-  final VoidCallback? onKeyboardSpeedChanged;
   final VoidCallback? onKeyboardAltitudeToggle;
 
   /// Called when the game loop hits an unrecoverable error.
@@ -204,8 +265,16 @@ class FlitGame extends FlameGame
   /// Set by showHintWayline, auto-clears after a few seconds.
   Vector2? _hintTarget;
 
-  /// Current flight speed setting.
-  FlightSpeed _flightSpeed = FlightSpeed.slow;
+  /// Normalized continuous throttle. 0 = legacy slow endpoint, 1 = fast.
+  double _throttle = FlightThrottle.min;
+
+  /// Keyboard throttle direction: -1 down, 0 neutral, +1 up.
+  int _keyThrottleDirection = 0;
+
+  /// Active compact-control throttle input. Unlike [setThrottle], this is
+  /// applied over time in the game loop and therefore remains frame-rate
+  /// independent.
+  double _controlThrottleInput = 0.0;
 
   /// Globe hit-test utility (screen-tap → lat/lng).
   final GlobeHitTest _hitTest = const GlobeHitTest();
@@ -352,53 +421,40 @@ class FlitGame extends FlameGame
   /// Used by WaylineRenderer to display a temporary wayline without steering.
   Vector2? get hintTarget => _hintTarget;
 
-  /// Current flight speed setting.
-  FlightSpeed get flightSpeed => _flightSpeed;
+  /// Current normalized throttle, exposed for the HUD gauge.
+  double get throttle => _throttle;
 
-  /// Set flight speed from HUD controls.
-  void setFlightSpeed(FlightSpeed speed) {
-    _flightSpeed = speed;
-    _log.info('game', 'Speed changed', data: {'speed': speed.name});
+  /// Set throttle directly, clamped to the normalized range.
+  void setThrottle(double value) {
+    final next = value.clamp(FlightThrottle.min, FlightThrottle.max);
+    if (next == _throttle) return;
+    _throttle = next;
+    _log.debug('game', 'Throttle changed', data: {'throttle': _throttle});
   }
 
-  /// Speed multiplier based on current flight speed setting.
-  /// Different scales for ascend (globe cruising) vs descend (map exploration).
-  /// Ascend base speed is 36 units/s, descend base is 3.6 units/s (10% of high).
+  /// Apply a small direct throttle increment, used by D-pad taps.
+  void adjustThrottle(double delta) => setThrottle(_throttle + delta);
+
+  /// Apply one of the optional keyboard presets without reintroducing speed
+  /// tiers as runtime state.
+  void setThrottlePreset(int preset) {
+    switch (preset) {
+      case 1:
+        setThrottle(FlightThrottle.min);
+      case 2:
+        setThrottle(FlightThrottle.mediumAnchor);
+      case 3:
+        setThrottle(FlightThrottle.max);
+    }
+  }
+
+  /// Speed multiplier based on continuous throttle.
   double get _speedMultiplier {
-    if (isFlatMapMode) {
-      // Flat map regional mode: medium speed for exploring a bounded region.
-      // Slightly faster than descent mode since the map is more zoomed out.
-      switch (_flightSpeed) {
-        case FlightSpeed.slow:
-          return 0.4;
-        case FlightSpeed.medium:
-          return 0.8;
-        case FlightSpeed.fast:
-          return 1.5;
-      }
-    }
-    if (_planeReady && !_plane.isHighAltitude) {
-      // Descend mode: really slow for cruising / exploring the OSM map.
-      // Effective speeds: slow ≈ 1.1, medium ≈ 2.2, fast ≈ 3.6 units/s.
-      switch (_flightSpeed) {
-        case FlightSpeed.slow:
-          return 0.3;
-        case FlightSpeed.medium:
-          return 0.6;
-        case FlightSpeed.fast:
-          return 1.0;
-      }
-    }
-    // Ascend mode: fast globe traversal.
-    // Effective speeds: slow = 18, medium = 36, fast = 90 units/s.
-    switch (_flightSpeed) {
-      case FlightSpeed.slow:
-        return 0.5;
-      case FlightSpeed.medium:
-        return 1.0;
-      case FlightSpeed.fast:
-        return 2.5;
-    }
+    return FlightThrottle.multiplier(
+      _throttle,
+      lowAltitude: _planeReady && !_plane.isHighAltitude,
+      flatMap: isFlatMapMode,
+    );
   }
 
   /// World position as (longitude, latitude) degrees.
@@ -976,8 +1032,8 @@ class FlitGame extends FlameGame
     // Fuel depletion no longer ends the round. Running out of fuel simply
     // means no fuel bonus at the end. License fuelBoost reduces burn rate.
     if (fuelEnabled && _fuel > 0) {
-      // Burn rate scales with speed setting AND altitude:
-      //   - Faster speeds burn more fuel (2.5× at fast vs 0.5× at slow)
+      // Burn rate scales continuously with throttle AND altitude:
+      //   - Faster throttle burns more fuel (2.5x at fast vs 0.5x at slow)
       //   - Descent mode burns much less (25% of ascend rate) to encourage
       //     exploration without fuel anxiety
       final isLow = _planeReady && !_plane.isHighAltitude;
@@ -1065,9 +1121,16 @@ class FlitGame extends FlameGame
   /// Turn input (keyboard/button or waymarker auto-steer) modifies the
   /// heading before each movement step, curving the flight path.
   void _updateMotion(double dt) {
-    // --- Process turn input (keyboard/button progressive, waymarker auto-steer) ---
+    // --- Process throttle and turn input (waymarker follows below) ---
+    _updateThrottle(dt);
     _updateTurnInput(dt);
     _updateWaymarkerSteering(dt);
+
+    // Calculate actual speed before turning so the turn radius responds in
+    // the same frame as a throttle change.
+    final speed = _plane.currentSpeedContinuous * _speedMultiplier * planeSpeed;
+    _plane.setFlightSpeedForTurning(speed);
+    _plane.effectiveSpeedFactor = speed / PlaneComponent.highAltitudeSpeed;
 
     // --- Apply turn to heading ---
     // planeHandling multiplier makes nimble planes turn tighter.
@@ -1083,13 +1146,7 @@ class FlitGame extends FlameGame
       }
     }
 
-    // planeSpeed multiplier makes faster planes cover more ground.
-    final speed = _plane.currentSpeedContinuous * _speedMultiplier * planeSpeed;
     final angularDist = speed * _speedToAngular * dt; // radians on unit sphere
-
-    // Tell the plane its effective speed factor so bank animation scales with
-    // flight speed (slow flight → gradual tilt, fast flight → snappy tilt).
-    _plane.effectiveSpeedFactor = speed / PlaneComponent.highAltitudeSpeed;
 
     if (angularDist < 1e-12) return; // Avoid division by zero when stationary
 
@@ -1367,6 +1424,37 @@ class FlitGame extends FlameGame
       lng += 360;
     }
     return lng;
+  }
+
+  // -- Continuous throttle input -------------------------------------------
+
+  /// Applies keyboard and compact-control throttle input over [dt].
+  ///
+  /// The keyboard state is polled as well as updated by key events so a lost
+  /// browser key-up cannot leave the aircraft accelerating forever. Unlike
+  /// steering, vertical input never touches [_waymarker].
+  void _updateThrottle(double dt) {
+    final keys = HardwareKeyboard.instance.logicalKeysPressed;
+    var keyDirection = 0;
+    if (keys.contains(LogicalKeyboardKey.arrowUp) ||
+        keys.contains(LogicalKeyboardKey.keyW)) {
+      keyDirection += 1;
+    }
+    if (keys.contains(LogicalKeyboardKey.arrowDown) ||
+        keys.contains(LogicalKeyboardKey.keyS)) {
+      keyDirection -= 1;
+    }
+    _keyThrottleDirection = keyDirection;
+
+    // A compact touch control has priority while it is held. Keyboard input
+    // remains available for the other hand and when no surface is active.
+    final input = _controlThrottleInput.abs() > 0
+        ? _controlThrottleInput
+        : _keyThrottleDirection.toDouble();
+    final next = FlightThrottle.applyInput(_throttle, input, dt);
+    if (next != _throttle) {
+      _throttle = next;
+    }
   }
 
   // -- Progressive turn input --
@@ -1710,19 +1798,17 @@ class FlitGame extends FlameGame
         onKeyboardAltitudeToggle?.call();
       }
 
-      // Speed controls: 1/2/3 keys (with or without ctrl)
+      // Optional throttle presets. These are shortcuts, not runtime speed
+      // states, and are intentionally omitted from the tutorial.
       if (event.logicalKey == LogicalKeyboardKey.digit1 ||
           event.logicalKey == LogicalKeyboardKey.numpad1) {
-        setFlightSpeed(FlightSpeed.slow);
-        onKeyboardSpeedChanged?.call();
+        setThrottlePreset(1);
       } else if (event.logicalKey == LogicalKeyboardKey.digit2 ||
           event.logicalKey == LogicalKeyboardKey.numpad2) {
-        setFlightSpeed(FlightSpeed.medium);
-        onKeyboardSpeedChanged?.call();
+        setThrottlePreset(2);
       } else if (event.logicalKey == LogicalKeyboardKey.digit3 ||
           event.logicalKey == LogicalKeyboardKey.numpad3) {
-        setFlightSpeed(FlightSpeed.fast);
-        onKeyboardSpeedChanged?.call();
+        setThrottlePreset(3);
       }
     }
 
@@ -1790,7 +1876,9 @@ class FlitGame extends FlameGame
     _currentClue = clue;
     _waymarker = null; // clear any previous waymarker
     _hintTarget = null; // clear any previous hint
-    _flightSpeed = FlightSpeed.slow; // reset speed — always start slow
+    _throttle = FlightThrottle.min; // reset throttle — always start slow
+    _keyThrottleDirection = 0;
+    _controlThrottleInput = 0.0;
     _fuel = maxFuel; // full tank (includes licence bonus)
     // Start launch animation sequence.
     _launchPhase = LaunchPhase.positioning;
@@ -1833,20 +1921,63 @@ class FlitGame extends FlameGame
 
   /// Set continuous joystick turn strength in the range [-1, 1].
   void setJoystickTurn(double strength) {
+    setJoystickInput(steering: strength, throttle: _controlThrottleInput);
+  }
+
+  /// Set steering from either compact control surface. The input remains
+  /// independent from throttle so vertical adjustments never cancel a
+  /// waypoint and horizontal input always does.
+  void setControlSteering(double strength) {
     _joystickActive = true;
     _joystickTurn = strength.clamp(-1.0, 1.0);
+  }
+
+  /// Set simultaneous joystick steering and throttle input.
+  ///
+  /// The vertical value is consumed over time by [_updateThrottle]; releasing
+  /// the joystick clears the input but leaves [_throttle] at its new value.
+  void setJoystickInput({required double steering, required double throttle}) {
+    _joystickActive = true;
+    _joystickTurn = steering.clamp(-1.0, 1.0);
+    _controlThrottleInput = throttle.clamp(-1.0, 1.0);
   }
 
   /// Release the central joystick and return control to other inputs.
   void releaseJoystickTurn() {
     _joystickActive = false;
     _joystickTurn = 0.0;
+    _controlThrottleInput = 0.0;
+  }
+
+  /// Set D-pad hold input. A zero value releases throttle adjustment without
+  /// changing the current throttle.
+  void setThrottleInput(double input) {
+    _controlThrottleInput = input.clamp(-1.0, 1.0);
   }
 
   /// Release on-screen button turn.
   void releaseButtonTurn() {
     _buttonTurnDir = 0;
     _buttonTurnHoldTime = 0.0;
+  }
+
+  /// Neutralize all active manual input. The current throttle is preserved.
+  /// Called on route exit, pause, orientation changes, and control swaps.
+  void neutralizeInput() {
+    _keyTurnDir = 0;
+    _keyTurnHoldTime = 0.0;
+    _buttonTurnDir = 0;
+    _buttonTurnHoldTime = 0.0;
+    _joystickActive = false;
+    _joystickTurn = 0.0;
+    _controlThrottleInput = 0.0;
+    if (_planeReady) _plane.releaseTurn();
+  }
+
+  @override
+  void onRemove() {
+    neutralizeInput();
+    super.onRemove();
   }
 
   /// Check if plane is near target using great-circle distance.

@@ -497,6 +497,9 @@ class UserPreferencesService {
     required double turnSensitivity,
     required bool invertControls,
     required bool enableJoystick,
+    String? controlMode,
+    String? controlPlacement,
+    String? clueTrigger,
     required bool enableNight,
     required bool enableClouds,
     double? cloudCoverage,
@@ -517,6 +520,9 @@ class UserPreferencesService {
       'turn_sensitivity': turnSensitivity,
       'invert_controls': invertControls,
       'enable_joystick': enableJoystick,
+      if (controlMode != null) 'control_mode': controlMode,
+      if (controlPlacement != null) 'control_placement': controlPlacement,
+      if (clueTrigger != null) 'clue_trigger': clueTrigger,
       'enable_night': enableNight,
       'enable_clouds': enableClouds,
       if (cloudCoverage != null) 'cloud_coverage': cloudCoverage,
@@ -1747,7 +1753,35 @@ class UserPreferencesSnapshot {
   }
 
   bool get enableJoystick {
-    return settings?['enable_joystick'] as bool? ?? false;
+    final value = settings?['enable_joystick'];
+    return value is bool && value;
+  }
+
+  String get controlMode {
+    final value = settings?['control_mode'];
+    if (value is String &&
+        const {'classic', 'dPad', 'joystick'}.contains(value)) {
+      return value;
+    }
+    return enableJoystick ? 'joystick' : 'classic';
+  }
+
+  String get controlPlacement {
+    final value = settings?['control_placement'];
+    if (value is String &&
+        const {'left', 'right', 'lowerCenter'}.contains(value)) {
+      return value;
+    }
+    return 'lowerCenter';
+  }
+
+  String get clueTrigger {
+    final value = settings?['clue_trigger'];
+    if (value is String &&
+        const {'button', 'controlDoubleTap'}.contains(value)) {
+      return value;
+    }
+    return 'button';
   }
 
   bool get enableNight {

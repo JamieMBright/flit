@@ -75,6 +75,57 @@ enum GameDifficulty {
   }
 }
 
+/// Input surface used for real-time flight controls.
+enum ControlMode {
+  classic,
+  dPad,
+  joystick;
+
+  String get displayName {
+    switch (this) {
+      case ControlMode.classic:
+        return 'Classic';
+      case ControlMode.dPad:
+        return 'D-pad';
+      case ControlMode.joystick:
+        return 'Joystick';
+    }
+  }
+}
+
+/// Placement of a compact one-handed control surface.
+enum ControlPlacement {
+  left,
+  right,
+  lowerCenter;
+
+  String get displayName {
+    switch (this) {
+      case ControlPlacement.left:
+        return 'Left';
+      case ControlPlacement.right:
+        return 'Right';
+      case ControlPlacement.lowerCenter:
+        return 'Lower center';
+    }
+  }
+}
+
+/// How the active flight control surface requests a clue.
+enum ClueTrigger {
+  button,
+  controlDoubleTap;
+
+  String get displayName {
+    switch (this) {
+      case ClueTrigger.button:
+        return 'Clue button';
+      case ClueTrigger.controlDoubleTap:
+        return 'Control double-tap';
+    }
+  }
+}
+
 /// Singleton that holds user-configurable game settings.
 ///
 /// Settings are synced to Supabase via [UserPreferencesService] (debounced).
@@ -93,7 +144,7 @@ class GameSettings extends ChangeNotifier {
   /// Bump this when you need to force-override specific settings for all
   /// players. The migration in [loadFromLocal] checks the stored version
   /// and resets affected fields to the new defaults.
-  static const int _settingsVersion = 3;
+  static const int _settingsVersion = 4;
 
   /// Set to `true` when [loadFromLocal] detects the stored version is behind
   /// [_settingsVersion]. When set, [hydrateFrom] skips overwriting the
@@ -107,7 +158,10 @@ class GameSettings extends ChangeNotifier {
     UserPreferencesService.instance.saveSettings(
       turnSensitivity: _turnSensitivity,
       invertControls: _invertControls,
-      enableJoystick: _enableJoystick,
+      enableJoystick: enableJoystick,
+      controlMode: _controlMode.name,
+      controlPlacement: _controlPlacement.name,
+      clueTrigger: _clueTrigger.name,
       enableNight: _enableNight,
       enableClouds: _enableClouds,
       cloudCoverage: _cloudCoverage,
@@ -134,7 +188,10 @@ class GameSettings extends ChangeNotifier {
   Future<void> hydrateFrom({
     required double turnSensitivity,
     required bool invertControls,
-    required bool enableJoystick,
+    bool? enableJoystick,
+    String? controlMode,
+    String? controlPlacement,
+    String? clueTrigger,
     required bool enableNight,
     required bool enableClouds,
     double? cloudCoverage,
@@ -152,7 +209,12 @@ class GameSettings extends ChangeNotifier {
     try {
       this.turnSensitivity = turnSensitivity;
       this.invertControls = invertControls;
-      this.enableJoystick = enableJoystick;
+      _controlMode = _parseControlMode(
+        controlMode,
+        legacyEnableJoystick: enableJoystick,
+      );
+      _controlPlacement = _parseControlPlacement(controlPlacement);
+      _clueTrigger = _parseClueTrigger(clueTrigger);
       // When a migration is pending, keep the forced cloud/night defaults
       // instead of reverting to stale Supabase values.
       if (_pendingMigration) {
@@ -188,7 +250,10 @@ class GameSettings extends ChangeNotifier {
         'version': _settingsVersion,
         'turn_sensitivity': _turnSensitivity,
         'invert_controls': _invertControls,
-        'enable_joystick': _enableJoystick,
+        'enable_joystick': enableJoystick,
+        'control_mode': _controlMode.name,
+        'control_placement': _controlPlacement.name,
+        'clue_trigger': _clueTrigger.name,
         'enable_night': _enableNight,
         'enable_clouds': _enableClouds,
         'cloud_coverage': _cloudCoverage,
@@ -226,7 +291,21 @@ class GameSettings extends ChangeNotifier {
       _turnSensitivity =
           (data['turn_sensitivity'] as num?)?.toDouble() ?? _turnSensitivity;
       _invertControls = data['invert_controls'] as bool? ?? _invertControls;
-      _enableJoystick = data['enable_joystick'] as bool? ?? _enableJoystick;
+      final storedControlMode = data['control_mode'];
+      final storedLegacyJoystick = data['enable_joystick'];
+      _controlMode = _parseControlMode(
+        storedControlMode is String ? storedControlMode : null,
+        legacyEnableJoystick:
+            storedLegacyJoystick is bool ? storedLegacyJoystick : null,
+      );
+      final storedPlacement = data['control_placement'];
+      _controlPlacement = _parseControlPlacement(
+        storedPlacement is String ? storedPlacement : null,
+      );
+      final storedClueTrigger = data['clue_trigger'];
+      _clueTrigger = _parseClueTrigger(
+        storedClueTrigger is String ? storedClueTrigger : null,
+      );
 
       // Migration v2: force cloud and night defaults on all players.
       if (storedVersion < 2) {
@@ -321,15 +400,93 @@ class GameSettings extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Whether touch steering uses the central thumb joystick instead of the
-  /// corner turn buttons. Defaults to false for existing players.
-  bool _enableJoystick = false;
+  /// Real-time flight control mode. Defaults to the legacy split controls.
+  ControlMode _controlMode = ControlMode.classic;
 
-  bool get enableJoystick => _enableJoystick;
+  ControlMode get controlMode => _controlMode;
 
-  set enableJoystick(bool value) {
-    _enableJoystick = value;
+  set controlMode(ControlMode value) {
+    if (_controlMode == value) return;
+    _controlMode = value;
     notifyListeners();
+  }
+
+  /// Placement for D-pad and joystick controls.
+  ControlPlacement _controlPlacement = ControlPlacement.lowerCenter;
+
+  ControlPlacement get controlPlacement => _controlPlacement;
+
+  set controlPlacement(ControlPlacement value) {
+    if (_controlPlacement == value) return;
+    _controlPlacement = value;
+    notifyListeners();
+  }
+
+  /// Whether clues are requested by a dedicated button or control double-tap.
+  ClueTrigger _clueTrigger = ClueTrigger.button;
+
+  ClueTrigger get clueTrigger => _clueTrigger;
+
+  set clueTrigger(ClueTrigger value) {
+    if (_clueTrigger == value) return;
+    _clueTrigger = value;
+    notifyListeners();
+  }
+
+  /// Atomically apply the three control selectors.
+  ///
+  /// A single notification lets an active game release input and rebuild its
+  /// control surface once instead of passing through mixed intermediate modes.
+  void updateControlSettings({
+    required ControlMode mode,
+    required ControlPlacement placement,
+    required ClueTrigger clueTrigger,
+  }) {
+    final changed = _controlMode != mode ||
+        _controlPlacement != placement ||
+        _clueTrigger != clueTrigger;
+    if (!changed) return;
+    _controlMode = mode;
+    _controlPlacement = placement;
+    _clueTrigger = clueTrigger;
+    notifyListeners();
+  }
+
+  /// Legacy compatibility adapter for callers and rows written before v4.
+  /// New gameplay code should use [controlMode].
+  @Deprecated('Use controlMode instead')
+  bool get enableJoystick => _controlMode == ControlMode.joystick;
+
+  /// Legacy compatibility adapter for callers written before v4.
+  @Deprecated('Use updateControlSettings or controlMode instead')
+  set enableJoystick(bool value) {
+    controlMode = value ? ControlMode.joystick : ControlMode.classic;
+  }
+
+  static ControlMode _parseControlMode(
+    String? value, {
+    bool? legacyEnableJoystick,
+  }) {
+    for (final mode in ControlMode.values) {
+      if (mode.name == value) return mode;
+    }
+    return legacyEnableJoystick == true
+        ? ControlMode.joystick
+        : ControlMode.classic;
+  }
+
+  static ControlPlacement _parseControlPlacement(String? value) {
+    for (final placement in ControlPlacement.values) {
+      if (placement.name == value) return placement;
+    }
+    return ControlPlacement.lowerCenter;
+  }
+
+  static ClueTrigger _parseClueTrigger(String? value) {
+    for (final trigger in ClueTrigger.values) {
+      if (trigger.name == value) return trigger;
+    }
+    return ClueTrigger.button;
   }
 
   // ─── Display ────────────────────────────────────────────────────

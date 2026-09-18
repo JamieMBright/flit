@@ -1,78 +1,52 @@
+import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
 
 import '../../core/services/game_settings.dart';
 import '../../core/theme/flit_colors.dart';
+import '../../data/services/user_preferences_service.dart';
 import '../../game/tutorial/campaign_mission.dart';
-import '../../game/tutorial/coach.dart';
 
-/// Aviation-themed tap-to-continue labels for the tutorial.
 const _continueLabels = [
   'Roger!',
   'Affirmative!',
   'Copy that!',
   'Wilco!',
   'Understood!',
-  '10-4!',
 ];
 
-/// Tutorial phases for Mission 1's interactive control introduction.
-///
-/// The game starts without showing a clue. The coach walks the player through
-/// each control, waiting for them to actually try it before advancing. Only
-/// after all controls have been explored does the clue appear and the real
-/// game begin.
 enum TutorialPhase {
-  /// Coach welcomes player. Tap to continue.
   welcome,
-
-  /// Spotlight on turn buttons. Player must turn several times.
-  tryTurning,
-
-  /// Spotlight on the central joystick when it is enabled.
-  tryJoystick,
-
-  /// Ask which steering control the player prefers.
+  classicSteering,
+  classicThrottle,
+  dPadSteering,
+  dPadThrottleTap,
+  dPadThrottleHold,
+  dPadAltitude,
+  joystickFine,
+  joystickStrong,
+  joystickVertical,
+  joystickRelease,
+  doubleTapClue,
   chooseControl,
-
-  /// Spotlight on globe. Player must set multiple waypoints.
-  tryWaypoint,
-
-  /// Spotlight on speed controls. Player must change speed several times.
-  trySpeed,
-
-  /// Spotlight on altitude toggle. Player descends.
-  tryAltitude,
-
-  /// After descending, encourage the player to ascend back up.
-  tryAscend,
-
-  /// All controls explored. Clue is about to appear.
+  choosePlacement,
+  chooseClue,
   ready,
-
-  /// Tutorial complete — overlay dismissed, clue is showing, game is live.
   complete,
 }
 
-/// Interactive pre-flight tutorial overlay for campaign Mission 1.
-///
-/// Greys out the screen except for a spotlight on the current control being
-/// introduced. The coach narrates each step. The player must actually try
-/// each control before advancing. The clue is withheld until the tutorial
-/// completes, preventing accidental mission end.
 class TutorialOverlay extends StatefulWidget {
   const TutorialOverlay({
     super.key,
     required this.mission,
     required this.onComplete,
+    this.onDemoControlModeChanged,
   });
 
   final CampaignMission mission;
-
-  /// Called when the tutorial finishes — PlayScreen should show the clue
-  /// and start normal gameplay.
   final VoidCallback onComplete;
+  final ValueChanged<ControlMode>? onDemoControlModeChanged;
 
   @override
   State<TutorialOverlay> createState() => TutorialOverlayState();
@@ -81,31 +55,26 @@ class TutorialOverlay extends StatefulWidget {
 class TutorialOverlayState extends State<TutorialOverlay>
     with SingleTickerProviderStateMixin {
   TutorialPhase _phase = TutorialPhase.welcome;
-
   late final AnimationController _fadeController;
-  late final Animation<double> _fadeAnim;
-
-  static final _rng = Random();
+  late final Animation<double> _fadeAnimation;
+  Timer? _fallbackTimer;
+  DateTime _phaseStartedAt = DateTime.now();
+  bool _fallbackAvailable = false;
+  bool _finishing = false;
   String _continueLabel =
       _continueLabels[Random().nextInt(_continueLabels.length)];
 
-  /// Count-based progression trackers.
-  int _turnCount = 0;
-  int _joystickCount = 0;
-  int? _lastJoystickDirection;
-  int _waypointCount = 0;
-  int _speedChangeCount = 0;
+  int _classicSteeringCount = 0;
+  final Set<int> _dPadDirections = {};
 
-  /// Thresholds for progressing past each phase.
-  static const _turnThreshold = 3;
-  static const _joystickThreshold = 3;
-  static const _waypointThreshold = 10;
-  static const _speedThreshold = 3;
+  ControlMode _selectedMode = ControlMode.classic;
+  ControlPlacement _selectedPlacement = ControlPlacement.lowerCenter;
+  ClueTrigger _selectedClueTrigger = ClueTrigger.button;
 
-  /// Whether the tutorial is still active (clue should be hidden).
+  static const _fallbackDelay = Duration(seconds: 12);
+
   bool get isActive => _phase != TutorialPhase.complete;
 
-  /// Whether the spotlight overlay should be shown.
   bool get _showOverlay =>
       _phase != TutorialPhase.complete && _phase != TutorialPhase.ready;
 
@@ -114,241 +83,240 @@ class TutorialOverlayState extends State<TutorialOverlay>
     super.initState();
     _fadeController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 350),
+      duration: const Duration(milliseconds: 300),
     );
-    _fadeAnim = CurvedAnimation(
+    _fadeAnimation = CurvedAnimation(
       parent: _fadeController,
       curve: Curves.easeInOut,
     );
     _fadeController.forward();
+    _fallbackTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (!mounted || !_isActionPhase || _fallbackAvailable) return;
+      if (DateTime.now().difference(_phaseStartedAt) >= _fallbackDelay) {
+        setState(() => _fallbackAvailable = true);
+      }
+    });
   }
 
   @override
   void dispose() {
+    _fallbackTimer?.cancel();
     _fadeController.dispose();
     super.dispose();
   }
 
-  /// Minimum breathing room between the player performing an action and the
-  /// next tutorial tip appearing, so they can enjoy flying for a moment.
-  static const _tipDelay = Duration(seconds: 5);
-
-  /// Whether a delayed phase transition is pending — prevents double-firing
-  /// if the player triggers the same action multiple times.
-  bool _advancing = false;
-
-  /// Advance to [next] after [_tipDelay], fading the current tip out first
-  /// and then fading the new one in.
-  void _advanceAfterDelay(TutorialPhase next) {
-    if (_advancing) return;
-    _advancing = true;
-
-    // Immediately fade out the current coach card so the player can fly
-    // unobstructed during the delay.
-    _fadeController.reverse();
-
-    Future.delayed(_tipDelay, () {
-      if (!mounted) return;
-      _advancing = false;
-      setState(() => _phase = next);
-      _fadeController.forward();
+  void _setPhase(TutorialPhase phase) {
+    if (!mounted) return;
+    setState(() {
+      _phase = phase;
+      _phaseStartedAt = DateTime.now();
+      _fallbackAvailable = false;
+      _continueLabel =
+          _continueLabels[Random().nextInt(_continueLabels.length)];
     });
+    widget.onDemoControlModeChanged?.call(_demoModeFor(phase));
   }
 
-  // ─── Callbacks from PlayScreen when the player performs actions ──────
-
-  /// Called when the player presses a turn button.
-  void onTurnPressed() {
-    if (_phase == TutorialPhase.tryTurning) {
-      _turnCount++;
-      if (_turnCount >= _turnThreshold) {
-        _advanceAfterDelay(TutorialPhase.tryJoystick);
-      } else {
-        setState(() {}); // Refresh message with updated count
-      }
+  ControlMode _demoModeFor(TutorialPhase phase) {
+    switch (phase) {
+      case TutorialPhase.dPadSteering:
+      case TutorialPhase.dPadThrottleTap:
+      case TutorialPhase.dPadThrottleHold:
+      case TutorialPhase.dPadAltitude:
+        return ControlMode.dPad;
+      case TutorialPhase.joystickFine:
+      case TutorialPhase.joystickStrong:
+      case TutorialPhase.joystickVertical:
+      case TutorialPhase.joystickRelease:
+      case TutorialPhase.doubleTapClue:
+        return ControlMode.joystick;
+      default:
+        return ControlMode.classic;
     }
   }
 
-  /// Called when the joystick produces a meaningful lateral movement.
-  void onJoystickDragged(int direction) {
-    if (_phase == TutorialPhase.tryJoystick) {
-      if (_lastJoystickDirection == direction) return;
-      _lastJoystickDirection = direction;
-      _joystickCount++;
-      if (_joystickCount >= _joystickThreshold) {
-        _advanceAfterDelay(TutorialPhase.chooseControl);
-      } else {
-        setState(() {});
-      }
-    }
-  }
-
-  void _selectControl(bool useJoystick) {
-    GameSettings.instance.enableJoystick = useJoystick;
-    _finishTutorial();
-  }
-
-  /// Called when the player taps the globe (sets a waypoint).
-  void onWaypointSet() {
-    if (_phase == TutorialPhase.tryWaypoint) {
-      _waypointCount++;
-      if (_waypointCount >= _waypointThreshold) {
-        _advanceAfterDelay(TutorialPhase.trySpeed);
-      } else {
-        setState(() {}); // Refresh message with encouragement
-      }
-    }
-  }
-
-  /// Called when the player changes speed.
-  void onSpeedChanged() {
-    if (_phase == TutorialPhase.trySpeed) {
-      _speedChangeCount++;
-      if (_speedChangeCount >= _speedThreshold) {
-        _advanceAfterDelay(TutorialPhase.tryAltitude);
-      } else {
-        setState(() {}); // Refresh message with updated count
-      }
-    }
-  }
-
-  /// Called when the player toggles altitude (descend).
-  void onAltitudeToggled() {
-    if (_phase == TutorialPhase.tryAltitude) {
-      // Player descended — now encourage them to ascend.
-      _advanceAfterDelay(TutorialPhase.tryAscend);
-    } else if (_phase == TutorialPhase.tryAscend) {
-      // Player ascended back up — tutorial complete.
-      _finishTutorial();
-    }
-  }
-
-  void _onTap() {
+  void _advanceAction() {
     switch (_phase) {
       case TutorialPhase.welcome:
-        setState(() {
-          _phase = TutorialPhase.tryTurning;
-          _continueLabel =
-              _continueLabels[_rng.nextInt(_continueLabels.length)];
-        });
-      case TutorialPhase.ready:
-        _finishTutorial();
-      // For action phases, tapping does nothing — player must use the control.
-      case TutorialPhase.tryTurning:
-      case TutorialPhase.tryJoystick:
+        _setPhase(TutorialPhase.classicSteering);
+      case TutorialPhase.classicSteering:
+        _setPhase(TutorialPhase.classicThrottle);
+      case TutorialPhase.classicThrottle:
+        _setPhase(TutorialPhase.dPadSteering);
+      case TutorialPhase.dPadSteering:
+        _setPhase(TutorialPhase.dPadThrottleTap);
+      case TutorialPhase.dPadThrottleTap:
+        _setPhase(TutorialPhase.dPadThrottleHold);
+      case TutorialPhase.dPadThrottleHold:
+        _setPhase(TutorialPhase.dPadAltitude);
+      case TutorialPhase.dPadAltitude:
+        _setPhase(TutorialPhase.joystickFine);
+      case TutorialPhase.joystickFine:
+        _setPhase(TutorialPhase.joystickStrong);
+      case TutorialPhase.joystickStrong:
+        _setPhase(TutorialPhase.joystickVertical);
+      case TutorialPhase.joystickVertical:
+        _setPhase(TutorialPhase.joystickRelease);
+      case TutorialPhase.joystickRelease:
+        _setPhase(TutorialPhase.doubleTapClue);
+      case TutorialPhase.doubleTapClue:
+        _setPhase(TutorialPhase.chooseControl);
       case TutorialPhase.chooseControl:
-      case TutorialPhase.tryWaypoint:
-      case TutorialPhase.trySpeed:
-      case TutorialPhase.tryAltitude:
-      case TutorialPhase.tryAscend:
+      case TutorialPhase.choosePlacement:
+      case TutorialPhase.chooseClue:
+      case TutorialPhase.ready:
       case TutorialPhase.complete:
         break;
     }
   }
 
-  void _finishTutorial() {
-    setState(() => _phase = TutorialPhase.ready);
-    // Brief pause to show "Ready!" message, then fade out and complete.
-    Future.delayed(const Duration(milliseconds: 1200), () {
-      if (!mounted) return;
-      _fadeController.reverse().then((_) {
-        if (mounted) {
-          setState(() => _phase = TutorialPhase.complete);
-          widget.onComplete();
-        }
-      });
-    });
+  void onTurnPressed() {
+    if (_phase != TutorialPhase.classicSteering) return;
+    _classicSteeringCount++;
+    if (_classicSteeringCount >= 3) {
+      _advanceAction();
+    } else {
+      setState(() {});
+    }
   }
 
-  // ─── Message text for each phase ────────────────────────────────────
+  void onJoystickDragged(int direction) {
+    if (_phase != TutorialPhase.dPadSteering) return;
+    _dPadDirections.add(direction);
+    if (_dPadDirections.length >= 2) {
+      _advanceAction();
+    } else {
+      setState(() {});
+    }
+  }
+
+  void onControlSteering(double value) {
+    if (_phase == TutorialPhase.joystickFine && value.abs() > 0.01) {
+      _advanceAction();
+    } else if (_phase == TutorialPhase.joystickStrong && value.abs() >= 0.55) {
+      _advanceAction();
+    }
+  }
+
+  void onThrottleChanged(double value) {
+    if (_phase == TutorialPhase.classicThrottle && value != 0) {
+      _advanceAction();
+    } else if (_phase == TutorialPhase.dPadThrottleHold && value.abs() > 0) {
+      _advanceAction();
+    } else if (_phase == TutorialPhase.joystickVertical && value.abs() > 0) {
+      _advanceAction();
+    }
+  }
+
+  void onThrottleTapped() {
+    if (_phase != TutorialPhase.dPadThrottleTap) return;
+    _advanceAction();
+  }
+
+  void onAltitudeToggled() {
+    if (_phase != TutorialPhase.dPadAltitude) return;
+    _advanceAction();
+  }
+
+  void onControlReleased() {
+    if (_phase != TutorialPhase.joystickRelease) return;
+    _advanceAction();
+  }
+
+  void onDoubleTapClue() {
+    if (_phase != TutorialPhase.doubleTapClue) return;
+    _advanceAction();
+  }
+
+  void onWaypointSet() {}
+
+  void _selectControl(ControlMode mode) {
+    _selectedMode = mode;
+    _setPhase(
+      mode == ControlMode.classic
+          ? TutorialPhase.chooseClue
+          : TutorialPhase.choosePlacement,
+    );
+  }
+
+  void _selectPlacement(ControlPlacement placement) {
+    _selectedPlacement = placement;
+    _setPhase(TutorialPhase.chooseClue);
+  }
+
+  Future<void> _selectClue(ClueTrigger trigger) async {
+    _selectedClueTrigger = trigger;
+    await _finishTutorial();
+  }
+
+  void _onTap() {
+    if (_phase == TutorialPhase.welcome) {
+      _setPhase(TutorialPhase.classicSteering);
+    } else if (_phase == TutorialPhase.ready) {
+      widget.onComplete();
+    }
+  }
+
+  Future<void> _finishTutorial() async {
+    if (_finishing) return;
+    _finishing = true;
+    GameSettings.instance.updateControlSettings(
+      mode: _selectedMode,
+      placement: _selectedPlacement,
+      clueTrigger: _selectedClueTrigger,
+    );
+    await UserPreferencesService.instance
+        .flush()
+        .timeout(const Duration(seconds: 2), onTimeout: () {});
+    if (!mounted) return;
+    _setPhase(TutorialPhase.ready);
+    await Future<void>.delayed(const Duration(milliseconds: 900));
+    if (!mounted) return;
+    setState(() => _phase = TutorialPhase.complete);
+    widget.onComplete();
+  }
 
   String get _message {
     final coach = widget.mission.coach;
     switch (_phase) {
       case TutorialPhase.welcome:
-        return 'Welcome aboard, cadet! I\'m ${coach.name}. In 1929 I became '
-            'the first Indian to earn a pilot\'s licence — and now I\'ll '
-            'teach you to fly. Let me show you the controls.';
-      case TutorialPhase.tryTurning:
-        final remaining = _turnThreshold - _turnCount;
-        if (_turnCount == 0) {
-          if (GameSettings.instance.enableJoystick) {
-            return 'When I flew the first airmail from Karachi to Bombay, '
-                'I had to bank and turn through mountain passes. Use the '
-                'turn controls at the bottom to practise banking. Try it!';
-          }
-          return 'When I flew the first airmail from Karachi to Bombay, '
-              'I had to bank and turn through mountain passes. See the '
-              'arrows at the bottom corners? Hold one to turn. Try it!';
-        }
-        if (remaining > 1) {
-          return 'Good banking! That\'s how I navigated the Western Ghats. '
-              '$remaining more turns — get comfortable!';
-        }
-        return 'One more turn and you\'ll fly like a natural!';
-      case TutorialPhase.tryJoystick:
-        final remaining = _joystickThreshold - _joystickCount;
-        if (_joystickCount == 0) {
-          return 'Now try the central joystick. Hold the circle and slide '
-              'left or right to bank gently or make a sharper turn. Let go '
-              'to fly straight again. Try moving side to side '
-              '$_joystickThreshold times.';
-        }
-        return 'Good control. Move to the other side, then back again. '
-            '$remaining more direction changes to go.';
+        return 'Welcome aboard, cadet! I am ${coach.name}. Let us learn every '
+            'flight control before your first clue.';
+      case TutorialPhase.classicSteering:
+        return 'Use the left and right arrows to bank the plane. '
+            '${3 - _classicSteeringCount} turns remain.';
+      case TutorialPhase.classicThrottle:
+        return 'Drag the throttle slider. Speed changes continuously across '
+            'the full range.';
+      case TutorialPhase.dPadSteering:
+        return 'The D-pad is next. Tap left and right to steer with one thumb. '
+            '${2 - _dPadDirections.length} directions remain.';
+      case TutorialPhase.dPadThrottleTap:
+        return 'Tap the D-pad up or down for a small throttle change.';
+      case TutorialPhase.dPadThrottleHold:
+        return 'Hold up or down to accelerate or decelerate continuously.';
+      case TutorialPhase.dPadAltitude:
+        return 'Tap the D-pad centre to toggle altitude.';
+      case TutorialPhase.joystickFine:
+        return 'Try a small joystick movement for a fine steering correction.';
+      case TutorialPhase.joystickStrong:
+        return 'Now make a large movement. Full lock needs real travel, not a '
+            'twitch near the base.';
+      case TutorialPhase.joystickVertical:
+        return 'Move the joystick vertically to adjust throttle while flying.';
+      case TutorialPhase.joystickRelease:
+        return 'Release and recenter. The throttle stays where you left it.';
+      case TutorialPhase.doubleTapClue:
+        return 'Double-tap the control surface for a clue. This demonstration '
+            'does not spend fuel or advance your hints.';
       case TutorialPhase.chooseControl:
-        return 'Which control felt better? Choose arrows for quick taps, or '
-            'the joystick for smooth, precise banking. You can change this '
-            'later in Settings.';
-      case TutorialPhase.tryWaypoint:
-        final remaining = _waypointThreshold - _waypointCount;
-        if (_waypointCount == 0) {
-          return 'On my first flight, I plotted my route from Karachi to '
-              'Bombay — every waypoint mattered. Tap anywhere on the '
-              'globe to set a waypoint. Your plane will steer towards it. '
-              'Set $_waypointThreshold to get the feel!';
-        }
-        if (_waypointCount < 3) {
-          return 'Excellent! In my little Puss Moth, I had to plan every '
-              'stop carefully. Keep setting waypoints — $remaining to go!';
-        }
-        if (_waypointCount < 6) {
-          return 'You\'re getting the hang of it! I once plotted a route '
-              'across half of India this way. $remaining more — try '
-              'different directions!';
-        }
-        if (_waypointCount < 9) {
-          return 'Almost there, cadet! Just $remaining more. When I '
-              'founded Tata Airlines, every pilot had to master this. '
-              'Try setting one far away!';
-        }
-        return 'One more waypoint! You\'d have made a fine Tata Airlines '
-            'pilot.';
-      case TutorialPhase.trySpeed:
-        final remaining = _speedThreshold - _speedChangeCount;
-        if (_speedChangeCount == 0) {
-          return 'My Puss Moth could only do 128 km/h — you\'ve got more '
-              'options! Tap SLOW, MED, or FAST to change your speed. '
-              'Try each one!';
-        }
-        if (remaining > 1) {
-          return 'Feel the difference? I learned to read the wind and '
-              'adjust my speed over the Arabian Sea. '
-              '$remaining more changes to go!';
-        }
-        return 'One more speed change — then I\'ll show you altitude!';
-      case TutorialPhase.tryAltitude:
-        return 'When I flew over Bombay, I\'d descend low to see the '
-            'coastline. Tap the altitude button to drop down and see '
-            'the map up close!';
-      case TutorialPhase.tryAscend:
-        return 'Beautiful, isn\'t it? I remember the first time I saw '
-            'India from above. Now climb back up — tap altitude again. '
-            'You\'ll want to be high when searching for countries. '
-            'The higher you fly, the more of the world you can see!';
+        return 'Choose the control surface you want to keep.';
+      case TutorialPhase.choosePlacement:
+        return 'Choose where your one-handed control should sit.';
+      case TutorialPhase.chooseClue:
+        return 'Choose a dedicated clue button or a control double-tap.';
       case TutorialPhase.ready:
-        return 'You fly with the confidence of an airline founder! '
-            'Here comes your first clue...';
+        return 'Controls set. Here comes your first clue.';
       case TutorialPhase.complete:
         return '';
     }
@@ -356,51 +324,51 @@ class TutorialOverlayState extends State<TutorialOverlay>
 
   TutorialTarget? get _target {
     switch (_phase) {
+      case TutorialPhase.classicSteering:
+      case TutorialPhase.classicThrottle:
+        return TutorialTarget.classicControls;
+      case TutorialPhase.dPadSteering:
+      case TutorialPhase.dPadThrottleTap:
+      case TutorialPhase.dPadThrottleHold:
+      case TutorialPhase.dPadAltitude:
+        return TutorialTarget.dPad;
+      case TutorialPhase.joystickFine:
+      case TutorialPhase.joystickStrong:
+      case TutorialPhase.joystickVertical:
+      case TutorialPhase.joystickRelease:
+      case TutorialPhase.doubleTapClue:
+        return TutorialTarget.joystick;
       case TutorialPhase.welcome:
+      case TutorialPhase.chooseControl:
+      case TutorialPhase.choosePlacement:
+      case TutorialPhase.chooseClue:
       case TutorialPhase.ready:
       case TutorialPhase.complete:
         return null;
-      case TutorialPhase.tryTurning:
-        return TutorialTarget.turnButtons;
-      case TutorialPhase.tryJoystick:
-        return TutorialTarget.joystick;
-      case TutorialPhase.chooseControl:
-        return null;
-      case TutorialPhase.tryWaypoint:
-        return TutorialTarget.globe;
-      case TutorialPhase.trySpeed:
-        return TutorialTarget.speedControls;
-      case TutorialPhase.tryAltitude:
-      case TutorialPhase.tryAscend:
-        return TutorialTarget.altitudeToggle;
     }
   }
 
   @override
   Widget build(BuildContext context) {
     if (_phase == TutorialPhase.complete) return const SizedBox.shrink();
-
-    final coach = widget.mission.coach;
     final mediaQuery = MediaQuery.of(context);
     final screenSize = mediaQuery.size;
     final safePadding = mediaQuery.padding;
+    final canContinue = _isTapPhase || _fallbackAvailable;
 
     return FadeTransition(
-      opacity: _fadeAnim,
+      opacity: _fadeAnimation,
       child: Stack(
         children: [
-          // Dark overlay with spotlight cutout (only during active phases).
-          // During action phases the overlay ignores pointer events so the
-          // underlying controls (turn buttons, globe, etc.) receive touches.
-          // During tap phases (welcome, waypointSet, ready) the overlay
-          // captures taps to advance the tutorial.
           if (_showOverlay)
             Positioned.fill(
               child: IgnorePointer(
-                ignoring: _isActionPhase,
+                ignoring: _isActionPhase && !_fallbackAvailable,
                 child: GestureDetector(
                   behavior: HitTestBehavior.opaque,
-                  onTap: _isTapPhase ? _onTap : null,
+                  onTap: canContinue
+                      ? (_isTapPhase ? _onTap : _advanceAction)
+                      : null,
                   child: CustomPaint(
                     painter: _SpotlightPainter(
                       target: _target,
@@ -411,76 +379,129 @@ class TutorialOverlayState extends State<TutorialOverlay>
                 ),
               ),
             ),
-
-          // Coach avatar below compass + speech bubble centred on screen.
           Positioned(
             top: safePadding.top + 110,
             right: 12,
             left: 12,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Coach avatar
-                _CoachAvatar(coach: coach),
-                const SizedBox(height: 4),
-                // Speech bubble — centred
-                Align(
-                  alignment: Alignment.center,
-                  child: _CoachCard(
-                    coachName: coach.name,
-                    message: _message,
-                    showPulse: _isActionPhase,
-                    showContinueButton: _isTapPhase,
-                    continueLabel: _continueLabel,
-                    onTap: _isTapPhase ? _onTap : null,
-                  ),
-                ),
-              ],
+            child: _CoachCard(
+              coachName: mediaQuery.size.width > 500
+                  ? widget.mission.coach.name
+                  : 'Coach ${widget.mission.coach.name}',
+              message: _message,
+              progress: _progressLabel,
+              showContinueButton: canContinue,
+              continueLabel: _continueLabel,
+              onTap:
+                  canContinue ? (_isTapPhase ? _onTap : _advanceAction) : null,
             ),
           ),
           if (_phase == TutorialPhase.chooseControl)
-            Positioned(
-              left: 24,
-              right: 24,
+            _ChoiceRow(
               bottom: safePadding.bottom + 132,
-              child: Row(
-                children: [
-                  Expanded(
-                    child: _ControlChoiceButton(
-                      label: 'ARROWS',
-                      icon: Icons.swap_horiz,
-                      onPressed: () => _selectControl(false),
+              children: ControlMode.values
+                  .map(
+                    (mode) => _ControlChoiceButton(
+                      label: mode.displayName.toUpperCase(),
+                      icon: mode == ControlMode.joystick
+                          ? Icons.gamepad_outlined
+                          : mode == ControlMode.dPad
+                              ? Icons.dialpad_rounded
+                              : Icons.swap_horiz,
+                      onPressed: () => _selectControl(mode),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _ControlChoiceButton(
-                      label: 'JOYSTICK',
-                      icon: Icons.gamepad_outlined,
-                      onPressed: () => _selectControl(true),
+                  )
+                  .toList(),
+            ),
+          if (_phase == TutorialPhase.choosePlacement)
+            _ChoiceRow(
+              bottom: safePadding.bottom + 132,
+              children: ControlPlacement.values
+                  .map(
+                    (placement) => _ControlChoiceButton(
+                      label: placement.displayName.toUpperCase(),
+                      icon: placement == ControlPlacement.left
+                          ? Icons.align_horizontal_left
+                          : placement == ControlPlacement.right
+                              ? Icons.align_horizontal_right
+                              : Icons.align_horizontal_center,
+                      onPressed: () => _selectPlacement(placement),
                     ),
-                  ),
-                ],
-              ),
+                  )
+                  .toList(),
+            ),
+          if (_phase == TutorialPhase.chooseClue)
+            _ChoiceRow(
+              bottom: safePadding.bottom + 132,
+              children: ClueTrigger.values
+                  .map(
+                    (trigger) => _ControlChoiceButton(
+                      label: trigger == ClueTrigger.button
+                          ? 'BUTTON'
+                          : 'DOUBLE-TAP',
+                      icon: trigger == ClueTrigger.button
+                          ? Icons.lightbulb_outline
+                          : Icons.touch_app,
+                      onPressed: () => _selectClue(trigger),
+                    ),
+                  )
+                  .toList(),
             ),
         ],
       ),
     );
   }
 
-  bool get _isActionPhase =>
-      _phase == TutorialPhase.tryTurning ||
-      _phase == TutorialPhase.tryJoystick ||
-      _phase == TutorialPhase.chooseControl ||
-      _phase == TutorialPhase.tryWaypoint ||
-      _phase == TutorialPhase.trySpeed ||
-      _phase == TutorialPhase.tryAltitude ||
-      _phase == TutorialPhase.tryAscend;
+  String get _progressLabel {
+    const steps = [
+      TutorialPhase.classicSteering,
+      TutorialPhase.classicThrottle,
+      TutorialPhase.dPadSteering,
+      TutorialPhase.dPadThrottleTap,
+      TutorialPhase.dPadThrottleHold,
+      TutorialPhase.dPadAltitude,
+      TutorialPhase.joystickFine,
+      TutorialPhase.joystickStrong,
+      TutorialPhase.joystickVertical,
+      TutorialPhase.joystickRelease,
+      TutorialPhase.doubleTapClue,
+    ];
+    final index = steps.indexOf(_phase);
+    if (index < 0) return '';
+    return 'Step ${index + 1} of ${steps.length}';
+  }
 
-  /// Whether the current phase advances on a simple tap (not a control action).
+  bool get _isActionPhase =>
+      _phase.index >= TutorialPhase.classicSteering.index &&
+      _phase.index <= TutorialPhase.doubleTapClue.index;
+
   bool get _isTapPhase =>
       _phase == TutorialPhase.welcome || _phase == TutorialPhase.ready;
+}
+
+class _ChoiceRow extends StatelessWidget {
+  const _ChoiceRow({required this.bottom, required this.children});
+
+  final double bottom;
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) => Positioned(
+        left: 20,
+        right: 20,
+        bottom: bottom,
+        child: Row(
+          children: children
+              .map(
+                (child) => Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    child: child,
+                  ),
+                ),
+              )
+              .toList(),
+        ),
+      );
 }
 
 class _ControlChoiceButton extends StatelessWidget {
@@ -503,297 +524,93 @@ class _ControlChoiceButton extends StatelessWidget {
           backgroundColor: FlitColors.accent,
           foregroundColor: FlitColors.backgroundDark,
           padding: const EdgeInsets.symmetric(vertical: 14),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
       );
 }
 
-/// HUD element regions for spotlight positioning.
-enum TutorialTarget {
-  turnButtons,
-  joystick,
-  globe,
-  speedControls,
-  altitudeToggle,
-}
+enum TutorialTarget { classicControls, dPad, joystick }
 
-/// Small circular coach avatar for the tutorial overlay.
-///
-/// Shows the coach's portrait image when available, falling back to styled
-/// initials with a flag badge.
-class _CoachAvatar extends StatelessWidget {
-  const _CoachAvatar({required this.coach});
-
-  final Coach coach;
-
-  @override
-  Widget build(BuildContext context) {
-    const size = 42.0;
-    final decoration = BoxDecoration(
-      shape: BoxShape.circle,
-      color: FlitColors.cardBackground,
-      border: Border.all(
-        color: FlitColors.accent.withValues(alpha: 0.6),
-        width: 2,
-      ),
-      boxShadow: [
-        BoxShadow(
-          color: Colors.black.withValues(alpha: 0.4),
-          blurRadius: 8,
-          offset: const Offset(0, 2),
-        ),
-      ],
-    );
-
-    if (coach.imageAsset != null) {
-      return Container(
-        width: size,
-        height: size,
-        decoration: decoration,
-        child: ClipOval(
-          child: Image.asset(
-            coach.imageAsset!,
-            width: size,
-            height: size,
-            fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) => _initialsFallback(size),
-          ),
-        ),
-      );
-    }
-
-    return Container(
-      width: size,
-      height: size,
-      decoration: decoration,
-      child: _initialsFallback(size),
-    );
-  }
-
-  Widget _initialsFallback(double size) {
-    final parts = coach.name.split(' ');
-    final initials = parts.length >= 2
-        ? '${parts.first[0]}${parts.last[0]}'
-        : parts.first.substring(0, 2);
-    return Center(
-      child: Text(
-        initials.toUpperCase(),
-        style: TextStyle(
-          color: FlitColors.accent,
-          fontSize: size * 0.35,
-          fontWeight: FontWeight.w800,
-        ),
-      ),
-    );
-  }
-}
-
-/// Speech bubble coach message card used by the tutorial overlay.
 class _CoachCard extends StatelessWidget {
   const _CoachCard({
     required this.coachName,
     required this.message,
+    required this.progress,
+    required this.showContinueButton,
     required this.continueLabel,
-    this.showPulse = false,
-    this.showContinueButton = false,
-    this.onTap,
+    required this.onTap,
   });
 
   final String coachName;
   final String message;
-  final String continueLabel;
-  final bool showPulse;
+  final String progress;
   final bool showContinueButton;
+  final String continueLabel;
   final VoidCallback? onTap;
 
   @override
-  Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final maxWidth = (screenWidth * 0.7).clamp(200.0, 320.0);
-
-    return SizedBox(
-      width: maxWidth,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Tail pointing up toward the avatar
-          Padding(
-            padding: const EdgeInsets.only(right: 14),
-            child: CustomPaint(
-              size: const Size(14, 8),
-              painter: _BubbleTailPainter(),
-            ),
-          ),
-          // Bubble body
-          Container(
-            width: maxWidth,
-            padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF5F0E8),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: const Color(0xFFD4C9B8),
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.2),
-                  blurRadius: 16,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
+  Widget build(BuildContext context) => Container(
+        constraints: const BoxConstraints(maxWidth: 520),
+        padding: const EdgeInsets.fromLTRB(18, 14, 18, 12),
+        decoration: BoxDecoration(
+          color: FlitColors.cardBackground.withValues(alpha: 0.96),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: FlitColors.accent.withValues(alpha: 0.7)),
+          boxShadow: const [BoxShadow(color: Colors.black54, blurRadius: 14)],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
               children: [
-                // Coach name
-                Text(
-                  coachName,
-                  style: const TextStyle(
-                    color: Color(0xFFC45E2C),
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                // Message text
-                Text(
-                  message,
-                  style: const TextStyle(
-                    color: Color(0xFF2D2D2D),
-                    fontSize: 13,
-                    height: 1.35,
-                  ),
-                ),
-                if (showPulse) ...[
-                  const SizedBox(height: 6),
-                  Center(child: _PulsingHint()),
-                ],
-                if (showContinueButton && onTap != null) ...[
-                  const SizedBox(height: 8),
-                  Center(
-                    child: GestureDetector(
-                      onTap: onTap,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: FlitColors.accent.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: FlitColors.accent.withValues(alpha: 0.4),
-                          ),
-                        ),
-                        child: Text(
-                          continueLabel,
-                          style: const TextStyle(
-                            color: FlitColors.accent,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
+                const Icon(Icons.flight_takeoff,
+                    color: FlitColors.accent, size: 20),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    coachName,
+                    style: const TextStyle(
+                      color: FlitColors.accent,
+                      fontWeight: FontWeight.w800,
                     ),
                   ),
-                ],
+                ),
+                if (progress.isNotEmpty)
+                  Text(
+                    progress,
+                    style: const TextStyle(
+                      color: FlitColors.textMuted,
+                      fontSize: 11,
+                      fontFamily: 'monospace',
+                    ),
+                  ),
               ],
             ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Paints the small triangular tail connecting the speech bubble to the avatar.
-class _BubbleTailPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = const Color(0xFFF5F0E8)
-      ..style = PaintingStyle.fill;
-
-    final path = Path()
-      ..moveTo(0, size.height)
-      ..lineTo(size.width / 2, 0)
-      ..lineTo(size.width, size.height)
-      ..close();
-    canvas.drawPath(path, paint);
-
-    final borderPaint = Paint()
-      ..color = const Color(0xFFD4C9B8)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.0;
-    final borderPath = Path()
-      ..moveTo(0, size.height)
-      ..lineTo(size.width / 2, 0)
-      ..lineTo(size.width, size.height);
-    canvas.drawPath(borderPath, borderPaint);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
-/// Pulsing "Try it!" indicator for action phases.
-class _PulsingHint extends StatefulWidget {
-  @override
-  State<_PulsingHint> createState() => _PulsingHintState();
-}
-
-class _PulsingHintState extends State<_PulsingHint>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1200),
-    )..repeat(reverse: true);
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return FadeTransition(
-      opacity: Tween<double>(begin: 0.4, end: 1.0).animate(_controller),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            Icons.touch_app,
-            size: 14,
-            color: FlitColors.accent.withValues(alpha: 0.8),
-          ),
-          const SizedBox(width: 4),
-          Text(
-            'Try it!',
-            style: TextStyle(
-              color: FlitColors.accent.withValues(alpha: 0.8),
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
+            const SizedBox(height: 8),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: FlitColors.textPrimary,
+                fontSize: 14,
+                height: 1.35,
+              ),
             ),
-          ),
-        ],
-      ),
-    );
-  }
+            if (showContinueButton) ...[
+              const SizedBox(height: 10),
+              TextButton(
+                onPressed: onTap,
+                child: Text(
+                  continueLabel,
+                  style: const TextStyle(color: FlitColors.accent),
+                ),
+              ),
+            ],
+          ],
+        ),
+      );
 }
 
-/// Paints a semi-transparent dark overlay with a rounded-rect spotlight
-/// cut out around the target HUD element.
 class _SpotlightPainter extends CustomPainter {
   _SpotlightPainter({
     required this.target,
@@ -808,91 +625,44 @@ class _SpotlightPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final darkPaint = Paint()..color = Colors.black.withValues(alpha: 0.68);
-
     if (target == null) {
       canvas.drawRect(Offset.zero & size, darkPaint);
       return;
     }
 
     final spotlight = _spotlightRect(target!, size);
-
-    // Draw dark overlay with a hole punched out via saveLayer + clear.
     canvas.saveLayer(Offset.zero & size, Paint());
     canvas.drawRect(Offset.zero & size, darkPaint);
-
-    final cutoutPaint = Paint()..blendMode = BlendMode.clear;
-    final rrect = RRect.fromRectAndRadius(spotlight, const Radius.circular(14));
-    canvas.drawRRect(rrect, cutoutPaint);
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(spotlight, const Radius.circular(16)),
+      Paint()..blendMode = BlendMode.clear,
+    );
     canvas.restore();
-
-    // Subtle glow border around the cutout.
-    final glowPaint = Paint()
-      ..color = FlitColors.accent.withValues(alpha: 0.5)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.0;
-    canvas.drawRRect(rrect, glowPaint);
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(spotlight, const Radius.circular(16)),
+      Paint()
+        ..color = FlitColors.accent.withValues(alpha: 0.55)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2,
+    );
   }
 
   Rect _spotlightRect(TutorialTarget target, Size size) {
-    final top = safePadding.top + 16;
-    final right = size.width - safePadding.right - 16;
-    final bottom = size.height - safePadding.bottom - 16;
-    final left = safePadding.left + 16;
-    const pad = 10.0;
-
+    final bottom = size.height - safePadding.bottom;
     switch (target) {
-      case TutorialTarget.turnButtons:
-        // Both turn button areas at bottom corners.
-        // Show a wide band across the lower portion covering both buttons.
-        final btnBottom = size.height - safePadding.bottom - 80;
-        return Rect.fromLTRB(
-          0,
-          btnBottom - 64 - pad,
-          size.width,
-          btnBottom + 8 + pad,
-        );
-
+      case TutorialTarget.classicControls:
+        return Rect.fromLTRB(0, bottom - 150, size.width, bottom + 6);
+      case TutorialTarget.dPad:
       case TutorialTarget.joystick:
-        final joystickBottom = size.height - safePadding.bottom - 72;
-        const joystickSize = 112.0;
         return Rect.fromCenter(
-          center: Offset(size.width / 2, joystickBottom - joystickSize / 2),
-          width: joystickSize + pad * 2,
-          height: joystickSize + pad * 2,
-        );
-
-      case TutorialTarget.globe:
-        // Central globe area (exclude HUD edges).
-        return Rect.fromLTRB(
-          left + 20,
-          top + 90,
-          right - 20,
-          bottom - 90,
-        );
-
-      case TutorialTarget.speedControls:
-        // Bottom row center: speed pills — centred between hint and altitude.
-        // The HUD Row uses spaceEvenly with 3 items, so the speed control
-        // sits roughly in the center third of the screen.
-        return Rect.fromLTRB(
-          size.width * 0.30 - pad,
-          bottom - 48 - pad,
-          size.width * 0.70 + pad,
-          bottom + pad,
-        );
-
-      case TutorialTarget.altitudeToggle:
-        // Bottom row right: altitude indicator.
-        return Rect.fromLTRB(
-          size.width * 0.62 - pad,
-          bottom - 48 - pad,
-          right + pad,
-          bottom + pad,
+          center: Offset(size.width / 2, bottom - 58),
+          width: 132,
+          height: 132,
         );
     }
   }
 
   @override
   bool shouldRepaint(_SpotlightPainter oldDelegate) =>
-      target != oldDelegate.target;
+      oldDelegate.target != target;
 }

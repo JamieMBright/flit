@@ -72,14 +72,22 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
   /// Get current turn rate based on speed.
   /// Lower speeds = tighter turning circles, higher speeds = wider arcs.
   double get currentTurnRate {
-    final speedRatio = currentSpeed / highAltitudeSpeed;
+    return turnRateForSpeed(
+      _flightSpeedForTurning,
+      sensitivity: GameSettings.instance.turnSensitivity,
+    );
+  }
+
+  /// Calculate turn rate for a continuous movement speed.
+  static double turnRateForSpeed(
+    double speed, {
+    double sensitivity = 0.5,
+  }) {
+    final speedRatio = (speed / highAltitudeSpeed).clamp(0.2, 3.0);
     // Apply turn sensitivity setting (default 0.5 → 1.0x multiplier).
-    final sensitivity = GameSettings.instance.turnSensitivity;
     final sensitivityScale = sensitivity / 0.5;
     // Inverse relationship: slower speed = higher turn rate
-    // At 50% speed (low altitude), turn rate is 2x (4.4 rad/s)
-    // At 100% speed (high altitude), turn rate is 1x (2.2 rad/s)
-    return turnRate * sensitivityScale / speedRatio.clamp(0.5, 1.0);
+    return turnRate * sensitivityScale / speedRatio;
   }
 
   /// Maximum bank angle for visual effect (radians, ~75 degrees).
@@ -118,6 +126,10 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
   /// Higher values (fast flight) → snappier tilt animation.
   double effectiveSpeedFactor = 1.0;
 
+  /// Actual movement speed supplied by [FlitGame] for continuous turn-radius
+  /// response. This includes throttle, altitude, and plane modifiers.
+  double _flightSpeedForTurning = highAltitudeSpeed;
+
   bool get isHighAltitude => _isHighAltitude;
   double get turnDirection => _turnDirection;
   double get continuousAltitude => _continuousAltitude;
@@ -131,6 +143,12 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
       highAltitudeSpeed *
       (lowAltitudeSpeedMultiplier +
           _continuousAltitude * (1.0 - lowAltitudeSpeedMultiplier));
+
+  double get flightSpeedForTurning => _flightSpeedForTurning;
+
+  void setFlightSpeedForTurning(double speed) {
+    _flightSpeedForTurning = speed.clamp(0.01, highAltitudeSpeed * 3.0);
+  }
 
   @override
   void update(double dt) {
