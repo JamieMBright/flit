@@ -140,7 +140,8 @@ class CameraState {
     final targetLngRad = effectiveLng * pi / 180.0;
 
     // Region presets control framing; there is no gameplay altitude state.
-    final targetDistance = _activeRegion == null
+    final targetDistance =
+        _activeRegion == null || _activeRegion == GameRegion.world
         ? normalCameraDistance
         : RegionCameraPresets.getPreset(_activeRegion!).altitudeDistance;
 
@@ -311,7 +312,9 @@ class CameraState {
     // Snap camera center and altitude to the preset values.
     _currentLatRad = preset.centerLat * pi / 180.0;
     _currentLngRad = preset.centerLng * pi / 180.0;
-    _currentDistance = preset.altitudeDistance;
+    _currentDistance = region == GameRegion.world
+        ? normalCameraDistance
+        : preset.altitudeDistance;
     _currentFov = _fovOverrideRad ?? fovNarrow;
     _currentHeadingRad = 0.0;
 
