@@ -75,14 +75,38 @@ void main() {
       );
     });
 
-    test('turn rate changes continuously with actual movement speed', () {
+    test('maximum throttle preserves the legacy top speed', () {
+      final globeTopSpeed =
+          PlaneComponent.normalFlightSpeed *
+          FlightThrottle.multiplier(1, flatMap: false);
+      final flatMapTopSpeed =
+          PlaneComponent.normalFlightSpeed *
+          FlightThrottle.multiplier(1, flatMap: true);
+
+      expect(
+        globeTopSpeed,
+        closeTo(
+          PlaneComponent.normalFlightSpeed * FlightThrottle.fastMultiplier,
+          0.000001,
+        ),
+      );
+      expect(
+        flatMapTopSpeed,
+        closeTo(
+          PlaneComponent.normalFlightSpeed * FlightThrottle.flatFastMultiplier,
+          0.000001,
+        ),
+      );
+    });
+
+    test('turn rate preserves the legacy maximum turn circle', () {
       final slow = PlaneComponent.turnRateForSpeed(18);
       final medium = PlaneComponent.turnRateForSpeed(36);
       final fast = PlaneComponent.turnRateForSpeed(90);
 
       expect(slow, greaterThan(medium));
-      expect(medium, greaterThan(fast));
       expect(medium, closeTo(PlaneComponent.turnRate, 0.000001));
+      expect(fast, closeTo(PlaneComponent.turnRate, 0.000001));
     });
 
     test('arrow key events are handled without an altitude action', () {

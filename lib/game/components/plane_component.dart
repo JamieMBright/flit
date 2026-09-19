@@ -68,8 +68,11 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
     final speedRatio = (speed / normalFlightSpeed).clamp(0.2, 3.0);
     // Apply turn sensitivity setting (default 0.5 → 1.0x multiplier).
     final sensitivityScale = sensitivity / 0.5;
-    // Inverse relationship: slower speed = higher turn rate
-    return turnRate * sensitivityScale / speedRatio;
+    // Preserve the legacy maximum turn circle once we reach the old
+    // normal/high-speed envelope, while still letting slower flight tighten.
+    final legacyTurnRate = turnRate * sensitivityScale;
+    final dynamicTurnRate = legacyTurnRate / speedRatio;
+    return max(dynamicTurnRate, legacyTurnRate);
   }
 
   /// Maximum bank angle for visual effect (radians, ~75 degrees).
