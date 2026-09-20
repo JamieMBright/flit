@@ -2105,6 +2105,9 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                 controlPlacement: _activeControlPlacement,
                 clueTrigger: _activeClueTrigger,
                 throttle: _game.throttle,
+                compactControlSurface: _activeControlMode == ControlMode.classic
+                    ? null
+                    : _buildCompactControlSurface(context),
                 onThrottleChanged: (value) {
                   _game.setThrottle(value);
                   _tutorialKey.currentState?.onThrottleChanged(value);
@@ -2221,10 +2224,19 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       ];
     }
 
+    return const [];
+  }
+
+  Widget _buildCompactControlSurface(BuildContext context) {
+    final media = MediaQuery.of(context);
+    final safe = media.padding;
+    final mode = _activeControlMode;
+    if (mode == ControlMode.classic) return const SizedBox.shrink();
+
     final visualSize = (media.size.width * 0.22).clamp(88.0, 112.0);
     final safeWidth = media.size.width - safe.left - safe.right;
     final travelDistance = (safeWidth * 0.42).clamp(120.0, 520.0);
-    final surface = FlightControlSurface(
+    return FlightControlSurface(
       key: _controlSurfaceKey,
       mode: mode,
       visualSize: visualSize,
@@ -2233,14 +2245,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
         _game.setControlSteering(value);
         _tutorialKey.currentState?.onControlSteering(value);
       },
-      onThrottleChanged: (value) {
-        _game.setThrottleInput(value);
-        _tutorialKey.currentState?.onThrottleChanged(value);
-      },
-      onThrottleStep: (delta) {
-        _game.adjustThrottle(delta);
-        _tutorialKey.currentState?.onThrottleTapped();
-      },
+      onThrottleChanged: (_) {},
       onReleased: () {
         _game.releaseJoystickTurn();
         _game.releaseButtonTurn();
@@ -2254,34 +2259,6 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       onDirectionChanged: (direction) =>
           _tutorialKey.currentState?.onJoystickDragged(direction),
     );
-
-    switch (_activeControlPlacement) {
-      case ControlPlacement.left:
-        return [
-          Positioned(
-            left: safe.left + 12,
-            bottom: safe.bottom + 12,
-            child: surface,
-          ),
-        ];
-      case ControlPlacement.right:
-        return [
-          Positioned(
-            right: safe.right + 12,
-            bottom: safe.bottom + 12,
-            child: surface,
-          ),
-        ];
-      case ControlPlacement.lowerCenter:
-        return [
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: safe.bottom + 12,
-            child: Center(child: surface),
-          ),
-        ];
-    }
   }
 }
 

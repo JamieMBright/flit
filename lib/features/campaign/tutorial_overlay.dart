@@ -21,11 +21,9 @@ enum TutorialPhase {
   classicSteering,
   classicThrottle,
   dPadSteering,
-  dPadThrottleTap,
-  dPadThrottleHold,
   joystickFine,
   joystickStrong,
-  joystickVertical,
+  joystickThrottle,
   joystickRelease,
   doubleTapClue,
   chooseControl,
@@ -119,12 +117,10 @@ class TutorialOverlayState extends State<TutorialOverlay>
   ControlMode _demoModeFor(TutorialPhase phase) {
     switch (phase) {
       case TutorialPhase.dPadSteering:
-      case TutorialPhase.dPadThrottleTap:
-      case TutorialPhase.dPadThrottleHold:
         return ControlMode.dPad;
       case TutorialPhase.joystickFine:
       case TutorialPhase.joystickStrong:
-      case TutorialPhase.joystickVertical:
+      case TutorialPhase.joystickThrottle:
       case TutorialPhase.joystickRelease:
       case TutorialPhase.doubleTapClue:
         return ControlMode.joystick;
@@ -142,16 +138,12 @@ class TutorialOverlayState extends State<TutorialOverlay>
       case TutorialPhase.classicThrottle:
         _setPhase(TutorialPhase.dPadSteering);
       case TutorialPhase.dPadSteering:
-        _setPhase(TutorialPhase.dPadThrottleTap);
-      case TutorialPhase.dPadThrottleTap:
-        _setPhase(TutorialPhase.dPadThrottleHold);
-      case TutorialPhase.dPadThrottleHold:
         _setPhase(TutorialPhase.joystickFine);
       case TutorialPhase.joystickFine:
         _setPhase(TutorialPhase.joystickStrong);
       case TutorialPhase.joystickStrong:
-        _setPhase(TutorialPhase.joystickVertical);
-      case TutorialPhase.joystickVertical:
+        _setPhase(TutorialPhase.joystickThrottle);
+      case TutorialPhase.joystickThrottle:
         _setPhase(TutorialPhase.joystickRelease);
       case TutorialPhase.joystickRelease:
         _setPhase(TutorialPhase.doubleTapClue);
@@ -197,16 +189,9 @@ class TutorialOverlayState extends State<TutorialOverlay>
   void onThrottleChanged(double value) {
     if (_phase == TutorialPhase.classicThrottle && value != 0) {
       _advanceAction();
-    } else if (_phase == TutorialPhase.dPadThrottleHold && value.abs() > 0) {
-      _advanceAction();
-    } else if (_phase == TutorialPhase.joystickVertical && value.abs() > 0) {
+    } else if (_phase == TutorialPhase.joystickThrottle && value.abs() > 0) {
       _advanceAction();
     }
-  }
-
-  void onThrottleTapped() {
-    if (_phase != TutorialPhase.dPadThrottleTap) return;
-    _advanceAction();
   }
 
   void onControlReleased() {
@@ -282,26 +267,23 @@ class TutorialOverlayState extends State<TutorialOverlay>
       case TutorialPhase.dPadSteering:
         return 'The D-pad is next. Tap left and right to steer with one thumb. '
             '${2 - _dPadDirections.length} directions remain.';
-      case TutorialPhase.dPadThrottleTap:
-        return 'Tap the D-pad up or down for a small throttle change.';
-      case TutorialPhase.dPadThrottleHold:
-        return 'Hold up or down to accelerate or decelerate continuously.';
       case TutorialPhase.joystickFine:
         return 'Try a small joystick movement for a fine steering correction.';
       case TutorialPhase.joystickStrong:
         return 'Now make a large movement. Full lock needs real travel, not a '
             'twitch near the base.';
-      case TutorialPhase.joystickVertical:
-        return 'Move the joystick vertically to adjust throttle while flying.';
+      case TutorialPhase.joystickThrottle:
+        return 'Use the shared throttle slider to change speed while steering.';
       case TutorialPhase.joystickRelease:
-        return 'Release and recenter. The throttle stays where you left it.';
+        return 'Release and recenter. Steering stops, but the slider keeps your '
+            'speed where you left it.';
       case TutorialPhase.doubleTapClue:
         return 'Double-tap the control surface for a clue. This demonstration '
             'does not spend fuel or advance your hints.';
       case TutorialPhase.chooseControl:
         return 'Choose the control surface you want to keep.';
       case TutorialPhase.choosePlacement:
-        return 'Choose where your one-handed control should sit.';
+        return 'Choose how your one-handed control cluster should sit.';
       case TutorialPhase.chooseClue:
         return 'Choose a dedicated clue button or a control double-tap.';
       case TutorialPhase.ready:
@@ -317,12 +299,10 @@ class TutorialOverlayState extends State<TutorialOverlay>
       case TutorialPhase.classicThrottle:
         return TutorialTarget.classicControls;
       case TutorialPhase.dPadSteering:
-      case TutorialPhase.dPadThrottleTap:
-      case TutorialPhase.dPadThrottleHold:
         return TutorialTarget.dPad;
       case TutorialPhase.joystickFine:
       case TutorialPhase.joystickStrong:
-      case TutorialPhase.joystickVertical:
+      case TutorialPhase.joystickThrottle:
       case TutorialPhase.joystickRelease:
       case TutorialPhase.doubleTapClue:
         return TutorialTarget.joystick;
@@ -407,11 +387,18 @@ class TutorialOverlayState extends State<TutorialOverlay>
                   .map(
                     (placement) => _ControlChoiceButton(
                       label: placement.displayName.toUpperCase(),
-                      icon: placement == ControlPlacement.left
-                          ? Icons.align_horizontal_left
-                          : placement == ControlPlacement.right
-                              ? Icons.align_horizontal_right
-                              : Icons.align_horizontal_center,
+                      icon: switch (placement) {
+                        ControlPlacement.left =>
+                          Icons.align_horizontal_left,
+                        ControlPlacement.right =>
+                          Icons.align_horizontal_right,
+                        ControlPlacement.lowerCenter =>
+                          Icons.align_horizontal_center,
+                        ControlPlacement.sliderLeft =>
+                          Icons.view_week_outlined,
+                        ControlPlacement.sliderAbove =>
+                          Icons.view_agenda_outlined,
+                      },
                       onPressed: () => _selectPlacement(placement),
                     ),
                   )
@@ -444,11 +431,9 @@ class TutorialOverlayState extends State<TutorialOverlay>
       TutorialPhase.classicSteering,
       TutorialPhase.classicThrottle,
       TutorialPhase.dPadSteering,
-      TutorialPhase.dPadThrottleTap,
-      TutorialPhase.dPadThrottleHold,
       TutorialPhase.joystickFine,
       TutorialPhase.joystickStrong,
-      TutorialPhase.joystickVertical,
+      TutorialPhase.joystickThrottle,
       TutorialPhase.joystickRelease,
       TutorialPhase.doubleTapClue,
     ];
@@ -476,17 +461,11 @@ class _ChoiceRow extends StatelessWidget {
         left: 20,
         right: 20,
         bottom: bottom,
-        child: Row(
-          children: children
-              .map(
-                (child) => Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 4),
-                    child: child,
-                  ),
-                ),
-              )
-              .toList(),
+        child: Wrap(
+          alignment: WrapAlignment.center,
+          spacing: 12,
+          runSpacing: 12,
+          children: children,
         ),
       );
 }
@@ -642,9 +621,9 @@ class _SpotlightPainter extends CustomPainter {
       case TutorialTarget.dPad:
       case TutorialTarget.joystick:
         return Rect.fromCenter(
-          center: Offset(size.width / 2, bottom - 58),
-          width: 132,
-          height: 132,
+          center: Offset(size.width / 2, bottom - 86),
+          width: min(size.width - 24, 236.0),
+          height: 198,
         );
     }
   }

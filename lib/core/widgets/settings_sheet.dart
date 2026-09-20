@@ -468,7 +468,7 @@ class _ControlPlacementSelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) =>
       _ControlChoiceSelector<ControlPlacement>(
-        title: 'Compact control placement',
+        title: 'Compact control layout',
         icon: Icons.open_with_rounded,
         value: value,
         options: ControlPlacement.values,
@@ -531,41 +531,42 @@ class _ControlChoiceSelector<T> extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 10),
-            Row(
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
               children: options.map((option) {
                 final selected = option == value;
-                return Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 3),
-                    child: GestureDetector(
-                      onTap: () => onChanged(option),
-                      child: Container(
-                        constraints: const BoxConstraints(minHeight: 44),
-                        alignment: Alignment.center,
-                        padding: const EdgeInsets.symmetric(horizontal: 6),
-                        decoration: BoxDecoration(
-                          color: selected
-                              ? FlitColors.accent.withOpacity(0.2)
-                              : FlitColors.backgroundMid,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color: selected
-                                ? FlitColors.accent
-                                : FlitColors.cardBorder,
-                            width: selected ? 1.5 : 1,
-                          ),
-                        ),
-                        child: Text(
-                          label(option),
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: selected
-                                ? FlitColors.accent
-                                : FlitColors.textMuted,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
+                return GestureDetector(
+                  onTap: () => onChanged(option),
+                  child: Container(
+                    constraints: const BoxConstraints(
+                      minWidth: 96,
+                      minHeight: 44,
+                    ),
+                    alignment: Alignment.center,
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: selected
+                          ? FlitColors.accent.withOpacity(0.2)
+                          : FlitColors.backgroundMid,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: selected
+                            ? FlitColors.accent
+                            : FlitColors.cardBorder,
+                        width: selected ? 1.5 : 1,
+                      ),
+                    ),
+                    child: Text(
+                      label(option),
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: selected
+                            ? FlitColors.accent
+                            : FlitColors.textMuted,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
                   ),
