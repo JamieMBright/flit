@@ -55,6 +55,10 @@ class FlightThrottle {
   static const double flatMediumMultiplier = 0.8;
   static const double flatFastMultiplier = 1.5;
 
+  static double launchDefault({required bool fullSpeed}) {
+    return fullSpeed ? max : min;
+  }
+
   static double multiplier(
     double throttle, {
     required bool flatMap,
@@ -1769,6 +1773,7 @@ class FlitGame extends FlameGame
     required Vector2 targetPosition,
     required String clue,
     double? heading,
+    double initialThrottle = FlightThrottle.min,
   }) {
     _log.info(
       'game',
@@ -1800,7 +1805,7 @@ class FlitGame extends FlameGame
     _currentClue = clue;
     _waymarker = null; // clear any previous waymarker
     _hintTarget = null; // clear any previous hint
-    _throttle = FlightThrottle.min; // reset throttle — always start slow
+    _throttle = initialThrottle.clamp(FlightThrottle.min, FlightThrottle.max);
     _keyThrottleDirection = 0;
     _controlThrottleInput = 0.0;
     _fuel = maxFuel; // full tank (includes licence bonus)
