@@ -68,6 +68,17 @@ void main() {
       expect(FlightThrottle.applyInput(0.5, 1, 0), 0.5);
     });
 
+    test('launch defaults can start slow or full speed', () {
+      expect(
+        FlightThrottle.launchDefault(fullSpeed: false),
+        FlightThrottle.min,
+      );
+      expect(
+        FlightThrottle.launchDefault(fullSpeed: true),
+        FlightThrottle.max,
+      );
+    });
+
     test('flat map curves retain their medium calibration anchor', () {
       expect(
         FlightThrottle.multiplier(0.5, flatMap: true),
