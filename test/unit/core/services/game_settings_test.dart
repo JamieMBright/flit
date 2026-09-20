@@ -36,13 +36,13 @@ void main() {
         profile: {'id': 'pilot'},
         settings: {
           'control_mode': 'dPad',
-          'control_placement': 'right',
+          'control_placement': 'sliderLeft',
           'clue_trigger': 'controlDoubleTap',
         },
       );
 
       expect(snapshot.controlMode, 'dPad');
-      expect(snapshot.controlPlacement, 'right');
+      expect(snapshot.controlPlacement, 'sliderLeft');
       expect(snapshot.clueTrigger, 'controlDoubleTap');
     });
   });

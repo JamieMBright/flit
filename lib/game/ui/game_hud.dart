@@ -24,6 +24,7 @@ class GameHud extends StatelessWidget {
     this.controlPlacement = ControlPlacement.lowerCenter,
     this.clueTrigger = ClueTrigger.button,
     this.throttle = 0.0,
+    this.compactControlSurface,
     this.onThrottleChanged,
     this.onThrottleIncrement,
     this.onThrottleDecrement,
@@ -48,6 +49,7 @@ class GameHud extends StatelessWidget {
   final ControlPlacement controlPlacement;
   final ClueTrigger clueTrigger;
   final double throttle;
+  final Widget? compactControlSurface;
   final ValueChanged<double>? onThrottleChanged;
   final VoidCallback? onThrottleIncrement;
   final VoidCallback? onThrottleDecrement;
@@ -191,29 +193,19 @@ class GameHud extends StatelessWidget {
                 )
               else
                 Padding(
-                  padding: const EdgeInsets.only(bottom: 112),
+                  padding: const EdgeInsets.only(bottom: 12),
                   child: Align(
                     alignment: _compactAlignment,
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (controlPlacement == ControlPlacement.left &&
-                            clueTrigger == ClueTrigger.button &&
-                            hintTier < 4 &&
-                            onHint != null) ...[
-                          _HintButton(tier: hintTier, onTap: onHint),
-                          const SizedBox(width: 10),
-                        ],
-                        const SizedBox(width: 2),
-                        ThrottleGauge(value: throttle),
-                        if (controlPlacement != ControlPlacement.left &&
-                            clueTrigger == ClueTrigger.button &&
-                            hintTier < 4 &&
-                            onHint != null) ...[
-                          const SizedBox(width: 10),
-                          _HintButton(tier: hintTier, onTap: onHint),
-                        ],
-                      ],
+                    child: _CompactControlCluster(
+                      placement: controlPlacement,
+                      clueTrigger: clueTrigger,
+                      hintTier: hintTier,
+                      throttle: throttle,
+                      onThrottleChanged: onThrottleChanged,
+                      onThrottleIncrement: onThrottleIncrement,
+                      onThrottleDecrement: onThrottleDecrement,
+                      onHint: onHint,
+                      surface: compactControlSurface,
                     ),
                   ),
                 ),
@@ -229,9 +221,139 @@ class GameHud extends StatelessWidget {
       case ControlPlacement.right:
         return Alignment.centerRight;
       case ControlPlacement.lowerCenter:
+      case ControlPlacement.sliderLeft:
+      case ControlPlacement.sliderAbove:
         return Alignment.center;
     }
   }
+}
+
+class _CompactControlCluster extends StatelessWidget {
+  const _CompactControlCluster({
+    required this.placement,
+    required this.clueTrigger,
+    required this.hintTier,
+    required this.throttle,
+    required this.onThrottleChanged,
+    required this.onThrottleIncrement,
+    required this.onThrottleDecrement,
+    required this.onHint,
+    this.surface,
+  });
+
+  final ControlPlacement placement;
+  final ClueTrigger clueTrigger;
+  final int hintTier;
+  final double throttle;
+  final ValueChanged<double>? onThrottleChanged;
+  final VoidCallback? onThrottleIncrement;
+  final VoidCallback? onThrottleDecrement;
+  final VoidCallback? onHint;
+  final Widget? surface;
+
+  bool get _showHint =>
+      clueTrigger == ClueTrigger.button && hintTier < 4 && onHint != null;
+
+  @override
+  Widget build(BuildContext context) {
+    final throttleControl = ClassicThrottleControl(
+      value: throttle,
+      onChanged: onThrottleChanged ?? (_) {},
+      onIncrement: onThrottleIncrement,
+      onDecrement: onThrottleDecrement,
+    );
+    final surfaceWidget = surface ?? const SizedBox.shrink();
+    final hint = _showHint
+        ? _HintButton(tier: hintTier, onTap: onHint)
+        : const SizedBox.shrink();
+
+    switch (placement) {
+      case ControlPlacement.left:
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            surfaceWidget,
+            const SizedBox(width: 12),
+            _CompactThrottleColumn(
+              throttleControl: throttleControl,
+              throttle: throttle,
+              hint: hint,
+              showHint: _showHint,
+              alignEnd: false,
+            ),
+          ],
+        );
+      case ControlPlacement.right:
+      case ControlPlacement.sliderLeft:
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            _CompactThrottleColumn(
+              throttleControl: throttleControl,
+              throttle: throttle,
+              hint: hint,
+              showHint: _showHint,
+              alignEnd: true,
+            ),
+            const SizedBox(width: 12),
+            surfaceWidget,
+          ],
+        );
+      case ControlPlacement.lowerCenter:
+      case ControlPlacement.sliderAbove:
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                throttleControl,
+                if (_showHint) ...[
+                  const SizedBox(width: 10),
+                  hint,
+                ],
+              ],
+            ),
+            const SizedBox(height: 10),
+            surfaceWidget,
+          ],
+        );
+    }
+  }
+}
+
+class _CompactThrottleColumn extends StatelessWidget {
+  const _CompactThrottleColumn({
+    required this.throttleControl,
+    required this.throttle,
+    required this.hint,
+    required this.showHint,
+    required this.alignEnd,
+  });
+
+  final Widget throttleControl;
+  final double throttle;
+  final Widget hint;
+  final bool showHint;
+  final bool alignEnd;
+
+  @override
+  Widget build(BuildContext context) => Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment:
+            alignEnd ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+        children: [
+          throttleControl,
+          const SizedBox(height: 8),
+          ThrottleGauge(value: throttle),
+          if (showHint) ...[
+            const SizedBox(height: 8),
+            hint,
+          ],
+        ],
+      );
 }
 
 class _ExitButton extends StatelessWidget {

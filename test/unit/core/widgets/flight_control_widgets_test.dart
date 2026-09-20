@@ -82,38 +82,39 @@ void main() {
 
     testWidgets('D-pad tap steps throttle and hold uses continuous input',
         (tester) async {
-      final inputs = <double>[];
-      final steps = <double>[];
+      final steering = <double>[];
 
       await tester.pumpWidget(
         MaterialApp(
           home: Center(
             child: FlightControlSurface(
               mode: ControlMode.dPad,
-              onSteeringChanged: (_) {},
-              onThrottleChanged: inputs.add,
+              onSteeringChanged: steering.add,
+              onThrottleChanged: (_) {},
               onReleased: () {},
-              onThrottleStep: steps.add,
             ),
           ),
         ),
       );
 
       final box = tester.getRect(find.byType(FlightControlSurface));
-      final upper = Offset(box.center.dx, box.top + 12);
-      final tap = await tester.startGesture(upper);
-      await tap.up();
-      await tester.pump();
-      expect(steps, [0.08]);
+      final left = Offset(box.left + 12, box.center.dy);
+      final right = Offset(box.right - 12, box.center.dy);
 
-      final hold = await tester.startGesture(upper);
-      await tester.pump(const Duration(milliseconds: 180));
-      expect(inputs, contains(1));
-      await hold.up();
+      final leftPress = await tester.startGesture(left);
+      await tester.pump();
+      expect(steering.last, -1);
+      await leftPress.up();
+      await tester.pump();
+
+      final rightPress = await tester.startGesture(right);
+      await tester.pump();
+      expect(steering.last, 1);
+      await rightPress.up();
       await tester.pump();
     });
 
-    testWidgets('joystick reports diagonal steering and throttle',
+    testWidgets('joystick reports horizontal steering only',
         (tester) async {
       final steering = <double>[];
       final throttle = <double>[];
@@ -136,7 +137,9 @@ void main() {
       final gesture = await tester.startGesture(centre);
       await gesture.moveBy(const Offset(180, -180));
       expect(steering.last, greaterThan(0));
-      expect(throttle.last, greaterThan(0));
+      expect(throttle.last, 0);
+      await gesture.moveBy(const Offset(-180, 260));
+      expect(throttle.last, 0);
       await gesture.cancel();
     });
   });

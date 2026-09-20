@@ -1845,14 +1845,14 @@ class _ControlsSection extends StatelessWidget {
           _ControlRow(
             gesture: 'D-pad',
             icon: Icons.dialpad_rounded,
-            effect: 'Left/right steer; tap or hold up/down to adjust throttle',
+            effect: 'Left/right steer with one thumb; use the shared throttle slider for speed',
           ),
           SizedBox(height: 8),
           _ControlRow(
             gesture: 'Joystick',
             icon: Icons.gamepad_outlined,
             effect:
-                'Small movement makes fine turns; larger travel makes stronger turns; vertical travel adjusts throttle',
+                'Small movement makes fine turns; larger travel makes stronger turns; use the shared throttle slider for speed',
           ),
           SizedBox(height: 8),
           _ControlRow(

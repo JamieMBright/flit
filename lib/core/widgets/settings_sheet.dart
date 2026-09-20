@@ -468,7 +468,7 @@ class _ControlPlacementSelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) =>
       _ControlChoiceSelector<ControlPlacement>(
-        title: 'Compact control placement',
+        title: 'Compact control layout',
         icon: Icons.open_with_rounded,
         value: value,
         options: ControlPlacement.values,

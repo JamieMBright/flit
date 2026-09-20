@@ -97,7 +97,9 @@ enum ControlMode {
 enum ControlPlacement {
   left,
   right,
-  lowerCenter;
+  lowerCenter,
+  sliderLeft,
+  sliderAbove;
 
   String get displayName {
     switch (this) {
@@ -107,6 +109,10 @@ enum ControlPlacement {
         return 'Right';
       case ControlPlacement.lowerCenter:
         return 'Lower center';
+      case ControlPlacement.sliderLeft:
+        return 'Slider left';
+      case ControlPlacement.sliderAbove:
+        return 'Slider above';
     }
   }
 }

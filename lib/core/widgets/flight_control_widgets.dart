@@ -1,13 +1,9 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 
 import '../services/game_settings.dart';
 import '../theme/flit_colors.dart';
 
 const _doubleTapWindow = Duration(milliseconds: 280);
-const _holdDelay = Duration(milliseconds: 160);
-const _tapThrottleStep = 0.08;
 
 /// Eased axis response for the compact joystick.
 ///
@@ -38,7 +34,6 @@ class FlightControlSurface extends StatefulWidget {
     required this.onSteeringChanged,
     required this.onThrottleChanged,
     required this.onReleased,
-    this.onThrottleStep,
     this.onDoubleTap,
     this.onDirectionChanged,
     this.visualSize = 96,
@@ -49,7 +44,6 @@ class FlightControlSurface extends StatefulWidget {
   final ValueChanged<double> onSteeringChanged;
   final ValueChanged<double> onThrottleChanged;
   final VoidCallback onReleased;
-  final ValueChanged<double>? onThrottleStep;
   final VoidCallback? onDoubleTap;
   final ValueChanged<int>? onDirectionChanged;
   final double visualSize;
@@ -69,21 +63,16 @@ class FlightControlSurfaceState extends State<FlightControlSurface> {
   Offset _displacement = Offset.zero;
   _DPadDirection _dPadDirection = _DPadDirection.center;
   bool _dragged = false;
-  bool _held = false;
   DateTime? _lastTapAt;
-  Timer? _holdTimer;
 
   /// Releases all input and clears pending gesture state.
   void neutralize() {
-    _holdTimer?.cancel();
-    _holdTimer = null;
     _activePointer = null;
     _ignoredPointer = null;
     _initialPosition = null;
     _displacement = Offset.zero;
     _dPadDirection = _DPadDirection.center;
     _dragged = false;
-    _held = false;
     _lastTapAt = null;
     widget.onSteeringChanged(0);
     widget.onThrottleChanged(0);
@@ -102,7 +91,6 @@ class FlightControlSurfaceState extends State<FlightControlSurface> {
 
   @override
   void dispose() {
-    _holdTimer?.cancel();
     super.dispose();
   }
 
@@ -126,11 +114,9 @@ class FlightControlSurfaceState extends State<FlightControlSurface> {
     _displacement = Offset.zero;
     _dPadDirection = _directionAt(localPosition);
     _dragged = false;
-    _held = false;
     widget.onSteeringChanged(0);
     widget.onThrottleChanged(0);
     _applyDPadDirection();
-    _startHoldTimer();
     if (mounted) setState(() {});
   }
 
@@ -142,11 +128,8 @@ class FlightControlSurfaceState extends State<FlightControlSurface> {
     } else {
       final nextDirection = _directionAt(event.localPosition);
       if (nextDirection != _dPadDirection) {
-        _holdTimer?.cancel();
-        _held = false;
         _dPadDirection = nextDirection;
         _applyDPadDirection();
-        _startHoldTimer();
       }
       if (delta.distance > widget.visualSize * 0.08) _dragged = true;
       _displacement = Offset(
@@ -163,13 +146,7 @@ class FlightControlSurfaceState extends State<FlightControlSurface> {
       widget.travelDistance,
       deadzone: 0.22,
     );
-    final vertical = joystickAxisResponse(
-      -delta.dy,
-      widget.travelDistance,
-      deadzone: 0.22,
-    );
-    _dragged = delta.dx.abs() > widget.visualSize * 0.05 ||
-        delta.dy.abs() > widget.visualSize * 0.05;
+    _dragged = delta.dx.abs() > widget.visualSize * 0.05;
     if (horizontal != 0 &&
         (_lastMeaningfulDirection == null ||
             _lastMeaningfulDirection != horizontal.sign.toInt())) {
@@ -177,10 +154,10 @@ class FlightControlSurfaceState extends State<FlightControlSurface> {
       widget.onDirectionChanged?.call(_lastMeaningfulDirection!);
     }
     widget.onSteeringChanged(horizontal);
-    widget.onThrottleChanged(vertical);
+    widget.onThrottleChanged(0);
     _displacement = Offset(
       (delta.dx / widget.travelDistance).clamp(-1.0, 1.0) * _visualTravel,
-      (delta.dy / widget.travelDistance).clamp(-1.0, 1.0) * _visualTravel,
+      0,
     );
   }
 
@@ -195,17 +172,9 @@ class FlightControlSurfaceState extends State<FlightControlSurface> {
 
     final direction = _dPadDirection;
     final wasDragged = _dragged;
-    final wasHeld = _held;
     _finishPointer();
 
-    if (widget.mode == ControlMode.dPad &&
-        !wasDragged &&
-        !wasHeld &&
-        (direction == _DPadDirection.up || direction == _DPadDirection.down)) {
-      widget.onThrottleStep?.call(
-        direction == _DPadDirection.up ? _tapThrottleStep : -_tapThrottleStep,
-      );
-    } else if (!wasDragged &&
+    if (!wasDragged &&
         (direction == _DPadDirection.center ||
             widget.mode == ControlMode.joystick)) {
       _lastTapAt = DateTime.now();
@@ -222,8 +191,6 @@ class FlightControlSurfaceState extends State<FlightControlSurface> {
   }
 
   void _finishPointer() {
-    _holdTimer?.cancel();
-    _holdTimer = null;
     _activePointer = null;
     _initialPosition = null;
     _displacement = Offset.zero;
@@ -233,21 +200,6 @@ class FlightControlSurfaceState extends State<FlightControlSurface> {
     widget.onThrottleChanged(0);
     widget.onReleased();
     if (mounted) setState(() {});
-  }
-
-  void _startHoldTimer() {
-    if (widget.mode != ControlMode.dPad ||
-        (_dPadDirection != _DPadDirection.up &&
-            _dPadDirection != _DPadDirection.down)) {
-      return;
-    }
-    _holdTimer?.cancel();
-    _holdTimer = Timer(_holdDelay, () {
-      if (_activePointer == null) return;
-      _held = true;
-      _applyDPadDirection();
-      if (mounted) setState(() {});
-    });
   }
 
   void _applyDPadDirection() {
@@ -260,12 +212,6 @@ class FlightControlSurfaceState extends State<FlightControlSurface> {
         widget.onDirectionChanged?.call(1);
         widget.onSteeringChanged(1);
         widget.onThrottleChanged(0);
-      case _DPadDirection.up:
-        widget.onSteeringChanged(0);
-        widget.onThrottleChanged(_held ? 1 : 0);
-      case _DPadDirection.down:
-        widget.onSteeringChanged(0);
-        widget.onThrottleChanged(_held ? -1 : 0);
       case _DPadDirection.center:
         widget.onSteeringChanged(0);
         widget.onThrottleChanged(0);
@@ -278,10 +224,15 @@ class FlightControlSurfaceState extends State<FlightControlSurface> {
     final distance = delta.distance;
     final centerRadius = widget.visualSize * 0.19;
     if (distance <= centerRadius) return _DPadDirection.center;
+    if (widget.mode == ControlMode.dPad) {
+      final horizontalLock = widget.visualSize * 0.11;
+      if (delta.dx.abs() <= horizontalLock) return _DPadDirection.center;
+      return delta.dx < 0 ? _DPadDirection.left : _DPadDirection.right;
+    }
     if (delta.dx.abs() >= delta.dy.abs()) {
       return delta.dx < 0 ? _DPadDirection.left : _DPadDirection.right;
     }
-    return delta.dy < 0 ? _DPadDirection.up : _DPadDirection.down;
+    return _DPadDirection.center;
   }
 
   double get _visualTravel => widget.visualSize * 0.27;
@@ -322,7 +273,7 @@ class FlightControlSurfaceState extends State<FlightControlSurface> {
   }
 }
 
-enum _DPadDirection { center, left, right, up, down }
+enum _DPadDirection { center, left, right }
 
 class _FlightControlPainter extends CustomPainter {
   const _FlightControlPainter({
@@ -374,6 +325,16 @@ class _FlightControlPainter extends CustomPainter {
       radius * 0.07,
       highlightPaint,
     );
+    final guidePaint = Paint()
+      ..color = FlitColors.textSecondary.withValues(alpha: 0.42)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2
+      ..strokeCap = StrokeCap.round;
+    canvas.drawLine(
+      centre.translate(-radius * 0.5, 0),
+      centre.translate(radius * 0.5, 0),
+      guidePaint,
+    );
   }
 
   void _paintDPad(Canvas canvas, Size size) {
@@ -402,18 +363,6 @@ class _FlightControlPainter extends CustomPainter {
     _drawChevron(
         canvas, centre.translate(-size.width * 0.29, 0), -1, linePaint);
     _drawChevron(canvas, centre.translate(size.width * 0.29, 0), 1, linePaint);
-    _drawVerticalChevron(
-      canvas,
-      centre.translate(0, -size.height * 0.29),
-      -1,
-      linePaint,
-    );
-    _drawVerticalChevron(
-      canvas,
-      centre.translate(0, size.height * 0.29),
-      1,
-      linePaint,
-    );
     canvas.drawCircle(
       centre,
       size.shortestSide * 0.11,
@@ -427,20 +376,6 @@ class _FlightControlPainter extends CustomPainter {
     path.moveTo(x, centre.dy - 7);
     path.lineTo(centre.dx - direction * 4, centre.dy);
     path.lineTo(x, centre.dy + 7);
-    canvas.drawPath(path, paint);
-  }
-
-  void _drawVerticalChevron(
-    Canvas canvas,
-    Offset centre,
-    int direction,
-    Paint paint,
-  ) {
-    final path = Path();
-    final y = centre.dy + direction * 5;
-    path.moveTo(centre.dx - 7, y);
-    path.lineTo(centre.dx, centre.dy - direction * 4);
-    path.lineTo(centre.dx + 7, y);
     canvas.drawPath(path, paint);
   }
 

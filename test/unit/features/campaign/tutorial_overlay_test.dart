@@ -44,8 +44,6 @@ void main() {
     key.currentState!.onThrottleChanged(0.3);
     key.currentState!.onJoystickDragged(-1);
     key.currentState!.onJoystickDragged(1);
-    key.currentState!.onThrottleTapped();
-    key.currentState!.onThrottleChanged(1);
     key.currentState!.onControlSteering(0.1);
     key.currentState!.onControlSteering(0.8);
     key.currentState!.onThrottleChanged(0.5);

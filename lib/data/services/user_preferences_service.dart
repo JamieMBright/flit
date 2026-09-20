@@ -1769,7 +1769,13 @@ class UserPreferencesSnapshot {
   String get controlPlacement {
     final value = settings?['control_placement'];
     if (value is String &&
-        const {'left', 'right', 'lowerCenter'}.contains(value)) {
+        const {
+          'left',
+          'right',
+          'lowerCenter',
+          'sliderLeft',
+          'sliderAbove',
+        }.contains(value)) {
       return value;
     }
     return 'lowerCenter';
