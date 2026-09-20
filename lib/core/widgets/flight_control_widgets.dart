@@ -112,11 +112,15 @@ class FlightControlSurfaceState extends State<FlightControlSurface> {
     final localPosition = _toLocal(event.position);
     _initialPosition = localPosition;
     _displacement = Offset.zero;
-    _dPadDirection = _directionAt(localPosition);
+    _dPadDirection = widget.mode == ControlMode.dPad
+        ? _directionAt(localPosition)
+        : _DPadDirection.center;
     _dragged = false;
     widget.onSteeringChanged(0);
     widget.onThrottleChanged(0);
-    _applyDPadDirection();
+    if (widget.mode == ControlMode.dPad) {
+      _applyDPadDirection();
+    }
     if (mounted) setState(() {});
   }
 
@@ -134,7 +138,7 @@ class FlightControlSurfaceState extends State<FlightControlSurface> {
       if (delta.distance > widget.visualSize * 0.08) _dragged = true;
       _displacement = Offset(
         delta.dx.clamp(-widget.visualSize * 0.36, widget.visualSize * 0.36),
-        delta.dy.clamp(-widget.visualSize * 0.36, widget.visualSize * 0.36),
+        0,
       );
     }
     if (mounted) setState(() {});

@@ -80,7 +80,7 @@ void main() {
       expect(clues, 1);
     });
 
-    testWidgets('D-pad tap steps throttle and hold uses continuous input',
+    testWidgets('D-pad handles left and right steering only',
         (tester) async {
       final steering = <double>[];
 
