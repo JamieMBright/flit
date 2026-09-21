@@ -55,9 +55,7 @@ class FlightThrottle {
   static const double flatMediumMultiplier = 0.8;
   static const double flatFastMultiplier = 1.5;
 
-  static double launchDefault({required bool fullSpeed}) {
-    return max;
-  }
+  static double launchDefault() => max;
 
   static double multiplier(
     double throttle, {

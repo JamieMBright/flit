@@ -69,14 +69,7 @@ void main() {
     });
 
     test('launch defaults start at full speed for every mode', () {
-      expect(
-        FlightThrottle.launchDefault(fullSpeed: false),
-        FlightThrottle.max,
-      );
-      expect(
-        FlightThrottle.launchDefault(fullSpeed: true),
-        FlightThrottle.max,
-      );
+      expect(FlightThrottle.launchDefault(), FlightThrottle.max);
     });
 
     test('flat map curves retain their medium calibration anchor', () {

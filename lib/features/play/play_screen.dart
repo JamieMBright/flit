@@ -835,8 +835,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
         targetPosition: _session!.targetPosition,
         clue: _session!.clue.displayText,
         heading: widget.campaignMission?.startHeading,
-        initialThrottle:
-            FlightThrottle.launchDefault(fullSpeed: widget.isDailyChallenge),
+        initialThrottle: FlightThrottle.launchDefault(),
       );
 
       // Configure fuel system.

@@ -422,92 +422,159 @@ class ClassicThrottleControl extends StatelessWidget {
   Widget build(BuildContext context) {
     final clampedValue = value.clamp(0.0, 1.0).toDouble();
     final percentage = (clampedValue * 100).round();
+    final increasedValue =
+        ((clampedValue + _step).clamp(0.0, 1.0).toDouble() * 100).round();
+    final decreasedValue =
+        ((clampedValue - _step).clamp(0.0, 1.0).toDouble() * 100).round();
 
-    return Semantics(
-      label: 'Throttle',
-      value: '$percentage percent',
-      onIncrease:
-          onIncrement ??
-          () => onChanged((clampedValue + _step).clamp(0.0, 1.0).toDouble()),
-      onDecrease:
-          onDecrement ??
-          () => onChanged((clampedValue - _step).clamp(0.0, 1.0).toDouble()),
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(minWidth: 188, minHeight: 84),
-        child: LayoutBuilder(
-          builder: (context, constraints) => GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTapDown: (details) =>
-                _updateFromLocalPosition(details.localPosition, constraints.biggest),
-            onHorizontalDragStart: (details) =>
-                _updateFromLocalPosition(details.localPosition, constraints.biggest),
-            onHorizontalDragUpdate: (details) =>
-                _updateFromLocalPosition(details.localPosition, constraints.biggest),
-            child: Container(
-              padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
-              decoration: BoxDecoration(
-                color: FlitColors.cardBackground.withValues(alpha: 0.9),
-                borderRadius: BorderRadius.circular(22),
-                border: Border.all(
-                  color: FlitColors.cardBorder.withValues(alpha: 0.78),
+    void increaseThrottle() {
+      if (onIncrement != null) {
+        onIncrement!();
+        return;
+      }
+      onChanged((clampedValue + _step).clamp(0.0, 1.0).toDouble());
+    }
+
+    void decreaseThrottle() {
+      if (onDecrement != null) {
+        onDecrement!();
+        return;
+      }
+      onChanged((clampedValue - _step).clamp(0.0, 1.0).toDouble());
+    }
+
+    return FocusableActionDetector(
+      shortcuts: const <ShortcutActivator, Intent>{
+        SingleActivator(LogicalKeyboardKey.arrowRight):
+            _ThrottleStepIntent(1),
+        SingleActivator(LogicalKeyboardKey.arrowUp): _ThrottleStepIntent(1),
+        SingleActivator(LogicalKeyboardKey.arrowLeft): _ThrottleStepIntent(-1),
+        SingleActivator(LogicalKeyboardKey.arrowDown): _ThrottleStepIntent(-1),
+      },
+      actions: <Type, Action<Intent>>{
+        _ThrottleStepIntent: CallbackAction<_ThrottleStepIntent>(
+          onInvoke: (intent) {
+            if (intent.delta > 0) {
+              increaseThrottle();
+            } else {
+              decreaseThrottle();
+            }
+            return null;
+          },
+        ),
+      },
+      child: Builder(
+        builder: (context) {
+          final hasFocus = Focus.of(context).hasFocus;
+          return Semantics(
+            label: 'Throttle',
+            value: '$percentage percent',
+            increasedValue: '$increasedValue percent',
+            decreasedValue: '$decreasedValue percent',
+            onIncrease: increaseThrottle,
+            onDecrease: decreaseThrottle,
+            slider: true,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minWidth: 188, minHeight: 84),
+              child: LayoutBuilder(
+                builder: (context, constraints) => GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTapDown: (details) =>
+                      _updateFromLocalPosition(
+                        details.localPosition,
+                        constraints.biggest,
+                      ),
+                  onHorizontalDragStart: (details) =>
+                      _updateFromLocalPosition(
+                        details.localPosition,
+                        constraints.biggest,
+                      ),
+                  onHorizontalDragUpdate: (details) =>
+                      _updateFromLocalPosition(
+                        details.localPosition,
+                        constraints.biggest,
+                      ),
+                  child: Container(
+                    padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
+                    decoration: BoxDecoration(
+                      color: FlitColors.cardBackground.withValues(alpha: 0.9),
+                      borderRadius: BorderRadius.circular(22),
+                      border: Border.all(
+                        color: hasFocus
+                            ? FlitColors.goldLight
+                            : FlitColors.cardBorder.withValues(alpha: 0.78),
+                        width: hasFocus ? 2 : 1,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: (hasFocus
+                                  ? FlitColors.gold.withValues(alpha: 0.24)
+                                  : FlitColors.shadow.withValues(alpha: 0.35)),
+                          blurRadius: hasFocus ? 18 : 14,
+                          offset: const Offset(0, 6),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Row(
+                          children: [
+                            Text(
+                              'THROTTLE',
+                              style: Theme.of(
+                                context,
+                              ).textTheme.labelSmall?.copyWith(
+                                color: hasFocus
+                                    ? FlitColors.goldLight
+                                    : FlitColors.textSecondary,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 1.2,
+                              ),
+                            ),
+                            const Spacer(),
+                            Text(
+                              '$percentage%',
+                              style: Theme.of(
+                                context,
+                              ).textTheme.titleSmall?.copyWith(
+                                color: FlitColors.textPrimary,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 0.4,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        _PilotThrottleRail(value: clampedValue),
+                        const SizedBox(height: 6),
+                        Row(
+                          children: [
+                            Text(
+                              'IDLE',
+                              style:
+                                  Theme.of(context).textTheme.labelSmall?.copyWith(
+                                        color: FlitColors.textMuted,
+                                        fontWeight: FontWeight.w700,
+                                        letterSpacing: 1.0,
+                                      ),
+                            ),
+                            const Spacer(),
+                            Text(
+                              'FULL',
+                              style:
+                                  Theme.of(context).textTheme.labelSmall?.copyWith(
+                                        color: FlitColors.textMuted,
+                                        fontWeight: FontWeight.w700,
+                                        letterSpacing: 1.0,
+                                      ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
-                boxShadow: [
-                  BoxShadow(
-                    color: FlitColors.shadow.withValues(alpha: 0.35),
-                    blurRadius: 14,
-                    offset: const Offset(0, 6),
-                  ),
-                ],
-              ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Row(
-                    children: [
-                      Text(
-                        'THROTTLE',
-                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                              color: FlitColors.textSecondary,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: 1.2,
-                            ),
-                      ),
-                      const Spacer(),
-                      Text(
-                        '$percentage%',
-                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                              color: FlitColors.textPrimary,
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: 0.4,
-                            ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  _PilotThrottleRail(value: clampedValue),
-                  const SizedBox(height: 6),
-                  Row(
-                    children: [
-                      Text(
-                        'IDLE',
-                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                              color: FlitColors.textMuted,
-                              fontWeight: FontWeight.w700,
-                              letterSpacing: 1.0,
-                            ),
-                      ),
-                      const Spacer(),
-                      Text(
-                        'FULL',
-                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                              color: FlitColors.textMuted,
-                              fontWeight: FontWeight.w700,
-                              letterSpacing: 1.0,
-                            ),
-                      ),
-                    ],
-                  ),
-                ],
               ),
             ),
           ),
@@ -515,6 +582,12 @@ class ClassicThrottleControl extends StatelessWidget {
       ),
     );
   }
+}
+
+class _ThrottleStepIntent extends Intent {
+  const _ThrottleStepIntent(this.delta);
+
+  final int delta;
 }
 
 class _PilotThrottleRail extends StatelessWidget {
