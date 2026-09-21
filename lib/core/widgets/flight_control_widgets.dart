@@ -406,76 +406,218 @@ class ClassicThrottleControl extends StatelessWidget {
   final VoidCallback? onIncrement;
   final VoidCallback? onDecrement;
 
+  static const double _step = 0.08;
+
+  void _updateFromLocalPosition(Offset localPosition, Size size) {
+    const horizontalInset = 14.0;
+    final usableWidth = (size.width - (horizontalInset * 2))
+        .clamp(1.0, double.infinity)
+        .toDouble();
+    final nextValue =
+        ((localPosition.dx - horizontalInset) / usableWidth).clamp(0.0, 1.0);
+    onChanged(nextValue.toDouble());
+  }
+
   @override
   Widget build(BuildContext context) {
+    final clampedValue = value.clamp(0.0, 1.0).toDouble();
+    final percentage = (clampedValue * 100).round();
+
     return Semantics(
-      label: 'Throttle ${((value.clamp(0.0, 1.0)) * 100).round()} percent',
-      child: Container(
-        width: 132,
-        height: 48,
-        padding: const EdgeInsets.symmetric(horizontal: 8),
-        decoration: BoxDecoration(
-          color: FlitColors.cardBackground.withValues(alpha: 0.86),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: FlitColors.cardBorder.withValues(alpha: 0.7),
-          ),
-        ),
-        child: Row(
-          children: [
-            _ThrottleButton(
-              icon: Icons.remove,
-              onTap: onDecrement,
-              tooltip: 'Decrease throttle',
-            ),
-            Expanded(
-              child: SliderTheme(
-                data: SliderThemeData(
-                  activeTrackColor: FlitColors.accent,
-                  inactiveTrackColor: FlitColors.backgroundMid,
-                  thumbColor: FlitColors.accent,
-                  overlayColor: FlitColors.accent.withValues(alpha: 0.14),
-                  trackHeight: 4,
+      label: 'Throttle',
+      value: '$percentage percent',
+      onIncrease:
+          onIncrement ??
+          () => onChanged((clampedValue + _step).clamp(0.0, 1.0).toDouble()),
+      onDecrease:
+          onDecrement ??
+          () => onChanged((clampedValue - _step).clamp(0.0, 1.0).toDouble()),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minWidth: 188, minHeight: 84),
+        child: LayoutBuilder(
+          builder: (context, constraints) => GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTapDown: (details) =>
+                _updateFromLocalPosition(details.localPosition, constraints.biggest),
+            onHorizontalDragStart: (details) =>
+                _updateFromLocalPosition(details.localPosition, constraints.biggest),
+            onHorizontalDragUpdate: (details) =>
+                _updateFromLocalPosition(details.localPosition, constraints.biggest),
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
+              decoration: BoxDecoration(
+                color: FlitColors.cardBackground.withValues(alpha: 0.9),
+                borderRadius: BorderRadius.circular(22),
+                border: Border.all(
+                  color: FlitColors.cardBorder.withValues(alpha: 0.78),
                 ),
-                child: Slider(
-                  value: value.clamp(0.0, 1.0),
-                  onChanged: onChanged,
-                  semanticFormatterCallback: (v) =>
-                      '${(v * 100).round()} percent throttle',
-                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: FlitColors.shadow.withValues(alpha: 0.35),
+                    blurRadius: 14,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        'THROTTLE',
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                              color: FlitColors.textSecondary,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 1.2,
+                            ),
+                      ),
+                      const Spacer(),
+                      Text(
+                        '$percentage%',
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                              color: FlitColors.textPrimary,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 0.4,
+                            ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  _PilotThrottleRail(value: clampedValue),
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      Text(
+                        'IDLE',
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                              color: FlitColors.textMuted,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 1.0,
+                            ),
+                      ),
+                      const Spacer(),
+                      Text(
+                        'FULL',
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                              color: FlitColors.textMuted,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 1.0,
+                            ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
-            _ThrottleButton(
-              icon: Icons.add,
-              onTap: onIncrement,
-              tooltip: 'Increase throttle',
-            ),
-          ],
+          ),
         ),
       ),
     );
   }
 }
 
-class _ThrottleButton extends StatelessWidget {
-  const _ThrottleButton({
-    required this.icon,
-    required this.onTap,
-    required this.tooltip,
-  });
+class _PilotThrottleRail extends StatelessWidget {
+  const _PilotThrottleRail({required this.value});
 
-  final IconData icon;
-  final VoidCallback? onTap;
-  final String tooltip;
+  final double value;
 
   @override
-  Widget build(BuildContext context) => IconButton(
-        icon: Icon(icon, size: 18),
-        color: FlitColors.textSecondary,
-        onPressed: onTap,
-        tooltip: tooltip,
-        constraints: const BoxConstraints(minWidth: 36, minHeight: 44),
-        padding: EdgeInsets.zero,
+  Widget build(BuildContext context) => SizedBox(
+        height: 28,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            const thumbWidth = 18.0;
+            final clampedValue = value.clamp(0.0, 1.0).toDouble();
+            final thumbTravel = (constraints.maxWidth - thumbWidth)
+                .clamp(0.0, double.infinity)
+                .toDouble();
+            final thumbLeft = thumbTravel * clampedValue;
+
+            return Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Align(
+                  alignment: Alignment.center,
+                  child: Container(
+                    height: 12,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(999),
+                      border: Border.all(
+                        color: FlitColors.cardBorder.withValues(alpha: 0.8),
+                      ),
+                      gradient: LinearGradient(
+                        colors: [
+                          FlitColors.oceanHighlight.withValues(alpha: 0.3),
+                          FlitColors.backgroundLight,
+                          FlitColors.accent.withValues(alpha: 0.92),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                Positioned.fill(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: List<Widget>.generate(
+                      5,
+                      (index) => Container(
+                        width: 2,
+                        height: index == 2 ? 18 : 14,
+                        decoration: BoxDecoration(
+                          color: FlitColors.textPrimary.withValues(
+                            alpha: index == 2 ? 0.7 : 0.36,
+                          ),
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  left: thumbLeft,
+                  top: 0,
+                  bottom: 0,
+                  child: Container(
+                    width: thumbWidth,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: FlitColors.backgroundDark.withValues(alpha: 0.9),
+                        width: 1.4,
+                      ),
+                      gradient: const LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          FlitColors.goldLight,
+                          FlitColors.gold,
+                        ],
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: FlitColors.shadow.withValues(alpha: 0.45),
+                          blurRadius: 8,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
+                    ),
+                    child: Center(
+                      child: Container(
+                        width: 4,
+                        height: 13,
+                        decoration: BoxDecoration(
+                          color: FlitColors.backgroundDark.withValues(alpha: 0.72),
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
       );
 }
 

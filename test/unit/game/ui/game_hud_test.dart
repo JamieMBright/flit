@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:flit/core/services/game_settings.dart';
+import 'package:flit/core/widgets/flight_control_widgets.dart';
 import 'package:flit/game/ui/game_hud.dart';
 
 void main() {
@@ -27,7 +28,7 @@ void main() {
       (tester) async {
     await tester.pumpWidget(buildHud(ControlPlacement.sliderLeft));
 
-    final sliderRect = tester.getRect(find.byType(Slider));
+    final sliderRect = tester.getRect(find.byType(ClassicThrottleControl));
     final surfaceRect = tester.getRect(find.byKey(const Key('surface')));
 
     expect(sliderRect.right, lessThanOrEqualTo(surfaceRect.left));
@@ -37,9 +38,15 @@ void main() {
       (tester) async {
     await tester.pumpWidget(buildHud(ControlPlacement.sliderAbove));
 
-    final sliderRect = tester.getRect(find.byType(Slider));
+    final sliderRect = tester.getRect(find.byType(ClassicThrottleControl));
     final surfaceRect = tester.getRect(find.byKey(const Key('surface')));
 
     expect(sliderRect.bottom, lessThanOrEqualTo(surfaceRect.top));
+  });
+
+  testWidgets('compact controls avoid duplicate throttle gauge', (tester) async {
+    await tester.pumpWidget(buildHud(ControlPlacement.sliderLeft));
+
+    expect(find.byType(ThrottleGauge), findsNothing);
   });
 }

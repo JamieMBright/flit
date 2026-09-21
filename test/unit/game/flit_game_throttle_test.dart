@@ -68,10 +68,10 @@ void main() {
       expect(FlightThrottle.applyInput(0.5, 1, 0), 0.5);
     });
 
-    test('launch defaults can start slow or full speed', () {
+    test('launch defaults start at full speed for every mode', () {
       expect(
         FlightThrottle.launchDefault(fullSpeed: false),
-        FlightThrottle.min,
+        FlightThrottle.max,
       );
       expect(
         FlightThrottle.launchDefault(fullSpeed: true),

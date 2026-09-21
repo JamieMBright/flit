@@ -277,7 +277,6 @@ class _CompactControlCluster extends StatelessWidget {
             const SizedBox(width: 12),
             _CompactThrottleColumn(
               throttleControl: throttleControl,
-              throttle: throttle,
               hint: hint,
               showHint: _showHint,
               alignEnd: false,
@@ -292,7 +291,6 @@ class _CompactControlCluster extends StatelessWidget {
           children: [
             _CompactThrottleColumn(
               throttleControl: throttleControl,
-              throttle: throttle,
               hint: hint,
               showHint: _showHint,
               alignEnd: true,
@@ -327,14 +325,12 @@ class _CompactControlCluster extends StatelessWidget {
 class _CompactThrottleColumn extends StatelessWidget {
   const _CompactThrottleColumn({
     required this.throttleControl,
-    required this.throttle,
     required this.hint,
     required this.showHint,
     required this.alignEnd,
   });
 
   final Widget throttleControl;
-  final double throttle;
   final Widget hint;
   final bool showHint;
   final bool alignEnd;
@@ -346,8 +342,6 @@ class _CompactThrottleColumn extends StatelessWidget {
             alignEnd ? CrossAxisAlignment.end : CrossAxisAlignment.start,
         children: [
           throttleControl,
-          const SizedBox(height: 8),
-          ThrottleGauge(value: throttle),
           if (showHint) ...[
             const SizedBox(height: 8),
             hint,

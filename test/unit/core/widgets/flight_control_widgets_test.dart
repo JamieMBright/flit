@@ -143,4 +143,39 @@ void main() {
       await gesture.cancel();
     });
   });
+
+  testWidgets('classic throttle control accepts taps at both extremes',
+      (tester) async {
+    final value = ValueNotifier<double>(0.4);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Center(
+            child: ValueListenableBuilder<double>(
+              valueListenable: value,
+              builder: (context, throttle, _) => SizedBox(
+                width: 220,
+                child: ClassicThrottleControl(
+                  value: throttle,
+                  onChanged: (next) => value.value = next,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    final control = find.byType(ClassicThrottleControl);
+    final rect = tester.getRect(control);
+
+    await tester.tapAt(Offset(rect.left + 4, rect.center.dy));
+    await tester.pump();
+    expect(value.value, closeTo(0, 0.02));
+
+    await tester.tapAt(Offset(rect.right - 4, rect.center.dy));
+    await tester.pump();
+    expect(value.value, closeTo(1, 0.02));
+  });
 }
