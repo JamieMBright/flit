@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:flit/core/services/game_settings.dart';
@@ -168,8 +167,8 @@ void main() {
       ),
     );
 
-    final control = find.byType(ClassicThrottleControl);
-    final rect = tester.getRect(control);
+    final slider = find.byType(Slider);
+    final rect = tester.getRect(slider);
 
     await tester.tapAt(Offset(rect.left + 4, rect.center.dy));
     await tester.pump();
@@ -178,41 +177,6 @@ void main() {
     await tester.tapAt(Offset(rect.right - 4, rect.center.dy));
     await tester.pump();
     expect(value.value, closeTo(1, 0.02));
-  });
-
-  testWidgets('classic throttle control exposes adjustable semantics',
-      (tester) async {
-    final semantics = SemanticsTester(tester);
-    addTearDown(semantics.dispose);
-
-    await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          body: Center(
-            child: SizedBox(
-              width: 220,
-              child: ClassicThrottleControl(
-                value: 0.4,
-                onChanged: (_) {},
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-
-    expect(
-      tester.getSemantics(find.byType(ClassicThrottleControl)),
-      matchesSemantics(
-        label: 'Throttle',
-        value: '40 percent',
-        increasedValue: '48 percent',
-        decreasedValue: '32 percent',
-        isSlider: true,
-        hasIncreaseAction: true,
-        hasDecreaseAction: true,
-      ),
-    );
   });
 
   testWidgets('classic throttle control responds to keyboard arrows',
@@ -247,5 +211,37 @@ void main() {
     await tester.sendKeyEvent(LogicalKeyboardKey.arrowLeft);
     await tester.pump();
     expect(value.value, closeTo(0.4, 0.001));
+  });
+
+  testWidgets('classic throttle control preset buttons jump to endpoints',
+      (tester) async {
+    final value = ValueNotifier<double>(0.4);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Center(
+            child: ValueListenableBuilder<double>(
+              valueListenable: value,
+              builder: (context, throttle, _) => SizedBox(
+                width: 220,
+                child: ClassicThrottleControl(
+                  value: throttle,
+                  onChanged: (next) => value.value = next,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('FULL'));
+    await tester.pump();
+    expect(value.value, 1);
+
+    await tester.tap(find.text('IDLE'));
+    await tester.pump();
+    expect(value.value, 0);
   });
 }

@@ -406,33 +406,21 @@ class ClassicThrottleControl extends StatelessWidget {
   final VoidCallback? onIncrement;
   final VoidCallback? onDecrement;
 
-  static const double _step = 0.08;
-
-  void _updateFromLocalPosition(Offset localPosition, Size size) {
-    const horizontalInset = 14.0;
-    final usableWidth = (size.width - (horizontalInset * 2))
-        .clamp(1.0, double.infinity)
-        .toDouble();
-    final nextValue =
-        ((localPosition.dx - horizontalInset) / usableWidth).clamp(0.0, 1.0);
-    onChanged(nextValue.toDouble());
-  }
-
   @override
   Widget build(BuildContext context) {
     final clampedValue = value.clamp(0.0, 1.0).toDouble();
     final percentage = (clampedValue * 100).round();
     final increasedValue =
-        ((clampedValue + _step).clamp(0.0, 1.0).toDouble() * 100).round();
+        ((clampedValue + 0.08).clamp(0.0, 1.0).toDouble() * 100).round();
     final decreasedValue =
-        ((clampedValue - _step).clamp(0.0, 1.0).toDouble() * 100).round();
+        ((clampedValue - 0.08).clamp(0.0, 1.0).toDouble() * 100).round();
 
     void increaseThrottle() {
       if (onIncrement != null) {
         onIncrement!();
         return;
       }
-      onChanged((clampedValue + _step).clamp(0.0, 1.0).toDouble());
+      onChanged((clampedValue + 0.08).clamp(0.0, 1.0).toDouble());
     }
 
     void decreaseThrottle() {
@@ -440,256 +428,200 @@ class ClassicThrottleControl extends StatelessWidget {
         onDecrement!();
         return;
       }
-      onChanged((clampedValue - _step).clamp(0.0, 1.0).toDouble());
+      onChanged((clampedValue - 0.08).clamp(0.0, 1.0).toDouble());
     }
 
-    return FocusableActionDetector(
-      shortcuts: const <ShortcutActivator, Intent>{
-        SingleActivator(LogicalKeyboardKey.arrowRight):
-            _ThrottleStepIntent(1),
-        SingleActivator(LogicalKeyboardKey.arrowUp): _ThrottleStepIntent(1),
-        SingleActivator(LogicalKeyboardKey.arrowLeft): _ThrottleStepIntent(-1),
-        SingleActivator(LogicalKeyboardKey.arrowDown): _ThrottleStepIntent(-1),
-      },
-      actions: <Type, Action<Intent>>{
-        _ThrottleStepIntent: CallbackAction<_ThrottleStepIntent>(
-          onInvoke: (intent) {
-            if (intent.delta > 0) {
-              increaseThrottle();
-            } else {
-              decreaseThrottle();
-            }
-            return null;
-          },
-        ),
-      },
-      child: Builder(
-        builder: (context) {
-          final hasFocus = Focus.of(context).hasFocus;
-          return Semantics(
-            label: 'Throttle',
-            value: '$percentage percent',
-            increasedValue: '$increasedValue percent',
-            decreasedValue: '$decreasedValue percent',
-            onIncrease: increaseThrottle,
-            onDecrease: decreaseThrottle,
-            slider: true,
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(minWidth: 188, minHeight: 84),
-              child: LayoutBuilder(
-                builder: (context, constraints) => GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTapDown: (details) =>
-                      _updateFromLocalPosition(
-                        details.localPosition,
-                        constraints.biggest,
-                      ),
-                  onHorizontalDragStart: (details) =>
-                      _updateFromLocalPosition(
-                        details.localPosition,
-                        constraints.biggest,
-                      ),
-                  onHorizontalDragUpdate: (details) =>
-                      _updateFromLocalPosition(
-                        details.localPosition,
-                        constraints.biggest,
-                      ),
-                  child: Container(
-                    padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
-                    decoration: BoxDecoration(
-                      color: FlitColors.cardBackground.withValues(alpha: 0.9),
-                      borderRadius: BorderRadius.circular(22),
-                      border: Border.all(
-                        color: hasFocus
-                            ? FlitColors.goldLight
-                            : FlitColors.cardBorder.withValues(alpha: 0.78),
-                        width: hasFocus ? 2 : 1,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: (hasFocus
-                                  ? FlitColors.gold.withValues(alpha: 0.24)
-                                  : FlitColors.shadow.withValues(alpha: 0.35)),
-                          blurRadius: hasFocus ? 18 : 14,
-                          offset: const Offset(0, 6),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final controlWidth = constraints.maxWidth.isFinite
+            ? constraints.maxWidth.toDouble()
+            : (MediaQuery.sizeOf(context).width * 0.42)
+                .clamp(160.0, 260.0)
+                .toDouble();
+        final idleButton = _ThrottlePresetButton(
+          label: 'IDLE',
+          active: clampedValue <= 0.05,
+          onTap: () => onChanged(0),
+        );
+        final fullButton = _ThrottlePresetButton(
+          label: 'FULL',
+          active: clampedValue >= 0.95,
+          onTap: () => onChanged(1),
+        );
+
+        return SizedBox(
+          width: controlWidth,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 84),
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
+              decoration: BoxDecoration(
+                color: FlitColors.cardBackground.withValues(alpha: 0.9),
+                borderRadius: BorderRadius.circular(22),
+                border: Border.all(
+                  color: FlitColors.cardBorder.withValues(alpha: 0.78),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: FlitColors.shadow.withValues(alpha: 0.35),
+                    blurRadius: 14,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (controlWidth < 150)
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'THROTTLE',
+                          style:
+                              Theme.of(context).textTheme.labelSmall?.copyWith(
+                                    color: FlitColors.textSecondary,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: 1.2,
+                                  ),
+                        ),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: Text(
+                            '$percentage%',
+                            style: Theme.of(
+                              context,
+                            ).textTheme.titleSmall?.copyWith(
+                              color: FlitColors.textPrimary,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 0.4,
+                            ),
+                          ),
+                        ),
+                      ],
+                    )
+                  else
+                    Row(
+                      children: [
+                        Text(
+                          'THROTTLE',
+                          style:
+                              Theme.of(context).textTheme.labelSmall?.copyWith(
+                                    color: FlitColors.textSecondary,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: 1.2,
+                                  ),
+                        ),
+                        const Spacer(),
+                        Text(
+                          '$percentage%',
+                          style:
+                              Theme.of(context).textTheme.titleSmall?.copyWith(
+                                    color: FlitColors.textPrimary,
+                                    fontWeight: FontWeight.w900,
+                                    letterSpacing: 0.4,
+                                  ),
                         ),
                       ],
                     ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Row(
-                          children: [
-                            Text(
-                              'THROTTLE',
-                              style: Theme.of(
-                                context,
-                              ).textTheme.labelSmall?.copyWith(
-                                color: hasFocus
-                                    ? FlitColors.goldLight
-                                    : FlitColors.textSecondary,
-                                fontWeight: FontWeight.w800,
-                                letterSpacing: 1.2,
-                              ),
-                            ),
-                            const Spacer(),
-                            Text(
-                              '$percentage%',
-                              style: Theme.of(
-                                context,
-                              ).textTheme.titleSmall?.copyWith(
-                                color: FlitColors.textPrimary,
-                                fontWeight: FontWeight.w900,
-                                letterSpacing: 0.4,
-                              ),
-                            ),
-                          ],
+                  const SizedBox(height: 8),
+                  Semantics(
+                    label: 'Throttle',
+                    value: '$percentage percent',
+                    increasedValue: '$increasedValue percent',
+                    decreasedValue: '$decreasedValue percent',
+                    onIncrease: increaseThrottle,
+                    onDecrease: decreaseThrottle,
+                    slider: true,
+                    excludeSemantics: true,
+                    child: SliderTheme(
+                      data: SliderTheme.of(context).copyWith(
+                        trackHeight: 12,
+                        activeTrackColor: FlitColors.accent,
+                        inactiveTrackColor: FlitColors.backgroundMid,
+                        thumbColor: FlitColors.goldLight,
+                        overlayColor: FlitColors.gold.withValues(alpha: 0.18),
+                        thumbShape: const RoundSliderThumbShape(
+                          enabledThumbRadius: 12,
+                          pressedElevation: 2,
                         ),
-                        const SizedBox(height: 10),
-                        _PilotThrottleRail(value: clampedValue),
-                        const SizedBox(height: 6),
-                        Row(
-                          children: [
-                            Text(
-                              'IDLE',
-                              style:
-                                  Theme.of(context).textTheme.labelSmall?.copyWith(
-                                        color: FlitColors.textMuted,
-                                        fontWeight: FontWeight.w700,
-                                        letterSpacing: 1.0,
-                                      ),
-                            ),
-                            const Spacer(),
-                            Text(
-                              'FULL',
-                              style:
-                                  Theme.of(context).textTheme.labelSmall?.copyWith(
-                                        color: FlitColors.textMuted,
-                                        fontWeight: FontWeight.w700,
-                                        letterSpacing: 1.0,
-                                      ),
-                            ),
-                          ],
-                        ),
-                      ],
+                        overlayShape:
+                            const RoundSliderOverlayShape(overlayRadius: 20),
+                      ),
+                      child: Slider(
+                        value: clampedValue,
+                        onChanged: onChanged,
+                        semanticFormatterCallback: (next) =>
+                            '${(next * 100).round()} percent throttle',
+                      ),
                     ),
                   ),
-                ),
+                  if (controlWidth < 190)
+                    Column(
+                      children: [
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: idleButton,
+                        ),
+                        const SizedBox(height: 4),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: fullButton,
+                        ),
+                      ],
+                    )
+                  else
+                    Row(
+                      children: [
+                        idleButton,
+                        const Spacer(),
+                        fullButton,
+                      ],
+                    ),
+                ],
               ),
             ),
           ),
         ),
-      ),
+      },
     );
   }
 }
 
-class _ThrottleStepIntent extends Intent {
-  const _ThrottleStepIntent(this.delta);
+class _ThrottlePresetButton extends StatelessWidget {
+  const _ThrottlePresetButton({
+    required this.label,
+    required this.active,
+    required this.onTap,
+  });
 
-  final int delta;
-}
-
-class _PilotThrottleRail extends StatelessWidget {
-  const _PilotThrottleRail({required this.value});
-
-  final double value;
+  final String label;
+  final bool active;
+  final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) => SizedBox(
-        height: 28,
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            const thumbWidth = 18.0;
-            final clampedValue = value.clamp(0.0, 1.0).toDouble();
-            final thumbTravel = (constraints.maxWidth - thumbWidth)
-                .clamp(0.0, double.infinity)
-                .toDouble();
-            final thumbLeft = thumbTravel * clampedValue;
-
-            return Stack(
-              clipBehavior: Clip.none,
-              children: [
-                Align(
-                  alignment: Alignment.center,
-                  child: Container(
-                    height: 12,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(999),
-                      border: Border.all(
-                        color: FlitColors.cardBorder.withValues(alpha: 0.8),
-                      ),
-                      gradient: LinearGradient(
-                        colors: [
-                          FlitColors.oceanHighlight.withValues(alpha: 0.3),
-                          FlitColors.backgroundLight,
-                          FlitColors.accent.withValues(alpha: 0.92),
-                        ],
-                      ),
-                    ),
+  Widget build(BuildContext context) => Semantics(
+        button: true,
+        selected: active,
+        label: '$label throttle preset',
+        child: ExcludeSemantics(
+          child: TextButton(
+            onPressed: onTap,
+            style: TextButton.styleFrom(
+              minimumSize: const Size(52, 44),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              shape: const StadiumBorder(),
+              foregroundColor:
+                  active ? FlitColors.goldLight : FlitColors.textMuted,
+            ),
+            child: Text(
+              label,
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 1.0,
                   ),
-                ),
-                Positioned.fill(
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: List<Widget>.generate(
-                      5,
-                      (index) => Container(
-                        width: 2,
-                        height: index == 2 ? 18 : 14,
-                        decoration: BoxDecoration(
-                          color: FlitColors.textPrimary.withValues(
-                            alpha: index == 2 ? 0.7 : 0.36,
-                          ),
-                          borderRadius: BorderRadius.circular(999),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                Positioned(
-                  left: thumbLeft,
-                  top: 0,
-                  bottom: 0,
-                  child: Container(
-                    width: thumbWidth,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: FlitColors.backgroundDark.withValues(alpha: 0.9),
-                        width: 1.4,
-                      ),
-                      gradient: const LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          FlitColors.goldLight,
-                          FlitColors.gold,
-                        ],
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: FlitColors.shadow.withValues(alpha: 0.45),
-                          blurRadius: 8,
-                          offset: const Offset(0, 3),
-                        ),
-                      ],
-                    ),
-                    child: Center(
-                      child: Container(
-                        width: 4,
-                        height: 13,
-                        decoration: BoxDecoration(
-                          color: FlitColors.backgroundDark.withValues(alpha: 0.72),
-                          borderRadius: BorderRadius.circular(999),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            );
-          },
+            ),
+          ),
         ),
       );
 }
