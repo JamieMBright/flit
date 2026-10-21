@@ -7,6 +7,8 @@ on:
   workflow_dispatch:
     # Allow manual triggering from the Actions tab.
 
+# Also enable Settings → Actions → General → Workflow permissions →
+# "Allow GitHub Actions to create and approve pull requests" for this repository.
 permissions:
   contents: write
   pull-requests: write
